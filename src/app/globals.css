@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
+/*
+  두 개의 시각 레이어를 쓴다.
+  - 자극물 레이어(.ott-*): OTT 앱처럼 보여야 하는 부분. 어둡고 포스터 중심.
+  - 설문 레이어: 응답 문항. 밝고 중립적이어서 "이건 설문이다"가 분명하게.
+  실험 자극물과 측정 도구를 시각적으로 분리해, 응답이 UI 매력도에 오염되지 않게 하려는 것.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f6f6f7;
+  --fg: #17171a;
+  --muted: #6b6b76;
+  --line: #e2e2e6;
+  --card: #ffffff;
+
+  --ott-bg: #0b0b0f;
+  --ott-fg: #f2f2f5;
+  --ott-muted: #9a9aa6;
+  --ott-surface: #17171d;
+  --ott-line: #2a2a33;
+
+  /* 강조색 배너 — 근거유형 설명 문구가 앉는 자리 (문서 0.2) */
+  --accent: #e0243c;
+  --accent-soft: #2a0f16;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-card: var(--card);
+  --color-ott-bg: var(--ott-bg);
+  --color-ott-fg: var(--ott-fg);
+  --color-ott-muted: var(--ott-muted);
+  --color-ott-surface: var(--ott-surface);
+  --color-ott-line: var(--ott-line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: var(--font-noto);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-noto), "Malgun Gothic", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 진행 표시자 */
+.step-dot {
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--line);
+  flex: 1;
+  transition: background 0.2s;
+}
+.step-dot[data-on="true"] {
+  background: var(--accent);
+}
+
+/* 리커트 라디오 */
+.likert-cell input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+  margin: 0;
+}
+.likert-cell span {
+  display: grid;
+  place-items: center;
+  height: 2.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  color: var(--muted);
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+.likert-cell:hover span {
+  border-color: #b9b9c2;
+}
+.likert-cell input:checked + span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.likert-cell input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

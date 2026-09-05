@@ -1,36 +1,386 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OTT 추천 근거유형 실험 · 파일럿 사이트
 
-## Getting Started
+홍익대학교 대학원 시각디자인 전공 석사학위논문 실험의 **본실험 파일럿(예비 시행)** 폼입니다.
 
-First, run the development server:
+- 독립변수 1 · 추천 근거유형 (피험자 내, 3수준): 콘텐츠 기반 / 협업 기반 / 맥락 인식 기반
+- 독립변수 2 · 이용조건 (피험자 간, 2수준): SVOD(구독 포함) / TVOD(5,500원 48시간 대여)
+- 매개변수: 지각된 추천 유용성 (3문항, 7점)
+- 종속변수: 추천 수용의도 (3문항, 7점)
+- 그 외: 조작점검 1문항, 화면별 체류시간
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 참여자 흐름 (기조 문서 4단계)
+
+```
+1단계 사전 세팅
+  /                      1-1 실험 안내 & 참가 동의
+  /survey/usage          1-2 사전 설문 (평소 OTT 이용 습관·기기·시간대)
+
+2단계 조건 배정 & 장르 선택
+  /pre                   2-2 6가지 장르 중 1개 선택
+                         └ 제출 시 서버에서 2-1 조건 배정이 일어난다 (화면 없음)
+
+3단계 라틴스퀘어 반복 측정
+  /stimulus/1  →  /rest/1  →  /stimulus/2  →  /rest/2  →  /stimulus/3
+  Trial 1~3 · 자극 제시 → 종속변수 평가 → 짧은 휴식
+
+4단계 사후 점검 & 종료
+  /post/check            4-1 조작 점검 (배정받은 조절변수 인지 여부)
+  /post/ranking          4-2 독립변수 3조건 상대 순위 (1/2/3위, 중복 불가)
+  /post/open             4-3 주관식 (선택 이유 / 경험 의견)
+  /survey/demographics   4-4 인구통계 문항
+  /done                  제출 완료 + 참여 코드
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 단계 순서 강제
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`src/lib/flow.ts` 가 두 겹으로 막습니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **화면 가드** (`guard`) — URL로 앞질러 가면 아직 못 채운 가장 앞 단계로 되돌립니다.
+- **저장 가드** (`canSubmitAt`) — API를 직접 호출해도 같은 검사를 통과해야 저장됩니다.
+  특히 4-4 인구통계를 자극물 노출 전에 미리 채워 넣는 것을 막습니다.
 
-## Learn More
+문항 단계는 이미 지나온 곳으로 돌아가 고칠 수 있지만, **자극물과 휴식은 앞으로만**
+진행됩니다. 이미 평가한 자극물을 다시 보여주면 그 인상이 남은 trial 과 4-2 순위 응답에
+섞여 들어가기 때문입니다.
 
-To learn more about Next.js, take a look at the following resources:
+### 짧은 휴식
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Trial 사이에 **3초** 휴식 화면(`REST_SECONDS`)이 들어갑니다. 카운트다운이 끝나기 전에는
+다음으로 넘어갈 수 없어, 세 화면을 한 번에 훑고 비교해버리는 응답 패턴을 막습니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3초는 이 연구의 이전 버전(`세현이논문/ott-survey-react`)이 안내 인터스티셜에 쓴 값과
+같습니다 — `S6Notice` 의 `useCountdown(3)`.
 
-## Deploy on Vercel
+### 문항 정의가 있는 곳
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| 파일 | 내용 |
+|---|---|
+| `src/lib/presurvey.ts` | 1-2 사전설문(B-1~B-5), 4-4 인구통계(A-1~A-2) |
+| `src/lib/items.ts` | 3단계 종속변수 — 유용성 3문항 · 수용의도 3문항 (7점) |
+| `src/lib/posttest.ts` | 4-1 조작점검(조절변수 + 독립변수) · 4-2 순위 · 4-3 주관식 |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+각 정의 하나로 화면 렌더링과 서버 검증을 모두 합니다. 문항을 고치면 양쪽이 따라옵니다.
+B-1(플랫폼)·B-4(기기)의 **기타**는 선택 시에만 자유입력이 열리고, 기타가 아닌데 입력이
+남아 있는 상태는 DB 제약으로도 막습니다.
+
+설문 기간(2026.09.06~09.13)은 소개 화면에 표시만 하고 접근은 막지 않습니다.
+
+### 개인화 — 호칭과 시간대
+
+자극물 화면이 실제 서비스처럼 보이도록 두 가지를 반영합니다.
+
+**호칭** — 2-2 단계에서 "화면에 표시될 호칭"을 선택 입력으로 받습니다.
+헤더 프로필 칩, 인사말, 레일 제목, 배너 문구에 `OO님` 으로 들어갑니다.
+비워 두면 전부 `회원님` 으로 나갑니다.
+
+**시간대** — 헤더 인사말이 접속 시각을 반영합니다("좋은 저녁이에요, 세현님").
+세션 시작 시각 기준이라 3화면 내내 같은 문구가 유지됩니다.
+
+> ⚠️ **둘 다 세 근거유형 조건에 똑같이 들어갑니다.** 특정 조건에만 개인화 요소가 붙으면
+> 그 조건이 '더 개인화된 화면'이 되어, 측정하려는 근거유형 효과와 뒤섞입니다.
+> 헤드라인·배너를 고칠 때 이 대칭을 깨지 않도록 주의하세요.
+
+**요일은 인사말에 넣지 않았습니다.** 요일·기기까지 언급하는 것은 맥락 인식 조건의 조작
+그 자체라, 모든 조건에 깔면 그 조건의 대비가 흐려집니다. 인사말은 시간대까지만 씁니다.
+
+#### 익명성
+
+소개 화면에서 "모든 응답은 익명으로 처리"된다고 고지하므로, 실명이 아니어도 된다고
+안내하고 입력 자체를 선택으로 둡니다. 호칭은 `participants.display_name` 에만 남고
+**CSV·분석용 뷰에는 나가지 않습니다** — 입력 여부(`has_display_name`)만 실립니다.
+논문 아카이브용으로 데이터를 넘기기 전에 이 컬럼을 지우면 깔끔합니다.
+
+```sql
+update public.participants set display_name = null;
+```
+
+### 맥락 인식 조건 문구
+B-4(주 이용 기기)·B-5(주 감상 시간대) **자기보고 값**과 실제 접속 요일을 조합해 만듭니다.
+
+> 토요일 저녁, 스마트폰으로 하루를 마치고 편하게 보기 좋은 작품입니다
+
+요일만 실제 접속 시점에서 가져오는 이유: 참여자가 설문에 응답하는 시각·기기(예: 낮에 PC로)는
+평소 OTT 시청 맥락과 어긋나기 쉬운데, 맥락 인식 추천이 실제로 참조하는 건 후자입니다.
+B-5가 '불규칙'이면 자기보고할 시간대가 없으므로 실제 접속 시각으로 대체하고, 어느 쪽을 썼는지는
+`context_snapshot.source` (`self_report` / `access_time`)에 남습니다.
+
+문구는 사전 문항 직후 한 번 만들어 저장하므로 3화면 간 흔들리지 않고, 분석 때 재현됩니다.
+조사 '로/으로'는 받침을 보고 고릅니다 — 기타 자유입력도 자연스럽게 붙습니다("빔프로젝터로").
+
+`/admin` 에서 배정 균형·조작점검·순위·큐레이션 현황을 보고 CSV를 내려받습니다.
+비밀번호를 한 번 입력하면 12시간 동안 유지됩니다.
+
+## 실행
+
+```bash
+cp .env.example .env.local   # 값 채우기
+npm install
+npm run dev            # http://localhost:4100
+```
+
+포트는 `package.json` 의 `dev` / `start` 스크립트에 `-p 4100` 로 고정해 뒀습니다.
+바꾸려면 그 두 줄만 수정하면 됩니다.
+
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` 가 비어 있으면 **로컬 폴백 모드**로 돌아가
+응답이 `.data/*.jsonl` 에만 쌓입니다. 흐름 점검용이며 실제 수집에는 쓰지 마세요.
+현재 어느 모드인지는 시작 화면과 `/admin` 상단에 표시됩니다.
+
+## Supabase (연결 완료)
+
+- 프로젝트: **OTT-Rec-Pilot** (`xnspwxavzidtbwjynkhd`, ap-northeast-2 서울)
+- 대시보드: https://supabase.com/dashboard/project/xnspwxavzidtbwjynkhd
+- 마이그레이션 10개 적용 완료, `.env.local` 작성 완료
+
+스키마를 바꿀 때는 `supabase/migrations/` 에 새 파일을 추가하고:
+
+```bash
+npx supabase db push
+```
+
+**보안 모델**: 두 테이블 모두 RLS를 켜고 정책을 만들지 않습니다. 즉 브라우저에 노출되는
+키(`anon`)로는 아무것도 읽고 쓸 수 없고 — 실제로 401 `42501` 로 막히는 것을 확인했습니다 —
+모든 접근은 Next.js 서버 라우트에서 `service_role` 키로만 일어납니다.
+`SUPABASE_SERVICE_ROLE_KEY` 에 `NEXT_PUBLIC_` 접두어를 절대 붙이지 마세요.
+
+현재 `.env.local` 은 **legacy service_role JWT** 를 쓰고 있습니다. CLI가 신형
+`sb_secret_…` 키를 마스킹해서만 내려주기 때문입니다. 대시보드 Project Settings → API Keys
+에서 신형 secret 키를 복사해 교체할 수 있습니다(둘 다 동작).
+
+**배포 전 확인**: `ADMIN_PASSWORD` 는 `.env.local` 에만 두고 문서·예시 파일에는 적지 않습니다.
+공개 주소에 올릴 때는 숫자만으로 된 짧은 값 대신 글자를 섞은 값을 쓰세요.
+
+## 카운터밸런싱
+
+| 축 | 수준 | 방식 |
+|---|---|---|
+| 제시 순서 | 6 | 3! = 6개 시퀀스 완전 카운터밸런싱 (`SEQUENCES`) |
+| 세트↔근거유형 매칭 | 3 | 3개 순환 이동 (`SET_MAPPINGS`) |
+| 이용조건 SVOD/TVOD | 2 | 피험자 간 조절변수 |
+
+제시 순서는 3×3 라틴방격(3행)이 아니라 **6개 전체 순열**입니다. 라틴방격은 각 조건이 각
+순서 위치에 한 번씩 오는 것만 보장하고 '직전에 무엇을 봤는지'(carryover)는 균형시키지
+못하는데, 6개 순열을 모두 쓰면 순서 효과와 이월 효과가 함께 상쇄됩니다. 기조 문서
+3단계의 Sequence 1~6 과 같은 순서로 `src/lib/experiment.ts` 에 적혀 있습니다.
+
+세트↔근거유형 순환은 인수인계 문서 3장 6번의 "아직 구체적 방법 미정" 항목에 대한 답입니다.
+
+### 배정 방식 — 축별 카운트 균형
+
+세 축을 **각각 독립적으로** 균형시킵니다(`assign_next_cell()`). 각 축에서 지금까지 가장
+적게 쓰인 값을 고르고, 동률이면 그중 무작위입니다. 동시 접속은 `pg_advisory_xact_lock`
+으로 직렬화됩니다.
+
+처음에는 36개 셀(2×6×3) 전체를 균형시켰는데, 그러면 **36명이 모여야 한 바퀴가 돌아**
+그 전까지는 사실상 무작위가 됩니다. 실제로 10명을 넣어보니 시퀀스 분포가
+`{S1:3, S2:2, S3:2, S4:1, S5:0, S6:2}` 로 나왔습니다 — 기조 문서가 요구한
+1:1:1:1:1:1 이 파일럿 표본에서 안 나오는 것입니다. 축별 균형으로 바꾸자 12명에서
+`S1~S6 각 2명 / SVOD 6 : TVOD 6 / M0~M2 각 4명` 으로 정확히 떨어졌습니다.
+
+3원 교차까지는 균형시키지 않습니다. 이용조건은 피험자 간 변수이고 시퀀스·세트매칭은
+순서·자극물 효과를 상쇄하기 위한 통제 요인이라, 교차 셀마다 같은 인원을 채워야 할
+분석상의 이유가 없습니다. `/admin` 배정 균형표의 **합계 행**을 보면 됩니다.
+
+### 이탈자가 균형을 깨지 않게
+
+이 연구의 이전 버전(`세현이논문/ott-survey-react`) 마이그레이션 0006 이 시퀀스(`nextval`)
+배정을 카운트 기반으로 교체한 기록을 보고 같은 방식을 적용했습니다. 시퀀스 방식은
+번호를 받아간 참여자가 이탈하면 그 칸이 영구히 빕니다.
+
+1. **지연 배정** — 사전 문항과 장르 선택을 끝낸 시점에 배정합니다. 소개 화면에서 동의만
+   누르고 나간 사람은 아무 칸도 차지하지 않습니다. `/admin` 의 "배정 전 이탈"이 그 수입니다.
+2. **진행 중 마커 + TTL** — 배정과 동시에 `pending_assignments` 에 마커를 넣고 완료 시
+   지웁니다. 못 지운 이탈자 마커는 20분 후 만료되어 그 칸이 되살아납니다.
+
+## Vercel 배포
+
+### 1. 저장소 올리기
+
+`.env.local` 은 `.gitignore` 에 있어 올라가지 않습니다. 키는 Vercel 쪽에 따로 넣습니다.
+
+```bash
+git add -A && git commit -m "OTT 추천 근거유형 실험 설문 사이트"
+gh repo create ott-pilot --private --source=. --push   # 또는 GitHub 웹에서 만들고 push
+```
+
+### 2. Vercel 환경변수 4개
+
+Project Settings → Environment Variables 에 넣습니다. 값은 `.env.local` 과 같습니다.
+
+| 이름 | 값 |
+|---|---|
+| `SUPABASE_URL` | `https://xnspwxavzidtbwjynkhd.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | `.env.local` 의 값 |
+| `ADMIN_PASSWORD` | `.env.local` 의 값 |
+| `SURVEY_PHASE` | `pilot` |
+
+**하나라도 빠지면 참여자가 시작 자체를 못 합니다.** 시작 화면에 "서버 설정이 끝나지
+않았습니다" 가 뜨고 `/api/session/start` 가 503 을 돌려줍니다. 설정이 없을 때 조용히
+임시 디스크에 응답을 쌓다가 잃어버리는 일을 막으려고 일부러 막아 둔 것입니다.
+
+### 3. 배포 후 확인
+
+1. `/` 에 경고 배너가 없는지 (있으면 환경변수 누락)
+2. `/admin` 로그인 → 상단에 "저장: Supabase" 로 뜨는지
+3. `/dev` 가 로그인 없이는 401 인지 (배포 환경에서는 잠깁니다)
+4. 본인이 한 번 완주해 보고 `/admin` 에서 1명으로 잡히는지 → 확인 후 그 행 삭제
+
+### 시간대
+
+서버가 어디에 있든 화면 문구는 **한국 시각**으로 계산합니다(`SURVEY_TIMEZONE`).
+Vercel 서버는 UTC 라 그냥 두면 한국 토요일 아침 8시가 "금요일 23시" 로 나오는데,
+맥락 인식 조건은 바로 그 요일·시간대를 근거로 내세우는 조작이라 치명적입니다.
+`Intl.DateTimeFormat` 으로 명시 변환하므로 `TZ` 환경변수를 따로 설정할 필요는 없습니다.
+
+### 알아둘 것
+
+- **참여자 세션은 쿠키 기반**이라 서버리스에서도 그대로 동작합니다. 서버 메모리에 남는
+  상태가 없습니다.
+- **로컬 폴백(`.data/*.jsonl`)은 배포 환경에서 쓰이지 않습니다.** 개발용입니다.
+- `npm start` 의 `-p 4100` 은 Vercel 이 쓰지 않습니다(자체 런타임으로 서빙). 로컬에서
+  프로덕션 빌드를 확인할 때만 쓰입니다.
+- 스키마를 바꾸면 `npx supabase db push` 를 **따로** 실행해야 합니다. Vercel 배포는
+  마이그레이션을 적용하지 않습니다.
+
+## 관리자 화면 · 인증
+
+`/admin` 에 들어가면 비밀번호를 묻습니다. 맞으면 쿠키가 심겨 12시간 유지되고,
+`/dev` 우측 하단의 "관리자 화면" 링크로도 같은 곳으로 갑니다.
+
+- 비밀번호는 `.env.local` 의 `ADMIN_PASSWORD` (저장소에는 적지 않습니다)
+- 쿠키에는 비밀번호가 아니라 비밀번호로 만든 토큰이 들어갑니다 — 쿠키를 봐도 값은 모릅니다
+- 비밀번호를 바꾸면 기존 로그인은 자동으로 무효가 됩니다 (토큰이 비밀번호에서 나오므로)
+- 오른쪽 위 "로그아웃" 으로 쿠키를 지웁니다
+
+CSV 내려받기는 로그인 상태면 그냥 되고, 스크립트로 뽑을 때를 위해 `?key=` 도 계속 받습니다.
+
+```bash
+curl -o data.csv "http://localhost:4100/api/admin/export?key=$ADMIN_PASSWORD&phase=pilot"
+```
+
+## 파일럿 → 본실험
+
+**테이블을 새로 만들 필요는 없습니다.** 두 단계는 같은 테이블을 쓰고 `participants.phase`
+(`pilot` / `main`)로 나뉩니다. 전환은 환경변수 한 줄입니다.
+
+```bash
+# .env.local
+SURVEY_PHASE=main     # 바꾸고 서버 재시작. 끝.
+```
+
+파일럿 데이터를 지울 필요가 없습니다.
+
+### 지금 해둔 것 — 배정 카운터 분리
+
+이것만은 나중에 하면 늦습니다. `assign_next_cell(phase)` 는 **같은 단계 안에서만** 셉니다.
+그렇지 않으면 파일럿 응답이 테이블에 남은 채 본실험을 시작할 때, 본실험 첫 참여자들이
+'파일럿 누적치 기준으로 가장 적은 칸'에 배정되어 카운터밸런싱이 조용히 깨집니다.
+데이터를 다 받은 뒤에는 되돌릴 방법이 없습니다.
+
+실제로 확인했습니다 — 파일럿 7명을 넣은 뒤 `main` 으로 바꿔 6명을 돌리자, 본실험은
+0명에서 다시 시작해 `S1~S6 각 1명 / SVOD 3 : TVOD 3` 으로 정확히 균형을 잡았습니다.
+진행 중 마커(`pending_assignments`)도 단계별로 나뉩니다.
+
+### 구성·순서가 달라질 때
+
+**단계 순서와 문항 구성은 스키마가 아니라 앱 코드에 있습니다.** 그래서 바꿔도 DB는
+건드리지 않습니다.
+
+| 무엇을 바꾸나 | 어디를 고치나 | 마이그레이션 |
+|---|---|---|
+| 단계 순서·구성 | `src/lib/steps.ts`, `src/lib/flow.ts` | 불필요 |
+| 시퀀스 세트 | `src/lib/experiment.ts` 의 `SEQUENCES` | 불필요 |
+| 기존 문항 문구·선택지 | `presurvey.ts` / `items.ts` / `posttest.ts` | 불필요 |
+| 자극물·포스터 | `src/lib/stimuli.ts` | 불필요 |
+| **문항 추가/삭제** | 위 정의 파일 + 컬럼 | 필요 (nullable 컬럼 추가, 몇 분) |
+| **trial 수 변경** | `TOTAL_STEPS` + `step_index` 제약 | 필요 (제약 한 줄) |
+
+문항이 늘면 `alter table participants add column ... ;` 한 줄이고, 파일럿 응답은 그 칸이
+비어 있게 됩니다. 이게 테이블을 나누는 것보다 낫습니다 — 두 단계를 한 CSV로 비교할 수 있고,
+코드 경로가 하나로 유지됩니다.
+
+### 어떤 구성으로 받은 응답인지 남기기
+
+구성이 달라질 수 있으니, 참여자마다 그때의 **측정 도구 버전**을 찍어 둡니다
+(`participants.instrument_version`, 값은 `src/lib/phase.ts` 의 `INSTRUMENT_VERSION`).
+
+단계 순서나 문항을 바꿀 때마다 이 상수를 올리고, 무엇을 바꿨는지 그 파일의 주석 기록에
+한 줄 적으면 됩니다. 이게 없으면 나중에 두 단계 응답을 나란히 놓았을 때 어느 쪽이 어떤
+문항지로 받은 것인지 구분할 수 없습니다.
+
+### 관리자 화면 · CSV
+
+`/admin` 상단에 지금 수집 중인 단계와 도구 버전이 뜨고, **파일럿 / 본실험 / 전체** 로
+바꿔 볼 수 있습니다. CSV도 같은 기준으로 나옵니다.
+
+```
+/api/admin/export?key=…&phase=pilot   → ott-survey-pilot-2026-09-05.csv
+/api/admin/export?key=…&phase=main    → ott-survey-main-2026-09-05.csv
+/api/admin/export?key=…&phase=all     → ott-survey-2026-09-05.csv (phase 컬럼으로 구분)
+```
+
+## /dev 미리보기
+
+`/dev` 에서 단계를 골라 바로 들어갈 수 있습니다. 설문을 처음부터 채우지 않아도 되고,
+조건(이용조건·제시순서·세트매칭·장르)을 링크로 직접 지정합니다.
+
+```
+/dev                     단계 목록 + 조건 지정
+/dev/<1-13>?usage=TVOD&seq=4&mapping=2&genre=comedy
+```
+
+- 별도 미리보기 UI가 아니라 **실제 화면 컴포넌트를 그대로** 엽니다
+- 사전 문항은 기본값으로 미리 채워지고, 단계 가드도 건너뜁니다
+- 세션은 `is_dev = true` 로 표시되어 **분석용 뷰·CSV·배정 카운트에서 모두 제외**됩니다
+- 우측 상단 배너에 현재 단계·조건(`seq`/`map`/`cell`)이 뜨고 이전/다음 단계로 이동됩니다
+- 사후 문항까지 기본값이 채워지므로 4단계 화면도 바로 열립니다
+- 조건이 쿼리스트링에만 담기므로, 링크를 그대로 복사해 보내면 같은 화면이 열립니다
+- 배포 환경에서는 `/admin` 로그인이 필요합니다 (개발 중에는 그냥 열림)
+
+미리보기 행은 저절로 정리됩니다. 쿠키가 있으면 같은 행을 재사용하고, 새 미리보기 세션을
+만들 때마다 6시간 넘은 지난 행들을 걷어냅니다(`DEV_SESSION_TTL_MS`). 따로 눌러 지울
+필요가 없습니다.
+
+## 자극물
+
+`src/lib/stimuli.ts` 가 6장르 × 3세트 × 3편 = **54 슬롯**을 전부 들고 있습니다.
+문서 2장의 확보 후보는 이미 채워져 있고, 나머지는 `status: "pending"` 빈 슬롯으로
+회색 카드로 렌더링됩니다.
+
+- 작품 추가: `SEEDED` 에 항목 추가 (`id` 는 응답 데이터에 기록되므로 한 번 정하면 바꾸지 말 것)
+- 포스터 이미지: `posterUrl` 을 채우면 텍스트 카드가 이미지로 자동 교체
+- `status` 는 `verified`(관객수 등 검증 완료) / `unverified`(재검토 필요) / `pending`(빈 슬롯)
+- peek 포스터(끝에 잘려 보이는 4번째)는 `PEEK_TITLE` 공용 1개 — 큐레이션 대상 아님
+
+## 아직 안 들어간 것
+
+1. **본문항 문구 확정** — `src/lib/items.ts` 의 유용성·수용의도 6문항과
+   `src/lib/posttest.ts` 의 사후 문항 문구는 초안입니다. 선행연구(TAM 계열 척도) 출처를
+   명시해 번안·확정 필요
+2. **54편 큐레이션 완료** — 현재 검증 완료 1편(살수). 코미디·SF/판타지가 가장 부족
+3. **실제 포스터 이미지 + 저작권 처리** — 인수인계 문서 1.3의 미해결 사항
+4. **자극물 사전평정 조사(20~30명)** — 세트 간 매력도·친숙도 동등성 검증
+5. **동의 절차 형식 확인** — 현재는 소개 화면의 체크박스 1개이며 체크 시점을
+   `consent_agreed_at` 에 기록합니다. IRB/학과가 별도 동의서 양식을 요구하는지 확인 필요
+6. **`/done` 의 파일럿 디버그 패널 제거** — 본실험 배포 전 반드시 삭제
+
+## 조작점검은 마지막에 한 번
+
+`/post/check` 한 화면에서 두 문항을 받습니다.
+
+**4-1-1 조절변수** — 배정받은 이용/결제 방식을 기억하는지. 3지선다이며 "잘 기억나지 않는다"는
+오답으로 집계합니다. → `mc_usage_answer` / `mc_usage_correct`
+
+**4-1-2 독립변수** — 실제로 제시된 추천 이유 설명을 고르는 재인(recognition) 과제.
+→ `mc_rationale_answer` / `mc_rationale_correct`
+
+처음에는 trial 마다 근거유형 조작점검을 물었는데, 한 trial 안에서는 포스터 소재가 달라도
+근거유형이 하나로 고정되므로 같은 질문을 세 번 하는 셈이라 마지막 한 번으로 옮겼습니다.
+
+옮기면서 **문항 형태를 바꿔야 했습니다.** 모든 참여자가 세 유형을 다 보기 때문에
+"무엇이었나요?"를 마지막에 한 번 묻는 것은 성립하지 않습니다. 그래서 실제 제시된 설명
+3개에 제시하지 않은 방해자극 2개("평점이 높은 순서라서", "최근 공개된 신작이라서")를 섞어
+고르게 하고, **3개를 모두 고르고 방해자극을 하나도 고르지 않았을 때만** 정답으로 봅니다.
+
+정답률이 낮으면 배너 문구나 시각적 강조를 다시 설계해야 합니다 — 파일럿에서 가장 먼저
+확인할 지표라 `/admin` 상단 카드에 띄워 뒀습니다. 방해자극 문구는
+`src/lib/posttest.ts` 의 `RATIONALE_RECOGNITION_CHECK` 에서 바꿉니다.
