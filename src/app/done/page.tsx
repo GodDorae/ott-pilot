@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
-import { completeParticipant, countTrials } from "@/lib/db";
+import { completeParticipant } from "@/lib/db";
+import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
-import { currentParticipant } from "@/lib/session";
+import { FollowupForm } from "@/components/PostTestForms";
 import {
   GENRE_LABELS,
   RATIONALE_LABELS,
+  TOTAL_STEPS,
   assignmentToCell,
   type Genre,
   type RationaleType,
@@ -12,18 +14,16 @@ import {
 } from "@/lib/experiment";
 
 /**
- * 제출 완료 화면 (기조 문서 4-4 이후). 여기 도착한 시점에 completed_at 을 찍는다.
- * 아래 배정 결과 패널은 흐름 점검용이며, 본실험 배포 전에 반드시 제거할 것.
+ * 제출 완료 화면. 여기 도착한 시점에 completed_at 을 찍는다.
+ * 후속 인터뷰 참여자 모집도 여기서 받는다 — 설문이 끝난 뒤라 응답에 영향을 주지 않는다.
  */
 export default async function DonePage() {
-  const participant = await currentParticipant();
-  if (!participant) redirect("/");
+  const session = await currentSession();
+  if (!session) redirect("/");
+  const { participant } = session;
 
-  /*
-   * 마지막 단계까지 실제로 마쳤는지 확인한다. 이게 없으면 동의만 누른 사람이
-   * /done 으로 바로 들어와 아무 응답 없이 completed_at 이 찍히고, 완료자 수가 부풀려진다.
-   */
-  const trialsDone = participant.is_dev ? 3 : await countTrials(participant.id);
+  // 마지막 단계까지 실제로 마쳤는지 확인한다 (건너뛰고 들어와 완료 처리되는 것 방지)
+  const trialsDone = participant.is_dev ? TOTAL_STEPS : session.trialsDone;
   const to = guard(participant, "/done", trialsDone);
   if (to) redirect(to);
 
@@ -44,6 +44,13 @@ export default async function DonePage() {
           {participant.participant_code}
         </p>
       </div>
+
+      <FollowupForm
+        initial={{
+          followup_email: participant.followup_email,
+          followup_phone: participant.followup_phone,
+        }}
+      />
 
       {/* 확인용 디버그 패널 — 본실험 전 제거 */}
       <section className="mt-10 rounded-xl border border-dashed border-line p-4">
@@ -75,7 +82,10 @@ export default async function DonePage() {
             </dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt>제시 순서 (Seq {participant.sequence_index === null ? "-" : participant.sequence_index + 1})</dt>
+            <dt>
+              제시 순서 (Seq{" "}
+              {participant.sequence_index === null ? "-" : participant.sequence_index + 1})
+            </dt>
             <dd className="text-right font-medium text-fg break-keep">
               {(participant.presentation_order ?? [])
                 .map((r) => RATIONALE_LABELS[r as RationaleType])
@@ -83,15 +93,9 @@ export default async function DonePage() {
             </dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt>세트 매칭 (순환 {participant.mapping_index ?? "-"})</dt>
+            <dt>맥락 문구</dt>
             <dd className="text-right font-medium text-fg break-keep">
-              {(() => {
-                const m = participant.set_mapping;
-                if (!m) return "-";
-                return (Object.keys(m) as RationaleType[])
-                  .map((r) => RATIONALE_LABELS[r] + "=" + m[r])
-                  .join(", ");
-              })()}
+              {participant.context_snapshot?.phrase ?? "-"}
             </dd>
           </div>
         </dl>

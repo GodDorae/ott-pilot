@@ -78,6 +78,12 @@ export type ParticipantRow = {
   open_reason: string | null;
   open_opinion: string | null;
   posttest_at: string | null;
+
+  // 선별 제외 / 후속 인터뷰
+  screened_out_at: string | null;
+  screened_out_reason: string | null;
+  followup_email: string | null;
+  followup_phone: string | null;
 };
 
 export type ScreenResponseInput = {
@@ -226,6 +232,10 @@ export async function createParticipant(input: {
     preferred_genre: null,
     display_name: null,
     context_snapshot: null,
+    screened_out_at: null,
+    screened_out_reason: null,
+    followup_email: null,
+    followup_phone: null,
     started_at: new Date().toISOString(),
     completed_at: null,
   } as unknown as ParticipantRow;
@@ -301,6 +311,14 @@ export async function assignAssignment(
   return { ...existing, ...patch } as ParticipantRow;
 }
 
+/** 선별 제외 표시 — 응답은 지우지 않고 표시만 남긴다 */
+export function screenOut(id: string, reason: "no_platform" | "never_used") {
+  return patchParticipant(id, {
+    screened_out_at: new Date().toISOString(),
+    screened_out_reason: reason,
+  });
+}
+
 /** 4단계 사후 문항 저장 — 컬럼명은 posttest.ts / presurvey.ts 정의에서만 나온다 */
 export function savePostTest(
   id: string,
@@ -329,6 +347,34 @@ export async function countTrials(participantId: string): Promise<number> {
 /** 맥락 인식 조건 문구를 만든 근거를 기록해 둔다 (분석 시 재현용) */
 export function saveContextSnapshot(id: string, snapshot: ContextSnapshot) {
   return patchParticipant(id, { context_snapshot: snapshot });
+}
+
+/**
+ * 참여자와 저장된 trial 수를 **한 번의 왕복**으로 가져온다.
+ *
+ * 화면마다 참여자 조회 + trial 수 조회를 따로 하면 왕복이 두 번이라, 단계를 넘길 때마다
+ * 눈에 띄게 느려진다. PostgREST 의 관계 임베딩으로 한 번에 받는다.
+ */
+export async function getParticipantWithTrials(
+  id: string,
+): Promise<{ participant: ParticipantRow; trialsDone: number } | null> {
+  if (dbDriver === "supabase") {
+    const { data, error } = await sb()
+      .from("participants")
+      .select("*, screen_responses(id)")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error("participants select 실패: " + error.message);
+    if (!data) return null;
+    const { screen_responses: trials, ...participant } = data as ParticipantRow & {
+      screen_responses: { id: string }[];
+    };
+    return { participant: participant as ParticipantRow, trialsDone: trials?.length ?? 0 };
+  }
+
+  const participant = await getParticipant(id);
+  if (!participant) return null;
+  return { participant, trialsDone: await countTrials(id) };
 }
 
 export async function getParticipant(id: string): Promise<ParticipantRow | null> {

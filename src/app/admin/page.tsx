@@ -73,14 +73,10 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const { participants, responses } = await listAll(viewing);
   const completed = participants.filter((p) => p.completed_at);
 
-  // 조작점검 정답률 — 이제 참여자당 1건씩 (4-1)
-  const rationaleChecked = participants.filter((p) => p.mc_rationale_correct !== null);
-  const accuracy = rationaleChecked.length
-    ? Math.round(
-        (rationaleChecked.filter((p) => p.mc_rationale_correct).length /
-          rationaleChecked.length) *
-          100,
-      )
+  // 조작점검 정답률 — 조절변수(이용조건) 인지 여부, 참여자당 1건
+  const checked = participants.filter((p) => p.mc_usage_answer);
+  const accuracy = checked.length
+    ? Math.round((checked.filter((p) => p.mc_usage_correct).length / checked.length) * 100)
     : null;
 
   // 근거유형별 평균 (표본이 작을 때는 어디까지나 눈대중용)
@@ -173,9 +169,14 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           hint="완료 시 1인 3건"
         />
         <Stat
-          label="근거유형 조작점검"
+          label="조작점검 정답률"
           value={accuracy === null ? "-" : accuracy + "%"}
-          hint="4-1 · 낮으면 배너 재설계"
+          hint="4-1 이용조건 인지"
+        />
+        <Stat
+          label="선별 제외"
+          value={String(participants.filter((p) => p.screened_out_at).length)}
+          hint="OTT 이용 경험 없음"
         />
         <Stat
           label="배정 전 이탈"
@@ -300,27 +301,6 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       {/* 4단계 사후 문항 요약 */}
       <h2 className="mt-10 text-sm font-bold">사후 점검 요약</h2>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-line bg-card p-4">
-          <p className="text-xs font-bold">
-            <span className="text-accent">4-1</span> 조절변수 조작점검
-          </p>
-          <p className="mt-2 text-xs leading-relaxed text-muted break-keep">
-            배정받은 이용조건을 맞게 기억한 비율입니다. 낮으면 이용조건 문구를 더 분명히
-            보여줘야 합니다.
-          </p>
-          <p className="mt-2 text-xl font-bold tabular-nums">
-            {(() => {
-              const answered = participants.filter((p) => p.mc_usage_answer);
-              if (answered.length === 0) return "-";
-              const ok = answered.filter((p) => p.mc_usage_correct).length;
-              return Math.round((ok / answered.length) * 100) + "%";
-            })()}
-            <span className="ml-2 text-xs font-normal text-muted">
-              n = {participants.filter((p) => p.mc_usage_answer).length}
-            </span>
-          </p>
-        </div>
-
         <div className="rounded-xl border border-line bg-card p-4">
           <p className="text-xs font-bold">
             <span className="text-accent">4-2</span> 순위 · 1위 득표

@@ -58,11 +58,7 @@ export default async function DevIndexPage({ searchParams }: PageProps<"/dev">) 
       ? "border-accent bg-accent text-white"
       : "border-line bg-card hover:border-muted/50");
 
-  const previewCtx = buildContextSnapshot(new Date(), {
-    primaryDevice: "smartphone",
-    primaryDeviceOther: null,
-    viewingTimeslot: "evening",
-  });
+  const previewCtx = buildContextSnapshot(new Date(), true);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10">
@@ -183,8 +179,8 @@ export default async function DevIndexPage({ searchParams }: PageProps<"/dev">) 
         <p className="text-xs font-bold">지금 조건에서 맥락 배너 문구</p>
         <p className="mt-1.5 text-sm leading-relaxed break-keep">{previewCtx.phrase}</p>
         <p className="mt-1.5 text-[11px] text-muted break-keep">
-          미리보기 기본 자기보고값(B-4 스마트폰 · B-5 저녁~야간)과 오늘 요일로 만든 문구입니다.
-          실제 참여자는 자신이 답한 값으로 문구가 만들어집니다.
+          모바일 접속 기준으로 지금 시각에 맞춰 만든 문구입니다.
+          실제 참여자는 접속한 기기와 시각에 따라 달라집니다.
         </p>
       </section>
 

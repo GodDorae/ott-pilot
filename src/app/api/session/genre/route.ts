@@ -6,7 +6,7 @@ import {
   setDisplayName,
   setPreferredGenre,
 } from "@/lib/db";
-import { buildContextSnapshot, normalizeDisplayName } from "@/lib/copy";
+import { buildContextSnapshot, isMobileUserAgent, normalizeDisplayName } from "@/lib/copy";
 import { currentParticipant } from "@/lib/session";
 import { nextStepPath } from "@/lib/flow";
 
@@ -42,11 +42,8 @@ export async function POST(req: Request) {
   if (!participant.context_snapshot) {
     await saveContextSnapshot(
       participant.id,
-      buildContextSnapshot(new Date(), {
-        primaryDevice: participant.primary_device,
-        primaryDeviceOther: participant.primary_device_other,
-        viewingTimeslot: participant.viewing_timeslot,
-      }),
+      // 실제 접속 기기·시각 기준 (자기보고 B-4·B-5 는 분석용으로만 남긴다)
+      buildContextSnapshot(new Date(), isMobileUserAgent(req.headers.get("user-agent"))),
     );
   }
 

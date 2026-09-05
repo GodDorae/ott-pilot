@@ -59,9 +59,9 @@ export async function POST(req: Request) {
     dwellMs: typeof body.dwellMs === "number" ? Math.round(body.dwellMs) : null,
   });
 
-  // 마지막 trial 이면 4단계로, 아니면 짧은 휴식을 거쳐 다음 trial 로 (기조 문서 3단계)
+  // 마지막 trial 이면 4단계로, 아니면 바로 다음 자극물로 (휴식 화면은 보류)
   return NextResponse.json({
     ok: true,
-    next: stepIndex >= TOTAL_STEPS ? "/post/check" : "/rest/" + stepIndex,
+    next: stepIndex >= TOTAL_STEPS ? "/post/check" : "/stimulus/" + (stepIndex + 1),
   });
 }

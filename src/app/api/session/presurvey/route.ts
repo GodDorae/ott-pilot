@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { countTrials, savePreSurvey } from "@/lib/db";
+import { countTrials, savePreSurvey, screenOut } from "@/lib/db";
 import { currentParticipant } from "@/lib/session";
 import { canSubmitAt } from "@/lib/flow";
-import { OTHER_MAX_LENGTH, PRE_SECTIONS, type SectionKey } from "@/lib/presurvey";
+import {
+  OTHER_MAX_LENGTH,
+  PRE_SECTIONS,
+  screenOutReason,
+  type SectionKey,
+} from "@/lib/presurvey";
 
 /**
  * 선택형 문항 한 섹션 저장 (1-2 사전설문 / 4-4 인구통계 공용).
@@ -75,5 +80,13 @@ export async function POST(req: Request) {
   }
 
   await savePreSurvey(participant.id, patch);
+
+  // 연구 대상이 아닌 응답(OTT 이용 경험 없음)은 여기서 종료한다
+  const reason = screenOutReason(answers);
+  if (reason && !participant.is_dev) {
+    await screenOut(participant.id, reason);
+    return NextResponse.json({ ok: true, next: "/screened-out" });
+  }
+
   return NextResponse.json({ ok: true, next: section.next });
 }

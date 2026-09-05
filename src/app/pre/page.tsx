@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import GenrePicker from "@/components/GenrePicker";
-import { currentParticipant } from "@/lib/session";
+import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
-import { countTrials } from "@/lib/db";
 
 /**
  * 선호 장르 선택.
@@ -10,10 +9,11 @@ import { countTrials } from "@/lib/db";
  * 개인화 장치다 (문서 0.4). 정밀 매칭 수치("취향 92% 일치" 등)는 쓰지 않는다.
  */
 export default async function PrePage() {
-  const participant = await currentParticipant();
-  if (!participant) redirect("/");
+  const session = await currentSession();
+  if (!session) redirect("/");
+  const { participant } = session;
 
-  const trialsDone = participant.is_dev ? 0 : await countTrials(participant.id);
+  const trialsDone = session.trialsDone;
   const to = guard(participant, "/pre", trialsDone);
   if (to) redirect(to);
 

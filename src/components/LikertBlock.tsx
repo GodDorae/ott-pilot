@@ -1,6 +1,6 @@
 "use client";
 
-import { LIKERT_ANCHORS, LIKERT_MAX, LIKERT_MIN, type LikertItem } from "@/lib/items";
+import { LIKERT_LABELS, LIKERT_MAX, LIKERT_MIN, type LikertItem } from "@/lib/items";
 
 const SCALE = Array.from({ length: LIKERT_MAX - LIKERT_MIN + 1 }, (_, i) => LIKERT_MIN + i);
 
@@ -20,9 +20,8 @@ export default function LikertBlock({
       <legend className="px-1 text-sm font-bold">{legend}</legend>
 
       <div className="mt-2 flex justify-between text-[11px] text-muted">
-        <span>{LIKERT_ANCHORS[0]}</span>
-        <span className="hidden sm:inline">{LIKERT_ANCHORS[1]}</span>
-        <span>{LIKERT_ANCHORS[2]}</span>
+        <span>{LIKERT_LABELS[0]}</span>
+        <span>{LIKERT_LABELS[LIKERT_LABELS.length - 1]}</span>
       </div>
 
       <ul className="mt-1 divide-y divide-line">
@@ -32,16 +31,21 @@ export default function LikertBlock({
             <div
               role="radiogroup"
               aria-label={item.text}
-              className="grid grid-cols-7 gap-1.5"
+              className="grid grid-cols-5 gap-1.5"
             >
               {SCALE.map((n) => (
-                <label key={n} className="likert-cell relative">
+                <label
+                  key={n}
+                  className="likert-cell relative"
+                  title={LIKERT_LABELS[n - LIKERT_MIN]}
+                >
                   <input
                     type="radio"
                     name={item.key}
                     value={n}
                     checked={values[item.key] === n}
                     onChange={() => onChange(item.key, n)}
+                    aria-label={LIKERT_LABELS[n - LIKERT_MIN]}
                   />
                   <span>{n}</span>
                 </label>

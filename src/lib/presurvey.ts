@@ -1,12 +1,11 @@
 /**
- * 선택형 문항 정의 — 사전(1-2)과 사후(4-4) 양쪽
+ * 1단계 사전조사 문항
  *
- *   usage        1-2 사전설문 · B. OTT 이용 현황 (B-1 플랫폼 ~ B-5 감상 시간대)
- *   demographics 4-4 인구통계  · A. 인구 통계학적 정보 (A-1 연령대, A-2 성별)
+ *   demographics  A. 인구 통계학적 정보 (A-1 연령대, A-2 성별)   ← 가장 먼저
+ *   usage         B. OTT 이용 현황 (B-1 플랫폼 ~ B-5 감상 시간대)
  *
- * 기조 문서 4단계에 따라 인구통계는 자극물 노출 뒤로 옮겼다. 문항 자체는 원 설문(구글 폼)
- * 문구·선택지 그대로다. `id` 는 participants 컬럼명과 같고 `value` 는 DB에 저장되는
- * 슬러그다. 이 정의 하나로 화면 렌더링과 서버 검증을 모두 한다.
+ * 문구·선택지는 원 설문(구글 폼) 그대로다. `id` 는 participants 컬럼명과 같고
+ * `value` 는 DB에 저장되는 슬러그다. 이 정의 하나로 화면 렌더링과 서버 검증을 모두 한다.
  */
 
 export type Choice = { value: string; label: string };
@@ -37,13 +36,13 @@ export type PreSection = {
   next: string;
 };
 
-/** 4-4 인구통계 — 마지막 단계 */
+/** 1-2 사전조사 첫 화면 — 인구통계 */
 export const SECTION_DEMOGRAPHICS: PreSection = {
   key: "demographics",
   formSection: 2,
   title: "A. 인구 통계학적 정보",
-  lead: "마지막입니다. 기본적인 인적사항에 답변해 주세요.",
-  next: "/done",
+  lead: "먼저 기본적인 인적사항에 답변해 주세요.",
+  next: "/survey/usage",
   questions: [
     {
       id: "age_group",
@@ -71,7 +70,7 @@ export const SECTION_DEMOGRAPHICS: PreSection = {
   ],
 };
 
-/** 1-2 사전설문 — 평소 미디어/OTT 이용 습관·기기·시간대 */
+/** 1-2 사전조사 두 번째 화면 — 평소 미디어/OTT 이용 습관·기기·시간대 */
 export const SECTION_USAGE: PreSection = {
   key: "usage",
   formSection: 3,
@@ -163,6 +162,32 @@ export const FORM_TOTAL_SECTIONS = 14;
 
 /** 자유입력 길이 상한 */
 export const OTHER_MAX_LENGTH = 60;
+
+/**
+ * 선별 제외(screen-out) 규칙
+ *
+ * OTT 이용 경험이 없는 응답자는 이 실험의 대상이 아니다(연구 대상: 사용해 본 경험이 있는 분).
+ * 해당 선택지를 고르면 자극물로 넘어가지 않고 종료 화면으로 보낸다.
+ * 응답 자체는 지우지 않고 screened_out_at 으로 표시만 해, 몇 명이 왜 걸렀는지 남긴다.
+ */
+export const SCREEN_OUT_RULES: {
+  questionId: string;
+  value: string;
+  reason: "no_platform" | "never_used";
+}[] = [
+  { questionId: "ott_platform", value: "none", reason: "no_platform" },
+  { questionId: "ott_tenure", value: "never", reason: "never_used" },
+];
+
+/** 이번 응답이 선별 제외에 걸리는지 */
+export function screenOutReason(
+  answers: Record<string, string>,
+): "no_platform" | "never_used" | null {
+  for (const rule of SCREEN_OUT_RULES) {
+    if (answers[rule.questionId] === rule.value) return rule.reason;
+  }
+  return null;
+}
 
 /** 라벨 조회 (관리자 화면·요약용) */
 export function labelOf(questionId: string, value: string | null): string {

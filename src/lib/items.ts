@@ -9,8 +9,16 @@
 export type LikertItem = { key: string; text: string };
 
 export const LIKERT_MIN = 1;
-export const LIKERT_MAX = 7;
-export const LIKERT_ANCHORS = ["전혀 그렇지 않다", "보통이다", "매우 그렇다"] as const;
+export const LIKERT_MAX = 5;
+
+/** 각 눈금의 뜻 — 5점이라 전부 적어줄 수 있다 */
+export const LIKERT_LABELS = [
+  "전혀 그렇지 않다",
+  "그렇지 않다",
+  "보통이다",
+  "그렇다",
+  "매우 그렇다",
+] as const;
 
 /** 매개변수 — 지각된 추천 유용성 */
 export const USEFULNESS_ITEMS: LikertItem[] = [

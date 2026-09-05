@@ -36,6 +36,7 @@ const POST_TEST_DEFAULTS: Record<string, string | number | null> = {
   rank_collab: 2,
   rank_context: 3,
   open_reason: "(미리보기)",
+  open_opinion: "(미리보기)",
 };
 
 /** /dev 링크로 지정할 수 있는 조건들 */
@@ -129,11 +130,7 @@ export async function ensureDevSession(
   await setDisplayName(participant.id, "세현");
   await saveContextSnapshot(
     participant.id,
-    buildContextSnapshot(new Date(), {
-      primaryDevice: PRE_SURVEY_DEFAULTS.primary_device,
-      primaryDeviceOther: PRE_SURVEY_DEFAULTS.primary_device_other,
-      viewingTimeslot: PRE_SURVEY_DEFAULTS.viewing_timeslot,
-    }),
+    buildContextSnapshot(new Date(), false),
   );
 
   const cell =

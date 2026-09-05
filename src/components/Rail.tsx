@@ -13,13 +13,28 @@ import { PEEK_TITLE } from "@/lib/stimuli";
 import type { UsageCondition } from "@/lib/experiment";
 import { honorific, usageNotice } from "@/lib/copy";
 
-function Poster({ title, peek = false }: { title: Title; peek?: boolean }) {
+function Poster({
+  title,
+  peek = false,
+  compact = false,
+}: {
+  title: Title;
+  peek?: boolean;
+  compact?: boolean;
+}) {
   const empty = title.status === "pending" || !title.title;
 
   return (
     <figure
       className={
-        "shrink-0 " + (peek ? "w-28 sm:w-36 opacity-45" : "w-40 sm:w-48")
+        "shrink-0 " +
+        (peek
+          ? compact
+            ? "w-14 opacity-45"
+            : "w-28 sm:w-36 opacity-45"
+          : compact
+            ? "w-20"
+            : "w-40 sm:w-48")
       }
       aria-hidden={peek || undefined}
     >
@@ -71,6 +86,7 @@ export default function Rail({
   usageCondition,
   displayName,
   greetingText,
+  compact = false,
 }: {
   headline: string;
   banner: string;
@@ -80,6 +96,8 @@ export default function Rail({
   displayName: string | null;
   /** 접속 시간대를 반영한 인사말 — 세 조건 모두 동일하게 들어간다 */
   greetingText: string;
+  /** 순위 화면에서 세 화면을 나란히 줄여 보여줄 때 */
+  compact?: boolean;
 }) {
   const notice = usageNotice(usageCondition);
   const initial = honorific(displayName).slice(0, 1);
@@ -103,24 +121,24 @@ export default function Rail({
         </div>
       </div>
 
-      <div className="px-4 py-6 sm:px-6">
+      <div className={compact ? "px-3 py-4" : "px-4 py-6 sm:px-6"}>
         {/* 인사말 — 접속 시간대 + 호칭. 근거유형과 무관하게 항상 같은 자리에 온다. */}
-        <p className="mb-1 text-xs text-ott-muted">{greetingText}</p>
-        <h2 className="mb-4 text-base font-bold break-keep sm:text-lg">{headline}</h2>
+        <p className={(compact ? "text-[10px] " : "text-xs ") + "mb-1 text-ott-muted"}>{greetingText}</p>
+        <h2 className={(compact ? "mb-2 text-[11px] " : "mb-4 text-base sm:text-lg ") + "font-bold break-keep"}>{headline}</h2>
 
         {/* peek 포스터가 화면 끝에서 잘려 보이도록 가로 스크롤 컨테이너 */}
         <div className="-mr-4 overflow-x-auto pb-1 sm:-mr-6">
           <div className="flex gap-3 pr-10">
             {titles.map((t) => (
-              <Poster key={t.id} title={t} />
+              <Poster key={t.id} title={t} compact={compact} />
             ))}
-            <Poster title={PEEK_TITLE} peek />
+            <Poster title={PEEK_TITLE} peek compact={compact} />
           </div>
         </div>
 
         {/* 강조색 배너 — 근거유형 조작이 실제로 들어가는 지점 */}
-        <div className="mt-6 rounded-lg border border-accent/40 bg-accent-soft px-4 py-3">
-          <p className="flex items-start gap-2 text-sm leading-relaxed break-keep">
+        <div className={(compact ? "mt-3 px-2.5 py-2 " : "mt-6 px-4 py-3 ") + "rounded-lg border border-accent/40 bg-accent-soft"}>
+          <p className={(compact ? "text-[10px] " : "text-sm ") + "flex items-start gap-2 leading-relaxed break-keep"}>
             <span
               aria-hidden
               className="mt-1.5 inline-block size-1.5 shrink-0 rounded-full bg-accent"
@@ -130,9 +148,11 @@ export default function Rail({
         </div>
 
         {/* 이용조건 — 피험자 간 변수 */}
-        <p className="mt-3 text-xs leading-relaxed text-ott-muted break-keep">
-          {notice.detail}
-        </p>
+        {!compact && (
+          <p className="mt-3 text-xs leading-relaxed text-ott-muted break-keep">
+            {notice.detail}
+          </p>
+        )}
       </div>
     </section>
   );

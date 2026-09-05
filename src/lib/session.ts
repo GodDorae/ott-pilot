@@ -7,7 +7,7 @@
  */
 
 import { cookies } from "next/headers";
-import { getParticipant, type ParticipantRow } from "./db";
+import { getParticipant, getParticipantWithTrials, type ParticipantRow } from "./db";
 
 export const SESSION_COOKIE = "survey_pid";
 
@@ -33,6 +33,20 @@ export async function currentParticipant(): Promise<ParticipantRow | null> {
   const id = jar.get(SESSION_COOKIE)?.value;
   if (!id) return null;
   return getParticipant(id);
+}
+
+/**
+ * 참여자와 trial 수를 한 번에 — 화면들이 쓰는 기본 경로.
+ * 단계 가드가 trial 수를 필요로 하는데, 따로 조회하면 왕복이 두 번이 된다.
+ */
+export async function currentSession(): Promise<{
+  participant: ParticipantRow;
+  trialsDone: number;
+} | null> {
+  const jar = await cookies();
+  const id = jar.get(SESSION_COOKIE)?.value;
+  if (!id) return null;
+  return getParticipantWithTrials(id);
 }
 
 /** 지금 세션이 /dev 미리보기인지 — 쿠키만 보고 판단해 조회를 아낀다 */

@@ -1,10 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import PreSurveyForm from "@/components/PreSurveyForm";
-import { currentParticipant } from "@/lib/session";
+import { currentSession } from "@/lib/session";
 import type { ParticipantRow } from "@/lib/db";
 import { guard } from "@/lib/flow";
 import { PRE_SECTIONS, type SectionKey } from "@/lib/presurvey";
-import { countTrials } from "@/lib/db";
 import { STAGE_LABELS, STEPS } from "@/lib/steps";
 
 /**
@@ -17,10 +16,11 @@ export default async function SurveyPage({ params }: PageProps<"/survey/[section
   const section = PRE_SECTIONS[key as SectionKey];
   if (!section) notFound();
 
-  const participant = await currentParticipant();
-  if (!participant) redirect("/");
+  const session = await currentSession();
+  if (!session) redirect("/");
+  const { participant } = session;
 
-  const trialsDone = participant.is_dev ? 3 : await countTrials(participant.id);
+  const trialsDone = session.trialsDone;
   const to = guard(participant, "/survey/" + section.key, trialsDone);
   if (to) redirect(to);
 
