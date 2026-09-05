@@ -235,17 +235,3 @@ export const PEEK_TITLE: Title = {
 export function getRail(genre: Genre, set: SetId): Title[] {
   return CATALOG[genre][set];
 }
-
-/** /admin 충원 현황용 집계 */
-export function catalogProgress() {
-  return GENRES.map((genre) => {
-    const titles = SET_IDS.flatMap((set) => CATALOG[genre][set]);
-    return {
-      genre,
-      verified: titles.filter((t) => t.status === "verified").length,
-      unverified: titles.filter((t) => t.status === "unverified").length,
-      pending: titles.filter((t) => t.status === "pending").length,
-      total: titles.length,
-    };
-  });
-}

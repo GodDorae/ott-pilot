@@ -46,3 +46,5 @@ next-env.d.ts
 
 # supabase CLI 로컬 상태
 supabase/.temp/
+
+.vercel

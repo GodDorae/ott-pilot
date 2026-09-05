@@ -1,17 +1,14 @@
 import { dbDriver, listAll } from "@/lib/db";
 import {
-  GENRE_LABELS,
   RATIONALE_LABELS,
   RATIONALE_TYPES,
   SEQUENCES,
   SET_MAPPINGS,
   TOTAL_CELLS,
   USAGE_CONDITIONS,
-  type Genre,
   type RationaleType,
 } from "@/lib/experiment";
 import Link from "next/link";
-import { catalogProgress } from "@/lib/stimuli";
 import { PRE_SECTIONS } from "@/lib/presurvey";
 import { INSTRUMENT_VERSION, PHASES, PHASE_LABELS, SURVEY_PHASE, type Phase } from "@/lib/phase";
 import AdminLogin from "@/components/AdminLogin";
@@ -30,10 +27,9 @@ const PRE_SUMMARY_QUESTIONS = [
 /**
  * 응답 모니터링 화면. 비밀번호를 한 번 입력하면 쿠키로 유지된다.
  *
- * 여기서 봐야 하는 것 3가지:
+ * 여기서 봐야 하는 것:
  *  1) 조건 배정이 균형을 이루는가 (라틴방격 · 세트매칭 · 이용조건)
  *  2) 조작점검 정답률 — 낮으면 배너 문구/시각 강조를 다시 설계해야 한다
- *  3) 54편 큐레이션 충원 현황
  */
 export const dynamic = "force-dynamic";
 
@@ -107,9 +103,6 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       })(),
     };
   });
-
-  const progress = catalogProgress();
-  const totalPending = progress.reduce((a, g) => a + g.pending, 0);
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -401,41 +394,6 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         })}
       </div>
 
-      {/* 큐레이션 충원 현황 */}
-      <h2 className="mt-10 text-sm font-bold">
-        54편 큐레이션 충원 현황
-        {totalPending > 0 && (
-          <span className="ml-2 font-normal text-accent">빈 슬롯 {totalPending}개</span>
-        )}
-      </h2>
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[30rem] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs text-muted">
-              <th className="py-2 pr-3 font-medium">장르</th>
-              <th className="py-2 pr-3 font-medium">검증 완료</th>
-              <th className="py-2 pr-3 font-medium">검증 필요</th>
-              <th className="py-2 pr-3 font-medium">빈 슬롯</th>
-              <th className="py-2 pr-3 font-medium">필요</th>
-            </tr>
-          </thead>
-          <tbody>
-            {progress.map((g) => (
-              <tr key={g.genre} className="border-b border-line/60">
-                <td className="py-2 pr-3">{GENRE_LABELS[g.genre as Genre]}</td>
-                <td className="py-2 pr-3 tabular-nums">{g.verified}</td>
-                <td className="py-2 pr-3 tabular-nums">{g.unverified}</td>
-                <td className="py-2 pr-3 tabular-nums text-accent">{g.pending}</td>
-                <td className="py-2 pr-3 tabular-nums text-muted">{g.total}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-3 text-xs leading-relaxed text-muted break-keep">
-        후보는 <code>src/lib/stimuli.ts</code> 의 <code>SEEDED</code> 에서 채웁니다.
-        <code>posterUrl</code> 을 넣으면 텍스트 카드가 실제 포스터 이미지로 바뀝니다.
-      </p>
     </main>
   );
 }
