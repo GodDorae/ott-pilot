@@ -43,6 +43,8 @@ export type ParticipantRow = {
 
   /** /dev 미리보기 세션 — 분석 제외, 배정 셀도 차지하지 않음 */
   is_dev: boolean;
+  /** 응답 기기 — true 면 모바일. 목업 프레임과 맥락 문구를 함께 결정한다. */
+  is_mobile: boolean | null;
   preferred_genre: Genre | null;
   /** 자극물 화면에 표시할 호칭(실명 아님). 분석에 쓰지 않는다. */
   display_name: string | null;
@@ -70,8 +72,6 @@ export type ParticipantRow = {
   // 4단계 사후 문항
   mc_usage_answer: string | null;
   mc_usage_correct: boolean | null;
-  mc_rationale_answer: string[] | null;
-  mc_rationale_correct: boolean | null;
   rank_content: number | null;
   rank_collab: number | null;
   rank_context: number | null;
@@ -200,6 +200,7 @@ export async function createParticipant(input: {
   participantCode: string;
   assignmentSeq: number;
   userAgent: string | null;
+  isMobile: boolean;
   isDev?: boolean;
 }): Promise<ParticipantRow> {
   assertConfigured();
@@ -207,6 +208,7 @@ export async function createParticipant(input: {
     assignment_seq: input.assignmentSeq,
     participant_code: input.participantCode,
     user_agent: input.userAgent,
+    is_mobile: input.isMobile,
     phase: SURVEY_PHASE,
     instrument_version: INSTRUMENT_VERSION,
     is_dev: input.isDev ?? false,

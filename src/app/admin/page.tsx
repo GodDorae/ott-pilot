@@ -174,6 +174,16 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           hint="4-1 이용조건 인지"
         />
         <Stat
+          label="모바일 응답"
+          value={(() => {
+            const known = participants.filter((p) => p.is_mobile !== null);
+            if (known.length === 0) return "-";
+            const m = known.filter((p) => p.is_mobile).length;
+            return m + " / " + known.length;
+          })()}
+          hint="나머지는 PC·태블릿"
+        />
+        <Stat
           label="선별 제외"
           value={String(participants.filter((p) => p.screened_out_at).length)}
           hint="OTT 이용 경험 없음"

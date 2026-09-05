@@ -6,7 +6,7 @@ import {
   setDisplayName,
   setPreferredGenre,
 } from "@/lib/db";
-import { buildContextSnapshot, isMobileUserAgent, normalizeDisplayName } from "@/lib/copy";
+import { buildContextSnapshot, normalizeDisplayName } from "@/lib/copy";
 import { currentParticipant } from "@/lib/session";
 import { nextStepPath } from "@/lib/flow";
 
@@ -42,8 +42,9 @@ export async function POST(req: Request) {
   if (!participant.context_snapshot) {
     await saveContextSnapshot(
       participant.id,
-      // 실제 접속 기기·시각 기준 (자기보고 B-4·B-5 는 분석용으로만 남긴다)
-      buildContextSnapshot(new Date(), isMobileUserAgent(req.headers.get("user-agent"))),
+      // 실제 접속 기기·시각 기준 (자기보고 B-4·B-5 는 분석용으로만 남긴다).
+      // 기기는 세션 시작 때 정해둔 값을 쓴다 — 중간에 바뀌지 않도록.
+      buildContextSnapshot(new Date(), participant.is_mobile ?? false),
     );
   }
 

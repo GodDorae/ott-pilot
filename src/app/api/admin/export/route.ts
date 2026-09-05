@@ -19,6 +19,9 @@ const HEADERS = [
   "preferred_genre_label",
   // 호칭 자체는 싣지 않는다 (익명성) — 개인화가 걸렸는지만 남긴다
   "has_display_name",
+  // 응답 기기 — 목업 프레임과 맥락 문구를 함께 결정한 값
+  "is_mobile",
+  "device",
   // A. 인구통계 / B. OTT 이용 현황
   "age_group",
   "gender",
@@ -100,6 +103,8 @@ export async function GET(req: Request) {
         p.preferred_genre,
         p.preferred_genre ? GENRE_LABELS[p.preferred_genre as Genre] : "",
         p.display_name !== null,
+        p.is_mobile,
+        p.is_mobile === null ? "" : p.is_mobile ? "mobile" : "desktop",
         p.age_group,
         p.gender,
         p.ott_platform,

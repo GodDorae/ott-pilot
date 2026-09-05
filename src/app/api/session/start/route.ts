@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { makeParticipantCode } from "@/lib/experiment";
+import { isMobileUserAgent } from "@/lib/copy";
 import { createParticipant, dbMisconfigured, nextAssignmentSeq } from "@/lib/db";
 import { DEV_COOKIE, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 
@@ -18,10 +19,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // 응답 기기는 첫 접속 때 정해 두고 끝까지 같은 값을 쓴다
+  // — 목업 프레임과 맥락 문구가 도중에 바뀌면 참여자마다 본 화면이 달라진다
+  const userAgent = req.headers.get("user-agent");
   const participant = await createParticipant({
     participantCode: makeParticipantCode(),
     assignmentSeq: await nextAssignmentSeq(),
-    userAgent: req.headers.get("user-agent"),
+    userAgent,
+    isMobile: isMobileUserAgent(userAgent),
   });
 
   const res = NextResponse.json({ participantCode: participant.participant_code });

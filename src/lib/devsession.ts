@@ -120,6 +120,7 @@ export async function ensureDevSession(
           participantCode: makeParticipantCode(),
           assignmentSeq: await nextAssignmentSeq(),
           userAgent: "dev-preview",
+          isMobile: false,
           isDev: true,
         });
 
