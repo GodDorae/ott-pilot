@@ -34,6 +34,13 @@
   --ott-surface: #17171d;
   --ott-line: #2a2a33;
 
+  /*
+    필수 표시(*) 전용 빨강.
+    강조색이 보라로 바뀌면서 별표까지 보라가 되어, "반드시 답해야 한다"는 신호가
+    다른 강조와 구분되지 않았다. 이 색은 오직 필수 표시에만 쓴다.
+  */
+  --required: #e0243c;
+
   /* 설문 레이어 강조 — 보라 계열 */
   --accent: #534ab7; /* p-6 */
   --accent-strong: #3c3489; /* p-8 */
@@ -61,6 +68,7 @@
   --color-ott-surface: var(--ott-surface);
   --color-ott-line: var(--ott-line);
   --color-faint: var(--faint);
+  --color-required: var(--required);
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);

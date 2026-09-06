@@ -91,7 +91,7 @@ function Textarea({
     <div>
       <label htmlFor={id} className="block text-sm leading-relaxed font-medium break-keep">
         {label}
-        <span className="ml-1 text-accent">*</span>
+        <span className="ml-1 text-required" aria-hidden>*</span>
       </label>
       {hint && <p className="mt-1 text-xs text-muted break-keep">{hint}</p>}
       <textarea

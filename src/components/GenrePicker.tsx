@@ -104,7 +104,7 @@ export default function GenrePicker({
       {/* 선호 장르 */}
       <div>
         <p className="mb-2.5 text-sm font-bold">
-          평소 즐겨 보는 장르<span className="ml-1 text-accent">*</span>
+          평소 즐겨 보는 장르<span className="ml-1 text-required" aria-hidden>*</span>
         </p>
         <div className="grid grid-cols-2 gap-2.5">
           {GENRES.map((g) => (
@@ -137,7 +137,7 @@ export default function GenrePicker({
         >
           <p id="familiarity-q" className="text-sm leading-relaxed font-bold break-keep">
             {FAMILIARITY_QUESTION}
-            <span className="text-accent">*</span>
+            <span className="text-required" aria-hidden>*</span>
           </p>
           {/*
             여기서 장르 이름을 말하지 않는다. 이 목록이 '고른 장르의 작품들'이라고

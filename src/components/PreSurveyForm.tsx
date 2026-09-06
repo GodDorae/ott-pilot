@@ -72,7 +72,7 @@ export default function PreSurveyForm({
           <CLabel className="text-accent">{q.code}</CLabel>
           <p className="mb-3 text-sm leading-relaxed font-medium break-keep">
             {q.label}
-            {q.required && <span className="ml-1 text-accent">*</span>}
+            {q.required && <span className="ml-1 text-required" aria-hidden>*</span>}
           </p>
 
           <div role="radiogroup" aria-label={q.label} className="space-y-2">

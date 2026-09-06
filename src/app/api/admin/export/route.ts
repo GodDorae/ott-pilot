@@ -3,6 +3,7 @@ import { GENRE_LABELS, type Genre } from "@/lib/experiment";
 import { PHASES, SURVEY_PHASE, type Phase } from "@/lib/phase";
 import { isAdminRequest } from "@/lib/adminauth";
 import type { FamiliarityLevel } from "@/lib/stimuli";
+import { buildCodebook } from "@/lib/codebook";
 
 /**
  * 응답 CSV 내보내기 — trial 1개 = 1행 (long format, 참여자당 3행).
@@ -101,6 +102,26 @@ function mean(values: (number | null)[]): string {
 export async function GET(req: Request) {
   if (!(await isAdminRequest(req))) {
     return new Response("권한이 없습니다.", { status: 401 });
+  }
+
+  /*
+    ?format=codebook — 응답 대신 "컬럼이 무엇인지" 를 내려준다.
+    화면의 문항 번호(A-1, 4-2-2 …)와 컬럼명(age_group, open_notable …)이 다르므로,
+    통계를 뽑을 때 둘을 이어 주는 표가 있어야 한다. 문항 정의에서 그대로 만들기 때문에
+    문항을 고쳐도 표가 옛날 것으로 남지 않는다.
+  */
+  if (new URL(req.url).searchParams.get("format") === "codebook") {
+    const head = ["column", "code", "section", "question", "type", "values"];
+    const body = buildCodebook(HEADERS).map((r) =>
+      [r.column, r.code, r.section, r.question, r.type, r.values].map(cell).join(","),
+    );
+    const stampC = new Date().toISOString().slice(0, 10);
+    return new Response("﻿" + [head.join(","), ...body].join("\r\n"), {
+      headers: {
+        "content-type": "text/csv; charset=utf-8",
+        "content-disposition": `attachment; filename="ott-codebook-${stampC}.csv"`,
+      },
+    });
   }
 
   // ?phase=pilot|main|all — 기본은 지금 수집 중인 단계

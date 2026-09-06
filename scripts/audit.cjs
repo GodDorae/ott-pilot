@@ -653,6 +653,22 @@ async function complete(opts = {}) {
     const myRows = rows.filter((r) => r.split(",")[codeAt] === myCode);
     ck("행 = 참여자×3", myRows.length === 3, myRows.length + " (전체 " + rows.length + ")");
     ck("호칭 문자열 미유출", !csv.includes("건빵"));
+
+    /*
+      코드북 — 화면의 문항 번호와 컬럼명이 다르므로 둘을 잇는 표가 함께 나와야 한다.
+      CSV 컬럼이 하나라도 설명 없이 나가면 나중에 그 값이 무엇이었는지 알 길이 없다.
+    */
+    const cbBuf = Buffer.from(
+      await fetch(B + "/api/admin/export?format=codebook&key=" + PW).then((r) => r.arrayBuffer()),
+    );
+    const cb = cbBuf.toString("utf8").replace(/^\ufeff/, "").trim().split(/\r?\n/);
+    ck("코드북 UTF-8 BOM", cbBuf[0] === 0xef && cbBuf[1] === 0xbb && cbBuf[2] === 0xbf);
+    ck("코드북 머리글", cb[0] === "column,code,section,question,type,values", cb[0]);
+    ck("코드북 행 = CSV 컬럼 수", cb.length - 1 === H.length, cb.length - 1 + " / " + H.length);
+    ck("설명 없는 컬럼 0", !cb.some((l) => l.includes("설명 없음")), cb.filter((l) => l.includes("설명 없음")).join(" "));
+    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4", "mc_usage_answer"], ["4-2-2", "open_notable"], ["PU1", "pu1"], ["RA3", "ai3"]])
+      ck("코드북 " + code + " → " + col, cb.some((l) => l.startsWith(col + "," + code + ",")), cb.find((l) => l.startsWith(col + ",")) ?? "없음");
+    ck("코드북에 권한 필요", (await fetch(B + "/api/admin/export?format=codebook")).status === 401);
   }
 
   // ── 12

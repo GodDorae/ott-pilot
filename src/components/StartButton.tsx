@@ -44,7 +44,7 @@ export default function StartButton() {
         />
         <span>
           위 내용을 모두 읽고 이해하였으며, 연구 참여에 동의합니다.
-          <span className="ml-1 text-accent">*</span>
+          <span className="ml-1 text-required" aria-hidden>*</span>
         </span>
       </label>
 
