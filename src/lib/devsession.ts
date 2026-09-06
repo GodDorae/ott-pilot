@@ -128,7 +128,7 @@ export async function ensureDevSession(
   // 4단계 화면도 가드 없이 열리도록 사후 문항까지 기본값을 넣어 둔다
   await savePostTest(participant.id, POST_TEST_DEFAULTS);
   await setPreferredGenre(participant.id, overrides.genre);
-  await setDisplayName(participant.id, "세현");
+  await setDisplayName(participant.id, "건빵");
   await saveContextSnapshot(
     participant.id,
     buildContextSnapshot(new Date(), false),

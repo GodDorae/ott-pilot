@@ -44,7 +44,9 @@ export default function GenrePicker({
       <div className="rounded-xl border border-line bg-card p-4 sm:p-5">
         <label htmlFor="displayName" className="block text-sm font-bold">
           화면에 표시될 호칭
-          <span className="ml-1.5 text-xs font-normal text-muted">(선택)</span>
+          <span className="ml-1.5 text-xs font-normal text-muted">
+            (선택 · 최대 {DISPLAY_NAME_MAX}글자)
+          </span>
         </label>
         <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">
           다음 화면들이 실제 서비스처럼 보이도록 쓰입니다. 실명이 아니어도 되고,
@@ -56,7 +58,7 @@ export default function GenrePicker({
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={DISPLAY_NAME_MAX}
-          placeholder="예: 세현"
+          placeholder="예: 건빵, 수리"
           className="mt-3 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-accent"
         />
         <p className="mt-2 text-xs text-muted">
