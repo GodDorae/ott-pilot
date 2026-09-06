@@ -36,6 +36,14 @@ const fitVars = (chromePx: number) =>
     "--device-reserve": `${CONTENT_RESERVE_PX + chromePx}px`,
   }) as React.CSSProperties;
 
+/**
+ * 목업 위에 놓는 것(머리글·이용조건 안내)도 목업과 같은 폭이어야 한다.
+ * 그러려면 폭 계산에 쓰는 값이 둘 다에게 보여야 하므로, 공통 조상에 실어 준다.
+ * 그 아래에서는 `.device-fit` 만 붙이면 같은 폭이 나온다.
+ */
+export const deviceFitVars = (isMobile: boolean) =>
+  fitVars(isMobile ? PHONE_BEZEL_PX : WEB_CHROME_PX);
+
 export default function DeviceFrame({
   isMobile,
   compact = false,

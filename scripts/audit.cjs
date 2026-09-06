@@ -638,7 +638,16 @@ async function complete(opts = {}) {
     ck("display_name 미노출", !H.includes("display_name"));
     ck("연락처 미노출", !H.includes("followup_email") && !H.includes("followup_phone"));
     ck("재인 컬럼 없음", !H.includes("mc_rationale_answer") && !H.includes("mc_rationale_correct"));
-    ck("행 = 참여자×3", rows.length === 3, String(rows.length));
+    /*
+      CSV 는 그 phase 의 모든 참여자를 내보낸다 — 실제 응답자가 한 명이라도 있으면
+      전체 행 수로는 검사가 안 된다. 이 스크립트가 만든 참여자의 코드로만 센다.
+    */
+    const myCode = (
+      await rest("participants?select=participant_code&is_dev=eq.false&order=started_at.desc&limit=1" + MINE)
+    )[0]?.participant_code;
+    const codeAt = H.indexOf("participant_code");
+    const myRows = rows.filter((r) => r.split(",")[codeAt] === myCode);
+    ck("행 = 참여자×3", myRows.length === 3, myRows.length + " (전체 " + rows.length + ")");
     ck("호칭 문자열 미유출", !csv.includes("건빵"));
   }
 

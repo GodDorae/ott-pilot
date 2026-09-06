@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import OttScreen from "@/components/OttScreen";
-import DeviceFrame from "@/components/DeviceFrame";
+import DeviceFrame, { deviceFitVars } from "@/components/DeviceFrame";
 import SplitScreen from "@/components/SplitScreen";
 import { NoticeCard } from "@/components/Notice";
 import StimulusForm from "@/components/StimulusForm";
@@ -53,13 +53,17 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
     <main className="flex flex-1 flex-col">
       <SplitScreen
         left={
-          <>
+          <div
+            className="flex w-full flex-col md:min-h-0 md:flex-1"
+            style={deviceFitVars(ctx.isMobile)}
+          >
             {/*
               화면 번호와 이용조건은 목업 **위**에 놓는다.
               아래에 두었을 때는 포스터에 시선을 뺏겨 읽지 않고 지나갔다.
               이용조건은 이 연구의 조절변수라, 못 읽고 넘어가면 조건이 걸리지 않는다.
+              폭은 목업과 똑같이 맞춘다 (.device-fit) — 목업보다 넓으면 따로 노는 덩어리로 보인다.
             */}
-            <div className="mx-auto w-full max-w-xs shrink-0 space-y-2.5">
+            <div className="device-fit shrink-0 space-y-2.5">
               <h2 className="text-base font-bold break-keep">추천 화면 {stepIndex}</h2>
               <NoticeCard>
                 {usageNotice(participant.usage_condition as UsageCondition).detail}
@@ -83,18 +87,25 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
                 />
               </DeviceFrame>
             </div>
-          </>
+          </div>
         }
         right={
           <>
-            {/* 진행 표시 */}
-            <div className="mb-5 flex items-center gap-2">
-              {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-                <span key={i} className="step-dot" data-on={i < stepIndex} />
-              ))}
-              <span className="shrink-0 text-xs text-muted tabular-nums">
-                {stepIndex} / {TOTAL_STEPS}
-              </span>
+            {/* 진행 표시 + 안내 — 스크롤과 무관하게 칸 맨 위에 붙어 있다 */}
+            <div className="shrink-0 border-b border-line px-5 pt-6 pb-4 md:px-8 md:pt-10">
+              <div className="mx-auto w-full max-w-lg">
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+                    <span key={i} className="step-dot" data-on={i < stepIndex} />
+                  ))}
+                  <span className="shrink-0 text-xs text-muted tabular-nums">
+                    {stepIndex} / {TOTAL_STEPS}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-muted break-keep">
+                  위 화면을 보고 느낀 그대로 답해 주세요. 정답은 없습니다.
+                </p>
+              </div>
             </div>
 
             {/* key: 단계가 바뀌면 폼을 리마운트해 이전 화면의 응답이 남지 않게 한다 */}

@@ -18,6 +18,13 @@ export default function SplitScreen({
   right,
 }: {
   left: ReactNode;
+  /**
+   * 오른쪽 칸의 내용.
+   *
+   * 세로 방향 flex 칸만 내어 주고 스크롤과 여백은 내용 쪽에서 정한다.
+   * 제출 줄을 스크롤 영역 **바깥**에 둘 수 있어야 하기 때문 — 안에 두고 sticky 로
+   * 띄우면 문항이 버튼 뒤로 지나가면서 글자가 버튼에 반쯤 걸린 채로 보인다.
+   */
   right: ReactNode;
 }) {
   return (
@@ -28,9 +35,7 @@ export default function SplitScreen({
       </div>
 
       {/* 오른쪽 — 측정 문항 (여기만 스크롤) */}
-      <div className="w-full min-w-0 px-5 py-6 md:h-screen md:w-1/2 md:overflow-y-auto md:px-8 md:py-10">
-        <div className="mx-auto w-full max-w-lg">{right}</div>
-      </div>
+      <div className="flex w-full min-w-0 flex-col md:h-screen md:w-1/2">{right}</div>
     </div>
   );
 }

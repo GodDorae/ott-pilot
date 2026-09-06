@@ -53,36 +53,47 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-xs leading-relaxed text-muted break-keep">
-        위 화면을 보고 느낀 그대로 답해 주세요. 정답은 없습니다.
-      </p>
+    /*
+      문항과 제출 줄을 위아래로 나눈다.
+      제출 줄이 스크롤 영역 안에 있으면 문항이 그 뒤로 지나가 글자가 버튼에
+      반쯤 걸린 채 보인다. 넓은 화면에서는 위쪽만 스크롤하고 버튼은 칸 바닥에 붙는다.
+    */
+    <>
+      <div className="min-h-0 flex-1 px-5 py-5 md:overflow-y-auto md:px-8">
+        <div className="mx-auto w-full max-w-lg space-y-4">
+          {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
+          <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
 
-      {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
-      <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
-
-      {error && (
-        <p role="alert" className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
-          {error}
-        </p>
-      )}
-
-      <div className="sticky bottom-0 -mx-5 border-t border-line bg-bg/95 px-5 py-3 backdrop-blur md:-mx-8 md:px-8">
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!complete || pending}
-          className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
-        >
-          {pending
-            ? "저장 중…"
-            : complete
-              ? stepIndex < 3
-                ? "평가 완료"
-                : "다음 단계로"
-              : "남은 문항 " + remaining + "개"}
-        </button>
+          {error && (
+            <p
+              role="alert"
+              className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent"
+            >
+              {error}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* 좁은 화면에서는 칸 높이가 정해지지 않아 sticky 로 띄운다 (배경은 불투명) */}
+      <div className="sticky bottom-0 shrink-0 border-t border-line bg-bg px-5 py-3 md:static md:px-8">
+        <div className="mx-auto w-full max-w-lg">
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!complete || pending}
+            className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
+          >
+            {pending
+              ? "저장 중…"
+              : complete
+                ? stepIndex < 3
+                  ? "평가 완료"
+                  : "다음 단계로"
+                : "남은 문항 " + remaining + "개"}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
