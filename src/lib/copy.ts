@@ -73,17 +73,34 @@ function daypartLabel(hour: number): string {
 }
 
 /**
- * 상황 묘사 — 요일까지 함께 본다.
+ * 상황 묘사 — 요일과 시간대를 함께 본다.
  *
- * 시간대만 보면 금요일 저녁과 화요일 저녁이 같은 문구가 된다. 맥락 인식 조건이
- * 내세우는 근거는 '지금 이 상황' 이므로, 주말이 걸린 시점은 그렇게 말해야 한다.
+ * 문장은 "{요일} {시간대}, {상황} {기기} 보기 좋은 작품" 꼴로 조립된다.
+ * 앞에 이미 요일과 시간대가 있으므로 여기서 그것을 되풀이하지 않는다 —
+ * "토요일 오후, 주말 오후를 느긋하게…" 처럼 같은 말을 두 번 하면 어색해진다.
+ *
+ * 주말이 걸린 시점(금요일 밤 · 일요일 밤)은 그 사실 자체가 가장 두드러진 맥락이라
+ * 시간대보다 우선한다. 맥락 인식 조건이 내세우는 근거가 바로 '지금 이 상황'이다.
  */
 function scenePhrase(weekdayIndex: number, hour: number): string {
-  const isWeekend = weekdayIndex === 0 || weekdayIndex === 6;
-  if (weekdayIndex === 5 && hour >= 18) return "주말을 시작하며";
-  if (isWeekend) return "주말을 여유롭게 보내며";
+  const isSat = weekdayIndex === 6;
+  const isSun = weekdayIndex === 0;
+  const isWeekend = isSat || isSun;
+
+  // 새벽은 요일과 무관하게 같은 상황이다
   if (hour < 6) return "잠들기 전 조용히";
-  if (hour < 11) return "하루를 시작하며";
+
+  // 주말의 시작과 끝
+  if (weekdayIndex === 5 && hour >= 18) return "주말을 시작하며";
+  if (isSun && hour >= 18) return "주말을 마무리하며";
+
+  if (isWeekend) {
+    if (hour < 11) return "느긋한 아침에";
+    if (hour < 18) return "느긋하게 시간을 보내며";
+    return "시간에 쫓기지 않고"; // 토요일 저녁·밤
+  }
+
+  if (hour < 11) return weekdayIndex === 1 ? "한 주를 시작하며" : "하루를 시작하며";
   if (hour < 14) return "짧게 틈내어";
   if (hour < 18) return "잠깐 쉬어가며";
   if (hour < 22) return "하루를 마무리하며";

@@ -30,14 +30,23 @@ import { honorific, type BannerSegment } from "@/lib/copy";
 /** 목업 1px → 화면 단위. 목업 폭이 1500 이므로 1px = 100/1500 cqw */
 const u = (n: number) => `calc(${n} * var(--ott-u))`;
 
-/** 목업에서 실측한 좌표·크기 (모두 1500px 폭 기준) */
+/**
+ * 목업에서 실측한 좌표·크기 (모두 1500px 폭 기준).
+ *
+ * 원본 목업은 3248 높이였는데 두 군데의 빈 자리를 걷어내 3042 로 줄였다.
+ *   - 상태바와 헤더({호칭}님) 사이 136px → 54px
+ *   - 하단 탭 라벨 아래 빈 검정 138px → 62px
+ * 2분할 화면에서 왼쪽 칸이 화면 높이에 갇혀 있어, 이 빈 자리 때문에 목업이
+ * 폭을 유지한 채로는 들어가지 못했다. 레일·배너·포스터 크기는 손대지 않았으므로
+ * 목업의 내용 비율은 그대로다 (가로세로비 0.462 → 0.493).
+ */
 const M = {
   screenW: 1500,
-  screenH: 3248,
+  screenH: 3042,
   pad: 48,
 
-  /** 상태바는 9:41 과 오른쪽 아이콘이 같은 세로 중심(y≈91)에 놓인 한 줄이다 */
-  statusY: 54,
+  /** 상태바는 9:41 과 오른쪽 아이콘이 같은 세로 중심에 놓인 한 줄이다 */
+  statusY: 40,
   statusH: 56,
   statusTimeIndent: 85,
   statusTimeSize: 57,
@@ -45,14 +54,14 @@ const M = {
   statusIconGap: 26,
   statusIconsRight: 59,
 
-  headerY: 246,
+  headerY: 150,
   headerNameSize: 80,
   headerIconBox: 96,
   headerIconSize: 96,
   headerIconGap: 106,
 
-  /** 상단 포스터 줄은 y416 에서 딱 잘린 채 시작한다 — 포스터 윗부분만 보인다 */
-  heroTop: 416,
+  /** 상단 포스터 줄은 헤더 바로 아래에서 딱 잘린 채 시작한다 — 아랫부분만 보인다 */
+  heroTop: 300,
   heroVisibleH: 348,
   /** 원본 포스터(608px) 중 어느 부분이 보이는지 — 목업과 같이 아래쪽 348px */
   heroCrop: "50% 100%",
@@ -61,9 +70,9 @@ const M = {
   heroPeekW: 84,
   gap: 32,
   /** 헤더 뒤 붉은 그라디언트가 내려오는 높이 */
-  fadeH: 416,
+  fadeH: 300,
 
-  title1Y: 823,
+  title1Y: 707,
   titleSize: 65,
   /** 스파클은 세로로 긴 별 — 목업 잉크 44×52, 왼쪽 여백 56에서 시작 */
   sparkleX: 53,
@@ -72,13 +81,13 @@ const M = {
   sparkleGap: 30,
   infoBox: 44,
 
-  bannerY: 962,
+  bannerY: 846,
   bannerH: 120,
   bannerRadius: 14,
   bannerIcon: 58,
   bannerTextSize: 45,
 
-  rail1Y: 1134,
+  rail1Y: 1018,
   posterRadius: 10,
 
   badgeInset: 18,
@@ -87,21 +96,27 @@ const M = {
   badgeSize: 40,
   badgeRadius: 8,
 
-  title2Y: 1801,
-  rail2Y: 1942,
+  title2Y: 1685,
+  rail2Y: 1826,
   rail2W: 612,
   rail2H: 1194,
   rail2PeekW: 164,
   rail2Radius: 12,
 
-  tabTop: 2955,
-  tabIconY: 2980,
+  tabTop: 2839,
+  tabIconY: 2864,
   tabIconW: 62,
   tabIconH: 63,
-  tabLabelY: 3056,
+  tabLabelY: 2940,
   tabLabelSize: 38,
   tabAvatar: 76,
 } as const;
+
+/**
+ * 화면 세로/가로 비. 기기 프레임이 "폭 N 일 때의 높이"를 계산하는 데 쓴다.
+ * 여기서만 정의해 두어, 목업 높이를 손보면 프레임 상한도 함께 따라오게 한다.
+ */
+export const SCREEN_ASPECT = M.screenH / M.screenW;
 
 /** 조건 무관 장식용 포스터 — 상단 줄과 "오직 이곳에서만" 줄 */
 const HERO_IMAGES = ["hero-1", "hero-2", "hero-3"];
@@ -255,7 +270,7 @@ export default function OttScreen({
 
   return (
     <div
-      className="relative isolate select-none overflow-hidden bg-black text-white"
+      className="ott-screen-fit relative isolate select-none overflow-hidden bg-black text-white"
       style={{
         // 목업 1px = 100/1500 cqw. 아래 모든 숫자는 목업에서 잰 값 그대로다.
         ["--ott-u" as string]: "0.0666667cqw",

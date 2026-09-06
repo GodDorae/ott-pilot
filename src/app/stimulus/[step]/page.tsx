@@ -53,31 +53,37 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
     <main className="flex flex-1 flex-col">
       <SplitScreen
         left={
-          <div className="flex flex-col items-center gap-3">
+          <>
             {/*
               화면 번호와 이용조건은 목업 **위**에 놓는다.
               아래에 두었을 때는 포스터에 시선을 뺏겨 읽지 않고 지나갔다.
               이용조건은 이 연구의 조절변수라, 못 읽고 넘어가면 조건이 걸리지 않는다.
             */}
-            <div className="w-full max-w-xs space-y-2.5">
+            <div className="mx-auto w-full max-w-xs shrink-0 space-y-2.5">
               <h2 className="text-base font-bold break-keep">추천 화면 {stepIndex}</h2>
               <NoticeCard>
                 {usageNotice(participant.usage_condition as UsageCondition).detail}
               </NoticeCard>
             </div>
 
-            <DeviceFrame isMobile={ctx.isMobile}>
-              <OttScreen
-                rationale={rationale}
-                headline={railHeadline(rationale, participant.display_name)}
-                banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
-                titles={titles}
-                usageCondition={participant.usage_condition as UsageCondition}
-                displayName={participant.display_name}
-                isMobile={ctx.isMobile}
-              />
-            </DeviceFrame>
-          </div>
+            {/*
+              목업은 남은 높이를 그대로 받는다. 넓은 화면에서는 왼쪽 칸에 스크롤이
+              없으므로, 위 안내가 차지하고 남은 만큼으로 줄어들어야 아래쪽이 안 잘린다.
+            */}
+            <div className="mt-3 flex w-full justify-center md:min-h-0 md:flex-1">
+              <DeviceFrame isMobile={ctx.isMobile}>
+                <OttScreen
+                  rationale={rationale}
+                  headline={railHeadline(rationale, participant.display_name)}
+                  banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
+                  titles={titles}
+                  usageCondition={participant.usage_condition as UsageCondition}
+                  displayName={participant.display_name}
+                  isMobile={ctx.isMobile}
+                />
+              </DeviceFrame>
+            </div>
+          </>
         }
         right={
           <>

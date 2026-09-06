@@ -1,3 +1,5 @@
+import { SCREEN_ASPECT } from "./OttScreen";
+
 /**
  * 자극물 화면을 감싸는 기기 목업.
  *
@@ -8,7 +10,32 @@
  * 안쪽 화면(OttScreen)이 상태바까지 스스로 그리므로, 여기서는 얇은 베젤만 두른다.
  * `compact` 는 순위 화면에서 세 화면을 나란히 줄여 보여줄 때 쓴다 —
  * 화면 내부가 전부 컨테이너 비례 단위라 폭만 줄이면 그대로 축소된다.
+ *
+ * ── 크기가 정해지는 방식 ────────────────────────────────────────
+ * 좁은 화면은 폭 기준, 넓은 화면은 남은 세로 공간에서 역산한 폭과 기준 폭 중 작은 쪽.
+ * 큰 모니터에서 계속 커지면 참여자마다 자극물이 다른 크기로 보이므로 상한을 둔다 —
+ * 시각디자인 실험에서 그냥 두면 안 되는 오차다. 세로가 모자란 창에서만
+ * 기준 폭 아래로 줄어들고, 잘리지는 않는다.
  */
+
+/**
+ * 목업 위아래로 이미 자리를 차지한 것들의 합 (px).
+ *   왼쪽 칸 위아래 여백 48 + 머리글·이용조건 안내 108 + 사이 간격 12
+ *   + 안내가 한 줄 더 늘어날 여지 22
+ * 여기에 기기 테두리(폰 베젤 / 브라우저 주소창)를 더해 넘긴다.
+ * 넉넉히 잡아 두면 목업이 조금 작아질 뿐이지만, 모자라면 아래가 잘린다.
+ */
+const CONTENT_RESERVE_PX = 190;
+const PHONE_BEZEL_PX = 6; // 위아래 3px
+const WEB_CHROME_PX = 35; // 브라우저 주소창 줄(34) + 아래 테두리(1)
+
+/** 화면 비율과 여백을 CSS 로 넘긴다 (.device-fit 이 폭을 계산한다) */
+const fitVars = (chromePx: number) =>
+  ({
+    "--screen-ratio": (1 / SCREEN_ASPECT).toFixed(4),
+    "--device-reserve": `${CONTENT_RESERVE_PX + chromePx}px`,
+  }) as React.CSSProperties;
+
 export default function DeviceFrame({
   isMobile,
   compact = false,
@@ -23,9 +50,10 @@ export default function DeviceFrame({
     return (
       <div
         className={
-          "mx-auto rounded-[1.9rem] bg-neutral-900 p-[3px] shadow-xl ring-1 ring-white/10 " +
-          (compact ? "w-full max-w-[9.5rem]" : "device-fit")
+          "rounded-[1.9rem] bg-neutral-900 p-[3px] shadow-xl ring-1 ring-white/10 " +
+          (compact ? "mx-auto w-full max-w-[9.5rem]" : "device-fit")
         }
+        style={compact ? undefined : fitVars(PHONE_BEZEL_PX)}
       >
         <div className="overflow-hidden rounded-[1.75rem] bg-black">{children}</div>
       </div>
@@ -35,12 +63,18 @@ export default function DeviceFrame({
   return (
     <div
       className={
-        "mx-auto overflow-hidden rounded-xl bg-neutral-900 shadow-xl ring-1 ring-white/10 " +
-        (compact ? "w-full max-w-[10.5rem]" : "device-fit")
+        "overflow-hidden rounded-xl bg-neutral-900 shadow-xl ring-1 ring-white/10 " +
+        (compact ? "mx-auto w-full max-w-[10.5rem]" : "device-fit")
       }
+      style={compact ? undefined : fitVars(WEB_CHROME_PX)}
     >
       {/* 브라우저 상단 바 */}
-      <div className={"flex items-center border-b border-neutral-800 " + (compact ? "gap-1 px-1.5 py-1" : "gap-2 px-3 py-2")}>
+      <div
+        className={
+          "flex shrink-0 items-center border-b border-neutral-800 " +
+          (compact ? "gap-1 px-1.5 py-1" : "h-[34px] gap-2 px-3")
+        }
+      >
         <span className={"rounded-full bg-neutral-700 " + (compact ? "size-1" : "size-2.5")} />
         <span className={"rounded-full bg-neutral-700 " + (compact ? "size-1" : "size-2.5")} />
         <span className={"rounded-full bg-neutral-700 " + (compact ? "size-1" : "size-2.5")} />
