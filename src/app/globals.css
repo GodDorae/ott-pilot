@@ -3,15 +3,20 @@
 /*
   두 개의 시각 레이어를 쓴다.
   - 자극물 레이어(.ott-*): OTT 앱처럼 보여야 하는 부분. 어둡고 포스터 중심.
-  - 설문 레이어: 응답 문항. 밝고 중립적이어서 "이건 설문이다"가 분명하게.
+  - 설문 레이어: 응답 문항. 옅은 라벤더 바탕에 흰 카드 — "이건 설문이다"가 분명하게.
   실험 자극물과 측정 도구를 시각적으로 분리해, 응답이 UI 매력도에 오염되지 않게 하려는 것.
+
+  설문 레이어의 색은 선행 조사(세현이논문/ott-survey-react)의 팔레트를 그대로 쓴다.
+  같은 연구자의 연속된 조사라 참여자가 느끼는 인상이 이어지고, 무엇보다
+  설문 레이어가 보라 계열이면 자극물(붉은 OTT 화면)과 절대 헷갈리지 않는다.
 */
 
 :root {
-  --bg: #f6f6f7;
-  --fg: #17171a;
-  --muted: #6b6b76;
-  --line: #e2e2e6;
+  --bg: #ecebf6; /* page */
+  --fg: #1a1a1a; /* tx-1 */
+  --muted: #555555; /* tx-2 */
+  --faint: #999999; /* tx-3 — 라벨·보조 설명 */
+  --line: rgba(0, 0, 0, 0.1);
   --card: #ffffff;
 
   --ott-bg: #0b0b0f;
@@ -20,9 +25,19 @@
   --ott-surface: #17171d;
   --ott-line: #2a2a33;
 
-  /* 강조색 배너 — 근거유형 설명 문구가 앉는 자리 (문서 0.2) */
-  --accent: #e0243c;
-  --accent-soft: #2a0f16;
+  /* 설문 레이어 강조 — 보라 계열 */
+  --accent: #534ab7; /* p-6 */
+  --accent-strong: #3c3489; /* p-8 */
+  --accent-soft: #eeedfe; /* p-1 */
+
+  /*
+    안내 상자 — 참여자가 반드시 읽어야 하는 문장을 담는다.
+    본문과 같은 흰 카드에 두면 주변에 묻혀 그냥 넘어간다.
+  */
+  --warn-bg: #faeeda; /* a-50 */
+  --warn-line: #ef9f27; /* a-4 */
+  --warn-fg: #633806; /* a-9 */
+  --warn-strong: #854f0b; /* a-8 */
 }
 
 @theme inline {
@@ -36,8 +51,14 @@
   --color-ott-muted: var(--ott-muted);
   --color-ott-surface: var(--ott-surface);
   --color-ott-line: var(--ott-line);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-line: var(--warn-line);
+  --color-warn-fg: var(--warn-fg);
+  --color-warn-strong: var(--warn-strong);
   --font-sans: var(--font-noto);
 }
 
@@ -49,7 +70,13 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-noto), "Malgun Gothic", system-ui, sans-serif;
+  line-height: 1.6;
   -webkit-text-size-adjust: 100%;
+}
+
+/* 카드 그림자 — 라벤더 바탕에서 흰 카드가 떠 보이게 하는 최소한의 깊이 */
+.card-shadow {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
 }
 
 /* 진행 표시자 */

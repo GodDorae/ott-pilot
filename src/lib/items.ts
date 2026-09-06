@@ -1,9 +1,9 @@
 /**
- * 측정 문항 — 7점 리커트
+ * 측정 문항 — 5점 리커트
  *
- * ⚠️ 아래 문구는 "틀을 돌려보기 위한 초안"이다.
- * 최종 문항은 선행연구(TAM 계열 perceived usefulness / behavioral intention 척도)에서
- * 출처를 명시해 번안·수정해야 하며, 지도교수 확인 후 확정할 것.
+ * 매개변수 지각된 유용성(PU) 3문항 + 종속변수 추천 수용의도(RA) 3문항.
+ * 문구는 연구자가 확정한 것이므로 임의로 다듬지 않는다 — 표현 하나가 바뀌면
+ * 측정하는 구성개념이 미묘하게 달라지고, 선행연구와의 비교도 어긋난다.
  */
 
 export type LikertItem = { key: string; text: string };
@@ -20,18 +20,18 @@ export const LIKERT_LABELS = [
   "매우 그렇다",
 ] as const;
 
-/** 매개변수 — 지각된 추천 유용성 */
+/** 매개변수 — 지각된 유용성 (PU) */
 export const USEFULNESS_ITEMS: LikertItem[] = [
-  { key: "pu1", text: "이 추천은 내가 볼 만한 작품을 찾는 데 도움이 될 것 같다." },
-  { key: "pu2", text: "이 추천은 내 취향을 잘 반영하고 있다고 느꼈다." },
-  { key: "pu3", text: "이런 방식의 추천은 작품을 고를 때 유용하다고 생각한다." },
+  { key: "pu1", text: "이 추천은 내게 맞는 작품을 찾는 데 도움이 되었다" },
+  { key: "pu2", text: "이 추천을 이용해 내가 좋아할 만한 작품을 찾는 것은 쉬웠다" },
+  { key: "pu3", text: "이 추천은 나에게 좋은 제안을 해주었다" },
 ];
 
-/** 종속변수 — 추천 수용의도 */
+/** 종속변수 — 추천 수용의도 (RA) */
 export const INTENTION_ITEMS: LikertItem[] = [
-  { key: "ai1", text: "이 화면에서 추천된 작품을 시청해 보고 싶다." },
-  { key: "ai2", text: "이 추천을 받아들여 실제로 재생해 볼 것 같다." },
-  { key: "ai3", text: "이 추천 작품을 내 시청 목록에 추가할 것 같다." },
+  { key: "ai1", text: "이 추천작을 실제로 시청하고 싶다" },
+  { key: "ai2", text: "상황이 맞으면 이 추천을 따라 볼 의향이 있다" },
+  { key: "ai3", text: "앞으로도 이런 방식의 추천을 참고할 의향이 있다" },
 ];
 
 export const ALL_ITEMS = [...USEFULNESS_ITEMS, ...INTENTION_ITEMS];

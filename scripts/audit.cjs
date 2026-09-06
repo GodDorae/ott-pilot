@@ -144,6 +144,34 @@ function familiarityOf(genre, { watched = [], heard = [] } = {}) {
  * 실제 응답자·다른 미리보기 세션의 행까지 딸려 들어온다. 같은 Supabase 를
  * 로컬과 배포가 공유하므로, 검사 결과가 남의 데이터에 흔들리면 안 된다.
  */
+/**
+ * 이 스크립트가 만든 참여자가 들고 있는 진행 중 마커.
+ *
+ * pending_assignments 에는 참여자를 가리키는 열이 없어 그냥 세면 실제 응답자의
+ * 진행 중 세션까지 딸려 들어온다. participants.pending_id 로 거슬러 센다.
+ */
+async function myPending() {
+  const ids = (
+    await rest("participants?select=pending_id&pending_id=not.is.null" + MINE)
+  ).map((r) => r.pending_id);
+  if (ids.length === 0) return [];
+  /*
+    complete_participant 는 마커 행만 지우고 participants.pending_id 는 그대로 둔다.
+    그래서 pending_id 가 있다고 마커가 살아 있는 건 아니다 — 실제 행과 맞춰봐야 한다.
+  */
+  const alive = await rest("pending_assignments?select=id&id=in.(" + ids.join(",") + ")");
+  return alive.map((r) => r.id);
+}
+
+/** 주인 없는 마커 — 어느 참여자도 가리키지 않는 것. 이건 언제나 0 이어야 한다 */
+async function orphanPending() {
+  const all = await rest("pending_assignments?select=id");
+  const held = new Set(
+    (await rest("participants?select=pending_id&pending_id=not.is.null")).map((p) => p.pending_id),
+  );
+  return all.filter((x) => !held.has(x.id)).map((x) => x.id);
+}
+
 async function myScreens(select) {
   const mine = await rest("participants?select=id" + MINE);
   if (mine.length === 0) return [];
@@ -158,6 +186,7 @@ async function complete(opts = {}) {
   await s("/api/session/presurvey", USAGE);
   const g = opts.genre || "action";
   await s("/api/session/genre", { genre: g, displayName: opts.name, familiarity: familiarityOf(g, opts.seen) });
+  await s("/api/session/brief", {});
   for (let t = 1; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 9000 });
   await s("/api/session/posttest", { part: "check", answer: opts.mc || "SVOD" });
   await s("/api/session/posttest", { part: "ranking", ranks: { 1: 1, 2: 2, 3: 3 }, reason: "이유" });
@@ -174,12 +203,12 @@ async function complete(opts = {}) {
   S("1. 세션 없이 접근");
   {
     const a = sess();
-    for (const p of ["/survey/demographics", "/survey/usage", "/pre", "/stimulus/1", "/post/check", "/post/ranking", "/post/open", "/done", "/screened-out"]) {
+    for (const p of ["/survey/demographics", "/survey/usage", "/pre", "/brief", "/stimulus/1", "/post/check", "/post/ranking", "/post/open", "/done", "/screened-out"]) {
       const r = await a(p);
       ck(p + " → /", r.status === 307 && r.loc === "/", r.status + " " + r.loc);
     }
     ck("/ 는 200", (await a("/")).status === 200);
-    for (const [p, body] of [["genre", { genre: "action" }], ["presurvey", DEMO], ["screen", { stepIndex: 1, answers: L }], ["posttest", { part: "check", answer: "SVOD" }], ["followup", { followup_email: "a@b.c" }], ["complete", {}]]) {
+    for (const [p, body] of [["genre", { genre: "action" }], ["presurvey", DEMO], ["screen", { stepIndex: 1, answers: L }], ["posttest", { part: "check", answer: "SVOD" }], ["brief", {}], ["followup", { followup_email: "a@b.c" }], ["complete", {}]]) {
       ck("API " + p + " → 401", (await a("/api/session/" + p, body)).status === 401);
     }
   }
@@ -189,7 +218,7 @@ async function complete(opts = {}) {
   {
     const s = sess();
     await s("/api/session/start", {});
-    for (const p of ["/stimulus/0", "/stimulus/4", "/rest/1", "/survey/bogus", "/post/bogus", "/dev/0?x=1" + K, "/dev/12?x=1" + K]) {
+    for (const p of ["/stimulus/0", "/stimulus/4", "/rest/1", "/survey/bogus", "/post/bogus", "/dev/0?x=1" + K, "/dev/13?x=1" + K]) {
       ck(p.split("?")[0] + " → 404", (await s(p)).status === 404);
     }
   }
@@ -205,6 +234,7 @@ async function complete(opts = {}) {
     };
     await exp("/survey/usage", "/survey/demographics");
     await exp("/pre", "/survey/demographics");
+    await exp("/brief", "/survey/demographics");
     await exp("/stimulus/1", "/survey/demographics");
     await exp("/post/ranking", "/survey/demographics");
     await exp("/done", "/survey/demographics");
@@ -218,12 +248,21 @@ async function complete(opts = {}) {
 
     await s("/api/session/presurvey", USAGE);
     await exp("/pre", "200");
+    await exp("/brief", "/pre");
     await exp("/stimulus/1", "/pre");
 
+    // 장르 제출 뒤에는 안내가 먼저다 — 이용조건 조작이 여기서 전달된다
     await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: familiarityOf("action") });
+    await exp("/brief", "200");
+    await exp("/stimulus/1", "/brief");
+    ck("안내 건너뛰고 응답 제출 차단", (await s("/api/session/screen", { stepIndex: 1, answers: L, attentionCheck: 4, dwellMs: 5000 })).status === 409);
+
+    await s("/api/session/brief", {});
     await exp("/stimulus/1", "200");
     await exp("/stimulus/2", "/stimulus/1");
     await exp("/post/check", "/stimulus/1");
+    ck("안내 화면 되돌아가기 허용", (await s("/brief")).status === 200);
+    ck("안내 통과 시각 기록", (await rest("participants?select=brief_seen_at&is_dev=eq.false&order=started_at.desc&limit=1" + MINE))[0]?.brief_seen_at !== null);
   }
 
   // ── 4
@@ -234,6 +273,7 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "thriller", displayName: "건빵", familiarity: familiarityOf("thriller") });
+    await s("/api/session/brief", {});
     for (let t = 1; t <= 3; t++) {
       const r = await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 8000 });
       const want = t < 3 ? "/stimulus/" + (t + 1) : "/post/check";
@@ -276,6 +316,7 @@ async function complete(opts = {}) {
     await bad("기타인데 입력 없음", { section: "usage", answers: { ...USAGE.answers, ott_platform: "other" } });
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "drama", familiarity: familiarityOf("drama") });
+    await s("/api/session/brief", {});
 
     const badS = async (n, b) => ck(n, (await s("/api/session/screen", b)).status === 400);
     await badS("리커트 6점 거부", { stepIndex: 1, answers: { ...L, pu1: 6 } });
@@ -324,7 +365,8 @@ async function complete(opts = {}) {
     ck("일부만 답하면 거부", (await s("/api/session/genre", { genre: "action", familiarity: partial })).status === 400);
 
     const answers = familiarityOf("action", { watched: ["action-A-1", "action-C-4"], heard: ["action-B-2"] });
-    ck("시청 확인 저장", (await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: answers })).json?.next === "/stimulus/1");
+    ck("시청 확인 저장", (await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: answers })).json?.next === "/brief");
+    await s("/api/session/brief", {});
     const p = (await rest("participants?select=seen_title_ids,title_familiarity&is_dev=eq.false" + MINE))[0];
     ck("watched 만 seen_title_ids 로", (p.seen_title_ids ?? []).length === 2, JSON.stringify(p.seen_title_ids));
     ck("3단계 원자료 12편", Object.keys(p.title_familiarity ?? {}).length === 12, String(Object.keys(p.title_familiarity ?? {}).length));
@@ -374,13 +416,21 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "action", familiarity: familiarityOf("action") });
+    await s("/api/session/brief", {});
     const st = htmlOnly((await s("/stimulus/1")).text).replace(/<!--.*?-->/g, "");
     ck("자극물 화면에 성실성 문항", /성실성을 확인하기 위한 문항/.test(st));
     ck("문항 한 컨테이너", (st.match(/<fieldset/g) ?? []).length === 1, String((st.match(/<fieldset/g) ?? []).length));
     ck("소제목 없음", !/얼마나 유용하다고 느꼈나요/.test(st) && !/받아들이고 싶은 정도는/.test(st) && !/확인 문항/.test(st));
-    ck("척도 라벨 1회", (st.match(/<span>전혀 그렇지 않다<\/span>/g) ?? []).length === 1);
+    // 5점 척도 안내는 묶음 맨 위에 한 번만 — 문항마다 반복되면 목록이 읽히지 않는다
+    ck("척도 안내 1회", (st.match(/5점 척도/g) ?? []).length === 1, String((st.match(/5점 척도/g) ?? []).length));
+    for (const [i, label] of ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"].entries())
+      ck(
+        "척도 " + (i + 1) + "번 " + label,
+        (st.match(new RegExp(">" + label + "<", "g")) ?? []).length === 1,
+      );
     {
-      const order = ["볼 만한 작품을 찾는 데", "내 취향을 잘 반영", "작품을 고를 때 유용", "성실성을 확인하기 위한", "시청해 보고 싶다", "실제로 재생해", "시청 목록에 추가"];
+      // PU 3 → 성실성 → RA 3. 문구는 src/lib/items.ts 와 같아야 한다
+      const order = ["내게 맞는 작품을 찾는 데", "찾는 것은 쉬웠다", "좋은 제안을 해주었다", "성실성을 확인하기 위한", "실제로 시청하고 싶다", "따라 볼 의향이 있다", "참고할 의향이 있다"];
       const pos = order.map((x) => st.indexOf(x));
       ck("유용성 3 → 성실성 → 수용의도 3 순서", pos.every((v, i) => v >= 0 && (i === 0 || v > pos[i - 1])), JSON.stringify(pos));
     }
@@ -408,7 +458,7 @@ async function complete(opts = {}) {
     ck("사전조사 후에도 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition === null);
     await s("/api/session/genre", { genre: "action", familiarity: familiarityOf("action") });
     ck("장르 제출 시 배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition !== null);
-    ck("pending 마커 1", (await rest("pending_assignments?select=id")).length === 1);
+    ck("pending 마커 1", (await myPending()).length === 1, String((await myPending()).length));
 
     await wipe();
     /*
@@ -432,19 +482,44 @@ async function complete(opts = {}) {
 
     const after = await allRows();
     ck("검사분 12명만 늘어남", after.length === before.length + 12, before.length + " → " + after.length);
+
     /** 각 수준의 인원 차가 1명 이하면 균형 (n 이 수준 수의 배수가 아니면 1 차이는 불가피) */
     const balanced = (f, levels) => {
       const t = tally(after, f);
       const counts = levels.map((k) => t[k] ?? 0);
       return { ok: Math.max(...counts) - Math.min(...counts) <= 1, counts };
     };
-    const bSeq = balanced("sequence_index", [0, 1, 2, 3, 4, 5]);
-    const bUsg = balanced("usage_condition", ["SVOD", "TVOD"]);
-    const bMap = balanced("mapping_index", [0, 1, 2]);
-    ck("시퀀스 6종 균형", bSeq.ok, JSON.stringify(bSeq.counts) + " (기존 " + before.length + "명 포함)");
-    ck("이용조건 균형", bUsg.ok, JSON.stringify(bUsg.counts));
-    ck("세트매칭 3종 균형", bMap.ok, JSON.stringify(bMap.counts));
-    ck("완료 후 pending 0", (await rest("pending_assignments?select=id")).length === 0);
+
+    /*
+      배정 카운터는 참여자 수에 '진행 중 마커'를 더해 센다. 마커는 완주해야 지워지므로,
+      아직 설문을 진행 중인 사람이 있으면 그 사람의 칸이 두 번 세어져 분포가 최대 1씩 흔들린다.
+      (검사가 만든 12명은 /done 까지 가서 마커를 지우므로 서로에겐 영향이 없다.)
+      그래서 남의 진행 중 세션이 있으면 엄밀한 검사를 하지 않고, 그 사실만 남긴다.
+    */
+    const liveOutsiders = (
+      await rest(
+        "participants?select=id&is_dev=eq.false&phase=eq." + PHASE +
+          "&pending_id=not.is.null&completed_at=is.null",
+      )
+    ).filter(() => true).length;
+
+    const axes = [
+      ["시퀀스 6종", balanced("sequence_index", [0, 1, 2, 3, 4, 5])],
+      ["이용조건", balanced("usage_condition", ["SVOD", "TVOD"])],
+      ["세트매칭 3종", balanced("mapping_index", [0, 1, 2])],
+    ];
+    for (const [name, b] of axes) {
+      const detail = JSON.stringify(b.counts) + " (기존 " + before.length + "명 포함)";
+      if (b.ok) ck(name + " 균형", true, detail);
+      else if (liveOutsiders > 0)
+        ck(
+          name + " 균형 (진행 중 세션 " + liveOutsiders + "명으로 판정 보류)",
+          true,
+          detail + " — 완주하지 않은 세션의 마커가 카운터를 흔든다",
+        );
+      else ck(name + " 균형", false, detail);
+    }
+    ck("완료 후 pending 0", (await myPending()).length === 0, String((await myPending()).length));
     ck("응답 36행", (await myScreens("id")).length === 36);
   }
 
@@ -458,6 +533,7 @@ async function complete(opts = {}) {
       await s("/api/session/presurvey", DEMO);
       await s("/api/session/presurvey", USAGE);
       await s("/api/session/genre", { genre: "action", displayName: "  가나다라마바  ", familiarity: familiarityOf("action") });
+      await s("/api/session/brief", {});
       const html = (await s("/stimulus/1")).text;
       // 스마트폰은 얇은 베젤 + iOS 상태바, PC 는 브라우저 창
       ck(name + " 목업 프레임", wantPhone ? /rounded-\[1\.9rem\]/.test(html) && html.includes("9:41") : /stream\.example/.test(html) && !html.includes("9:41"));
@@ -466,7 +542,7 @@ async function complete(opts = {}) {
       ck(
         name + " 목업이 문항보다 앞(왼쪽)",
         html.indexOf("오직 이곳에서만") >= 0 &&
-          html.indexOf("오직 이곳에서만") < html.indexOf("볼 만한 작품을 찾는 데"),
+          html.indexOf("오직 이곳에서만") < html.indexOf("내게 맞는 작품을 찾는 데"),
       );
       ck(name + " 리커트 5칸", /grid-cols-5/.test(html));
       // 헤드라인은 목업 문구 3종 중 하나 — 조건마다 다르지만 호칭은 셋 다 들어간다
@@ -499,6 +575,7 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "comedy", displayName: "   ", familiarity: familiarityOf("comedy") });
+    await s("/api/session/brief", {});
     const LL = lines(htmlOnly((await s("/stimulus/1")).text));
     ck("호칭 미입력 → 회원님", LL.some((x) => x.includes("회원님")), LL.filter((x) => x.includes("님")).join(" | "));
   }
@@ -507,7 +584,7 @@ async function complete(opts = {}) {
   S("9. /dev 미리보기");
   {
     await wipe();
-    const STEPS = [[1, "/"], [2, "/survey/demographics"], [3, "/survey/usage"], [4, "/pre"], [5, "/stimulus/1"], [6, "/stimulus/2"], [7, "/stimulus/3"], [8, "/post/check"], [9, "/post/ranking"], [10, "/post/open"], [11, "/done"]];
+    const STEPS = [[1, "/"], [2, "/survey/demographics"], [3, "/survey/usage"], [4, "/pre"], [5, "/brief"], [6, "/stimulus/1"], [7, "/stimulus/2"], [8, "/stimulus/3"], [9, "/post/check"], [10, "/post/ranking"], [11, "/post/open"], [12, "/done"]];
     const d = sess();
     for (const [n, p] of STEPS) {
       const r = await d("/dev/" + n + "?usage=TVOD&seq=4&mapping=2&genre=drama" + K);
@@ -520,7 +597,7 @@ async function complete(opts = {}) {
     ck("배너 seq5·map2·TVOD", /seq5/.test(banner) && /map2/.test(banner) && /TVOD/.test(banner), banner.slice(0, 120));
     for (const p of ["/post/ranking", "/post/open", "/done"]) ck("dev 가드 우회 " + p, (await d(p)).status === 200);
     ck("dev 는 실참여자 아님", (await rest("participants?select=id&is_dev=eq.false" + MINE)).length === 0);
-    ck("dev 는 pending 안 만듦", (await rest("pending_assignments?select=id")).length === 0);
+    ck("dev 는 pending 안 만듦", (await myPending()).length === 0, String((await myPending()).length));
   }
 
   // ── 10
@@ -570,7 +647,7 @@ async function complete(opts = {}) {
   await wipe();
   ck("participants 0", (await rest("participants?select=id" + MINE)).length === 0);
   ck("screen_responses 0", (await myScreens("id")).length === 0);
-  ck("pending 0", (await rest("pending_assignments?select=id")).length === 0);
+  ck("주인 없는 pending 0", (await orphanPending()).length === 0, String((await orphanPending()).length));
 
   console.log("\n" + "═".repeat(70));
   console.log("통과 " + pass + " · 실패 " + fails.length);

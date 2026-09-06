@@ -198,15 +198,20 @@ export function bannerPlainText(segments: BannerSegment[]): string {
   return segments.map((s) => s.text).join("");
 }
 
-/** 이용조건 문구 — 피험자 간 변수 */
+/**
+ * 이용조건 문구 — 피험자 간 변수.
+ *
+ * 자극물 화면 **위**에 놓는다. 아래에 두었더니 포스터에 시선을 뺏겨
+ * 읽지 않고 지나갔다 — 조절변수를 전달받지 못한 채 평가하게 된다.
+ */
 export function usageNotice(condition: UsageCondition): { label: string; detail: string } {
   return condition === "SVOD"
     ? {
         label: "구독 포함",
-        detail: "구독에 포함되어 있어 추가 결제 없이 바로 시청할 수 있습니다.",
+        detail: "추천 콘텐츠는 구독에 포함되어 있어 추가 결제 없이 바로 시청 가능합니다.",
       }
     : {
         label: "개별 대여",
-        detail: "5,500원을 결제하면 48시간 동안 시청할 수 있습니다.",
+        detail: "추천 콘텐츠는 5,500원 결제 시 48시간 동안 시청 가능합니다.",
       };
 }

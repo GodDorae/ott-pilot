@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { OTHER_MAX_LENGTH, type PreSection } from "@/lib/presurvey";
 import { postJson } from "@/lib/client-api";
+import { CLabel } from "@/components/Notice";
 
 /** 사전 문항 섹션 하나를 렌더링한다 (A, B 공용) */
 export default function PreSurveyForm({
@@ -65,8 +66,10 @@ export default function PreSurveyForm({
   return (
     <div className="space-y-4">
       {section.questions.map((q) => (
-        <fieldset key={q.id} className="rounded-xl border border-line bg-card p-4 sm:p-5">
-          <legend className="px-1 text-xs font-bold text-accent">{q.code}</legend>
+        // 문항 번호는 카드 안 맨 위에 둔다. legend 로 두면 테두리 선 위에
+        // 걸쳐 앉아서, 글이 선을 뚫고 나온 것처럼 보인다.
+        <div key={q.id} className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
+          <CLabel className="text-accent">{q.code}</CLabel>
           <p className="mb-3 text-sm leading-relaxed font-medium break-keep">
             {q.label}
             {q.required && <span className="ml-1 text-accent">*</span>}
@@ -108,7 +111,7 @@ export default function PreSurveyForm({
               className="mt-2.5 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-accent"
             />
           )}
-        </fieldset>
+        </div>
       ))}
 
       {error && (

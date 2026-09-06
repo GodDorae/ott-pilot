@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
   // 사전 문항을 건너뛰고 여기로 바로 들어오는 것을 막는다
   const expected = nextStepPath(participant);
-  if (!participant.is_dev && expected !== "/pre" && expected !== "/stimulus/1") {
+  if (!participant.is_dev && expected !== "/pre" && expected !== "/brief") {
     return NextResponse.json({ error: "사전 문항을 먼저 완료해 주세요." }, { status: 409 });
   }
 
@@ -84,5 +84,5 @@ export async function POST(req: Request) {
     await assignAssignment(participant.id);
   }
 
-  return NextResponse.json({ ok: true, next: "/stimulus/1" });
+  return NextResponse.json({ ok: true, next: "/brief" });
 }

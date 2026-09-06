@@ -57,6 +57,8 @@ export type ParticipantRow = {
   /** 작품 id → 전혀 모른다 | 이름만 들어봤다 | 시청한 적 있다. null = 미응답 */
   title_familiarity: Record<string, FamiliarityLevel> | null;
   context_snapshot: ContextSnapshot | null;
+  /** 3단계 안내 화면을 읽고 넘어간 시각 */
+  brief_seen_at: string | null;
   /** 파일럿 / 본실험 */
   phase: Phase;
   /** 응답 수집 당시의 문항 구성·순서 버전 */
@@ -250,6 +252,7 @@ export async function createParticipant(input: {
     seen_title_ids: null,
     title_familiarity: null,
     context_snapshot: null,
+    brief_seen_at: null,
     screened_out_at: null,
     screened_out_reason: null,
     followup_email: null,
@@ -442,6 +445,11 @@ export function setTitleFamiliarity(
     title_familiarity: familiarity,
     seen_title_ids: watchedIds,
   });
+}
+
+/** 3단계 안내를 읽고 넘어갔다고 표시 */
+export function markBriefSeen(id: string) {
+  return patchParticipant(id, { brief_seen_at: new Date().toISOString() });
 }
 
 /** 사전 문항 한 섹션 분량 저장 — 컬럼명은 presurvey.ts 의 정의에서만 나온다 */

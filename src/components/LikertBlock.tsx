@@ -21,11 +21,27 @@ export default function LikertBlock({
   onChange: (key: string, value: number) => void;
 }) {
   return (
-    <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
-      {/* 척도 양 끝 라벨 — 컨테이너 맨 위에 한 번만 */}
-      <div className="flex justify-between text-[11px] text-muted">
-        <span>{LIKERT_LABELS[0]}</span>
-        <span>{LIKERT_LABELS[LIKERT_LABELS.length - 1]}</span>
+    <fieldset className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
+      {/*
+        척도 안내 — 묶음마다 맨 위에 한 번.
+
+        문항 옆에는 숫자 1~5 만 나오므로, 그 숫자가 무엇을 뜻하는지 같은 화면에
+        있어야 한다. 양 끝만 적어 두면 2·3·4 를 참여자가 짐작해서 답하게 된다.
+        묶음마다 반복해 두는 것은, 화면을 내려 답하다가 위로 돌아가지 않아도
+        기준을 확인할 수 있게 하려는 것.
+      */}
+      <div className="rounded-lg border border-accent/40 bg-accent/5 px-3 py-2.5">
+        <p className="text-[11px] font-bold text-accent">5점 척도</p>
+        <ul className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1.5">
+          {LIKERT_LABELS.map((label, i) => (
+            <li key={label} className="flex items-center gap-1.5 text-[11px] leading-none">
+              <span className="grid size-4 shrink-0 place-items-center rounded bg-accent text-[10px] font-bold text-white tabular-nums">
+                {LIKERT_MIN + i}
+              </span>
+              <span className="break-keep">{label}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <ul className="mt-1 divide-y divide-line">

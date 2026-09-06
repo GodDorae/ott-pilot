@@ -20,6 +20,7 @@ import {
   assignAssignment,
   createParticipant,
   deleteDevSessions,
+  markBriefSeen,
   nextAssignmentSeq,
   savePostTest,
   savePreSurvey,
@@ -133,6 +134,8 @@ export async function ensureDevSession(
         });
 
   await savePreSurvey(participant.id, PRE_SURVEY_DEFAULTS);
+  // 안내 화면도 지난 것으로 둔다 — /dev 는 어느 단계든 바로 열려야 한다
+  await markBriefSeen(participant.id);
   // 4단계 화면도 가드 없이 열리도록 사후 문항까지 기본값을 넣어 둔다
   await savePostTest(participant.id, POST_TEST_DEFAULTS);
   await setPreferredGenre(participant.id, overrides.genre);
@@ -152,5 +155,6 @@ export async function ensureDevSession(
     ...PRE_SURVEY_DEFAULTS,
     ...POST_TEST_DEFAULTS,
     preferred_genre: overrides.genre,
+    brief_seen_at: new Date().toISOString(),
   } as ParticipantRow;
 }

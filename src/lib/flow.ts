@@ -5,6 +5,7 @@
  *   /survey/demographics   A. 인구 통계학적 정보      ← 사전조사 첫 문항
  *   /survey/usage          B. OTT 이용 현황           ← 여기서 선별 제외가 갈린다
  *   /pre                   호칭 + 선호 장르           ← 제출 시 조건 배정
+ *   /brief                 3단계 안내                 ← 이용조건 조작을 전달
  *   /stimulus/1 → 2 → 3    반복측정 3회
  *   /post/check            조작점검 (조절변수)
  *   /post/ranking          추천 화면 순위 + 선택 이유
@@ -36,6 +37,12 @@ export function nextStepPath(p: ParticipantRow, trialsDone = 0): string {
   if (!sectionComplete(p, "demographics")) return "/survey/demographics";
   if (!sectionComplete(p, "usage")) return "/survey/usage";
   if (!p.preferred_genre || !p.presentation_order) return "/pre";
+  /*
+    안내를 읽기 전에는 자극물로 보내지 않는다. 이 화면이 이용조건(SVOD/TVOD)을
+    말해 주는 유일한 곳이라, 건너뛰면 조절변수를 전달받지 못한 채 평가하게 된다.
+    이미 한 화면이라도 평가했다면 되돌리지 않는다 — 자극물은 앞으로만 간다.
+  */
+  if (!p.brief_seen_at && trialsDone === 0) return "/brief";
 
   if (trialsDone < TOTAL_STEPS) return "/stimulus/" + (trialsDone + 1);
 
@@ -51,6 +58,7 @@ const ORDER = [
   "/survey/demographics",
   "/survey/usage",
   "/pre",
+  "/brief",
   "/stimulus/1",
   "/stimulus/2",
   "/stimulus/3",

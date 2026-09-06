@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import OttScreen from "@/components/OttScreen";
 import DeviceFrame from "@/components/DeviceFrame";
 import SplitScreen from "@/components/SplitScreen";
+import { NoticeCard } from "@/components/Notice";
 import StimulusForm from "@/components/StimulusForm";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
@@ -53,6 +54,18 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
       <SplitScreen
         left={
           <div className="flex flex-col items-center gap-3">
+            {/*
+              화면 번호와 이용조건은 목업 **위**에 놓는다.
+              아래에 두었을 때는 포스터에 시선을 뺏겨 읽지 않고 지나갔다.
+              이용조건은 이 연구의 조절변수라, 못 읽고 넘어가면 조건이 걸리지 않는다.
+            */}
+            <div className="w-full max-w-xs space-y-2.5">
+              <h2 className="text-base font-bold break-keep">추천 화면 {stepIndex}</h2>
+              <NoticeCard>
+                {usageNotice(participant.usage_condition as UsageCondition).detail}
+              </NoticeCard>
+            </div>
+
             <DeviceFrame isMobile={ctx.isMobile}>
               <OttScreen
                 rationale={rationale}
@@ -64,12 +77,6 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
                 isMobile={ctx.isMobile}
               />
             </DeviceFrame>
-            {/* 이용조건 안내 — 화면 밖에 둔다. 목업 안에는 '구매' 배지만 있고,
-                금액·이용 기간은 참여자가 계속 확인할 수 있어야 한다. */}
-            <p className="max-w-xs text-center text-xs leading-relaxed text-muted break-keep">
-              {usageNotice(participant.usage_condition as UsageCondition).detail}
-            </p>
-            <p className="text-xs text-muted">추천 화면 {stepIndex}</p>
           </div>
         }
         right={

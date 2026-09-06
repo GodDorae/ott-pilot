@@ -64,7 +64,7 @@ export default function GenrePicker({
         familiarity,
       });
       if (!r.ok) throw new Error(r.error);
-      router.push("/stimulus/1");
+      router.push((r.data.next as string) ?? "/brief");
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장할 수 없습니다.");
       setPending(false);
@@ -76,7 +76,7 @@ export default function GenrePicker({
   return (
     <div className="space-y-6">
       {/* 호칭 — 자극물 화면의 프로필·인사말·레일 제목에 쓰인다 */}
-      <div className="rounded-xl border border-line bg-card p-4 sm:p-5">
+      <div className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
         <label htmlFor="displayName" className="block text-sm font-bold">
           화면에 표시될 호칭
           <span className="ml-1.5 text-xs font-normal text-muted">
@@ -128,14 +128,24 @@ export default function GenrePicker({
 
       {/* 시청 경험 확인 — 장르를 고르면 나타난다 */}
       {genre && (
-        <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
-          <legend className="px-1 text-sm font-bold">
-            {/* 별표를 붙여 두어 문항이 한 줄을 꽉 채워도 홀로 다음 줄로 넘어가지 않게 한다 */}
+        // 질문은 카드 안 맨 위에 둔다. legend 로 두면 테두리 선 위에 걸쳐 앉아
+        // 글이 선을 뚫고 나온 것처럼 보인다.
+        <div
+          role="group"
+          aria-labelledby="familiarity-q"
+          className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5"
+        >
+          <p id="familiarity-q" className="text-sm leading-relaxed font-bold break-keep">
             {FAMILIARITY_QUESTION}
             <span className="text-accent">*</span>
-          </legend>
+          </p>
+          {/*
+            여기서 장르 이름을 말하지 않는다. 이 목록이 '고른 장르의 작품들'이라고
+            알려주면, 이후 자극물의 추천 근거("최근 시청하신 {장르} 작품과 …")를
+            참여자가 미리 예상하게 된다.
+          */}
           <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">
-            {GENRE_LABELS[genre]} 작품 {titles.length}편입니다. 작품마다 하나씩 골라 주세요.
+            작품마다 하나씩 골라 주세요.
           </p>
 
           {/*
@@ -194,7 +204,7 @@ export default function GenrePicker({
               </div>
             ))}
           </div>
-        </fieldset>
+        </div>
       )}
 
       {error && (

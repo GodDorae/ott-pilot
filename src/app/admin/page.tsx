@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-line bg-card p-4">
+    <div className="card-shadow rounded-xl border border-line bg-card p-4">
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 text-xl font-bold tabular-nums">{value}</p>
       {hint && <p className="mt-0.5 text-[11px] text-muted">{hint}</p>}
@@ -330,7 +330,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       {/* 4단계 사후 문항 요약 */}
       <h2 className="mt-10 text-sm font-bold">사후 점검 요약</h2>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-line bg-card p-4">
+        <div className="card-shadow rounded-xl border border-line bg-card p-4">
           <p className="text-xs font-bold">
             <span className="text-accent">4-2</span> 순위 · 1위 득표
           </p>
@@ -370,7 +370,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
             .flatMap((s) => s.questions)
             .find((q) => q.id === id)!;
           return (
-            <div key={id} className="rounded-xl border border-line bg-card p-4">
+            <div key={id} className="card-shadow rounded-xl border border-line bg-card p-4">
               <p className="text-xs font-bold">
                 <span className="text-accent">{code}</span> {title}
               </p>

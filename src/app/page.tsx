@@ -1,4 +1,5 @@
 import StartButton from "@/components/StartButton";
+import { NoticeCard, NoticeList } from "@/components/Notice";
 import { dbDriver, dbMisconfigured } from "@/lib/db";
 
 /** 설문 기간 — 원 설문 고지와 동일. 표시용이며 접근을 막지는 않는다. */
@@ -44,18 +45,19 @@ export default function Home() {
         것을 약속 드립니다.
       </p>
 
-      <section className="mt-6 rounded-xl border border-line bg-card p-4 sm:p-5">
-        <h2 className="text-sm font-bold">유의사항</h2>
-        <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted break-keep">
-          <li>· 설문은 약 5~10분 소요됩니다.</li>
-          <li>· 정답은 없으며, 귀하의 솔직한 느낌을 측정합니다.</li>
-          <li>· 모든 응답은 익명으로 처리되며, 연구 목적 외에는 사용되지 않습니다.</li>
-          {/* 되돌릴 수 없는 안내라 강조한다 — 놓치면 응답을 처음부터 다시 해야 한다 */}
-          <li className="font-bold text-accent">
-            · 중간에 창을 닫으면 처음부터 다시 시작해야 합니다.
-          </li>
-        </ul>
-      </section>
+      <NoticeCard label="유의사항" className="mt-6">
+        <NoticeList
+          items={[
+            "설문은 약 5~10분 소요됩니다.",
+            "정답은 없으며, 귀하의 솔직한 느낌을 측정합니다.",
+            "모든 응답은 익명으로 처리되며, 연구 목적 외에는 사용되지 않습니다.",
+          ]}
+        />
+        {/* 되돌릴 수 없는 안내라 같은 목록 안에서도 한 번 더 세운다 */}
+        <p className="mt-3 border-t border-warn-line/40 pt-3 font-bold text-warn-strong">
+          중간에 창을 닫으면 처음부터 다시 시작해야 합니다.
+        </p>
+      </NoticeCard>
 
       <p className="mt-6 text-sm leading-relaxed text-muted break-keep">
         바쁘신 와중에도 귀중한 시간을 내어 연구 설문에 참여해 주셔서 감사합니다.

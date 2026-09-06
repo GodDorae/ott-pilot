@@ -14,6 +14,7 @@ import {
   validateRanking,
 } from "@/lib/posttest";
 import { postJson } from "@/lib/client-api";
+import { CLabel } from "@/components/Notice";
 
 /** 사후 파트가 공유하는 제출 처리 */
 function useSubmit(part: string) {
@@ -117,8 +118,8 @@ export function UsageCheckForm() {
 
   return (
     <div>
-      <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
-        <legend className="px-1 text-xs font-bold text-accent">3-4</legend>
+      <div className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
+        <CLabel className="text-accent">3-4</CLabel>
         <p className="text-sm leading-relaxed font-medium break-keep">
           {USAGE_MANIPULATION_CHECK.question}
         </p>
@@ -149,7 +150,7 @@ export function UsageCheckForm() {
             </label>
           ))}
         </div>
-      </fieldset>
+      </div>
 
       <ErrorLine error={error} />
       <Submit
@@ -191,8 +192,8 @@ export function RankingForm({ previews }: { previews: ReactNode[] }) {
 
   return (
     <div>
-      <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
-        <legend className="px-1 text-xs font-bold text-accent">4-1</legend>
+      <div className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
+        <CLabel className="text-accent">4-1</CLabel>
         <p className="text-sm leading-relaxed font-medium break-keep">{RANK_TASK.question}</p>
         <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">{RANK_TASK.help}</p>
 
@@ -233,7 +234,7 @@ export function RankingForm({ previews }: { previews: ReactNode[] }) {
             );
           })}
         </div>
-      </fieldset>
+      </div>
 
       {/* 선택 이유 — 순위 바로 아래, 같은 화면에서 받는다 */}
       <div className="mt-4 rounded-xl border border-line bg-card p-4 sm:p-5">
@@ -270,8 +271,8 @@ export function OpenEndedForm() {
   return (
     <div className="space-y-4">
       {OPEN_QUESTIONS.map((q, i) => (
-        <div key={q.id} className="rounded-xl border border-line bg-card p-4 sm:p-5">
-          <p className="mb-1.5 text-xs font-bold text-accent">4-2-{i + 1}</p>
+        <div key={q.id} className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
+          <CLabel className="text-accent">4-2-{i + 1}</CLabel>
           <Textarea
             id={q.id}
             label={q.label}
