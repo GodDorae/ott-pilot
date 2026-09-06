@@ -167,7 +167,9 @@ export default function GenrePicker({
                     <label
                       key={l.value}
                       className={
-                        "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border p-2 text-center text-[11px] leading-tight break-keep transition sm:border-0 sm:bg-transparent sm:p-0 " +
+                        // min-w-0 이 없으면 flex 항목이 글자 폭 아래로 못 줄어들어
+                        // 좁은 화면에서 세 번째 보기가 화면 밖으로 밀린다
+                        "flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-1.5 py-2 text-center text-[11px] leading-tight break-keep transition sm:border-0 sm:bg-transparent sm:p-0 " +
                         (familiarity[t.id] === l.value
                           ? "border-accent bg-accent/10"
                           : "border-line hover:border-muted/50")
@@ -180,7 +182,7 @@ export default function GenrePicker({
                         checked={familiarity[t.id] === l.value}
                         onChange={() => setFamiliarity((p) => ({ ...p, [t.id]: l.value }))}
                         aria-label={t.title + " — " + l.label}
-                        className="accent-[var(--accent)]"
+                        className="shrink-0 accent-[var(--accent)]"
                       />
                       <span className="sm:hidden">{l.label}</span>
                     </label>
