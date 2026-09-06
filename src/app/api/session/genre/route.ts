@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { GENRES, type Genre } from "@/lib/experiment";
-import { genreTitles } from "@/lib/stimuli";
+import {
+  genreTitles,
+  isFamiliarityLevel,
+  watchedTitleIds,
+  type FamiliarityLevel,
+} from "@/lib/stimuli";
 import {
   assignAssignment,
   saveContextSnapshot,
   setDisplayName,
   setPreferredGenre,
-  setSeenTitles,
+  setTitleFamiliarity,
 } from "@/lib/db";
 import { buildContextSnapshot, normalizeDisplayName } from "@/lib/copy";
 import { currentParticipant } from "@/lib/session";
@@ -29,7 +34,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     genre?: string;
     displayName?: string;
-    seenTitleIds?: string[];
+    familiarity?: Record<string, string>;
   };
   if (!body.genre || !GENRES.includes(body.genre as Genre)) {
     return NextResponse.json({ error: "장르 값이 올바르지 않습니다." }, { status: 400 });
@@ -41,15 +46,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "사전 문항을 먼저 완료해 주세요." }, { status: 409 });
   }
 
-  // 시청 경험은 그 장르 작품에 한해서만 받는다 (다른 장르 id 가 섞여 들어오지 않도록)
-  const allowed = new Set(genreTitles(body.genre as Genre).map((t) => t.id));
-  const seen = (body.seenTitleIds ?? []).filter((id) => allowed.has(id));
-  if ((body.seenTitleIds ?? []).some((id) => !allowed.has(id))) {
-    return NextResponse.json({ error: "작품 값이 올바르지 않습니다." }, { status: 400 });
+  /*
+    시청 경험은 그 장르 12편 전부에 대해, 정해진 3단계 중 하나로만 받는다.
+    빠진 작품을 '모른다'로 채우지 않는다 — 무응답과 '모른다'가 섞이면
+    자극물 전제(모르는 작품인가)를 확인하는 값이 못 된다.
+  */
+  const titles = genreTitles(body.genre as Genre);
+  const allowed = new Set(titles.map((t) => t.id));
+  const raw = body.familiarity ?? {};
+  const familiarity: Record<string, FamiliarityLevel> = {};
+  for (const [id, level] of Object.entries(raw)) {
+    if (!allowed.has(id) || !isFamiliarityLevel(level)) {
+      return NextResponse.json({ error: "작품 값이 올바르지 않습니다." }, { status: 400 });
+    }
+    familiarity[id] = level;
+  }
+  if (titles.some((t) => !familiarity[t.id])) {
+    return NextResponse.json({ error: "작품마다 하나씩 골라 주세요." }, { status: 400 });
   }
 
   await setPreferredGenre(participant.id, body.genre as Genre);
-  await setSeenTitles(participant.id, seen);
+  await setTitleFamiliarity(participant.id, familiarity, watchedTitleIds(familiarity));
   // 호칭은 선택 입력 — 비워두면 화면에서 '회원님'으로 나간다
   await setDisplayName(participant.id, normalizeDisplayName(body.displayName));
 

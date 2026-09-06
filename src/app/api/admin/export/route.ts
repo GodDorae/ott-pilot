@@ -2,6 +2,7 @@ import { listAll } from "@/lib/db";
 import { GENRE_LABELS, type Genre } from "@/lib/experiment";
 import { PHASES, SURVEY_PHASE, type Phase } from "@/lib/phase";
 import { isAdminRequest } from "@/lib/adminauth";
+import type { FamiliarityLevel } from "@/lib/stimuli";
 
 /**
  * 응답 CSV 내보내기 — trial 1개 = 1행 (long format, 참여자당 3행).
@@ -23,8 +24,11 @@ const HEADERS = [
   "is_mobile",
   "device",
   // 저인지도 가정 검증 — 그 장르 12편 중 이미 본 편수
-  "seen_count",
+  "watched_count",
+  "heard_count",
+  "unknown_count",
   "seen_title_ids",
+  "title_familiarity",
   // A. 인구통계 / B. OTT 이용 현황
   "age_group",
   "gender",
@@ -43,7 +47,9 @@ const HEADERS = [
   "rank_collab",
   "rank_context",
   "open_reason",
-  "open_opinion",
+  "open_feeling",
+  "open_notable",
+  "open_missing",
   "followup_agreed",
   "consent_agreed_at",
   "posttest_at",
@@ -74,6 +80,15 @@ function cell(v: unknown): string {
   if (v === null || v === undefined) return "";
   const s = String(v);
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+/** 작품별 시청 경험 3단계 중 특정 단계로 답한 편수 */
+function countLevel(
+  familiarity: Record<string, FamiliarityLevel> | null,
+  level: FamiliarityLevel,
+): string {
+  if (!familiarity) return "";
+  return String(Object.values(familiarity).filter((v) => v === level).length);
 }
 
 function mean(values: (number | null)[]): string {
@@ -112,7 +127,10 @@ export async function GET(req: Request) {
         p.is_mobile,
         p.is_mobile === null ? "" : p.is_mobile ? "mobile" : "desktop",
         p.seen_title_ids === null ? "" : p.seen_title_ids.length,
+        countLevel(p.title_familiarity, "heard"),
+        countLevel(p.title_familiarity, "unknown"),
         (p.seen_title_ids ?? []).join("|"),
+        p.title_familiarity ? JSON.stringify(p.title_familiarity) : "",
         p.age_group,
         p.gender,
         p.ott_platform,
@@ -130,7 +148,9 @@ export async function GET(req: Request) {
         p.rank_collab,
         p.rank_context,
         p.open_reason,
-        p.open_opinion,
+        p.open_feeling,
+        p.open_notable,
+        p.open_missing,
         p.followup_email !== null || p.followup_phone !== null,
         p.consent_agreed_at,
         p.posttest_at,

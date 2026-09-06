@@ -42,7 +42,7 @@ export function nextStepPath(p: ParticipantRow, trialsDone = 0): string {
   if (!p.mc_usage_answer) return "/post/check";
   // 순위와 선택 이유는 한 화면에서 같이 받는다
   if (p.rank_content === null || !p.open_reason) return "/post/ranking";
-  if (!p.open_opinion) return "/post/open";
+  if (!p.open_feeling || !p.open_notable || !p.open_missing) return "/post/open";
   return "/done";
 }
 

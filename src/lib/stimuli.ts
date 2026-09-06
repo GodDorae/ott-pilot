@@ -103,3 +103,34 @@ export function genreTitles(genre: Genre): Title[] {
 
 /** 전체 사용 편수 (예비 제외) */
 export const TOTAL_TITLES = GENRES.length * SET_IDS.length * SET_SIZE;
+
+// 시청 경험 확인 (2-2) --------------------------------------------------------
+
+/**
+ * 이 카탈로그는 '참여자가 모르는 작품'이라는 전제로 고른 것이다.
+ * 그 전제가 실제로 성립하는지 확인해야, 평가가 추천 근거 때문인지 원래 아는
+ * 작품이라 그런지 갈라진다.
+ *
+ * '봤다/안 봤다' 이분법으로는 모자란다 — 이름은 아는데 안 본 작품은 처음 보는
+ * 작품과 다르게 반응할 수 있어서, 중간 단계를 따로 받는다.
+ */
+export const FAMILIARITY_QUESTION = "이 작품들을 이전에 시청하거나 들어본 적이 있나요?";
+
+export const FAMILIARITY_LEVELS = [
+  { value: "unknown", label: "전혀 모른다" },
+  { value: "heard", label: "이름만 들어봤다" },
+  { value: "watched", label: "시청한 적 있다" },
+] as const;
+
+export type FamiliarityLevel = (typeof FAMILIARITY_LEVELS)[number]["value"];
+
+const FAMILIARITY_VALUES = new Set<string>(FAMILIARITY_LEVELS.map((l) => l.value));
+
+export function isFamiliarityLevel(v: unknown): v is FamiliarityLevel {
+  return typeof v === "string" && FAMILIARITY_VALUES.has(v);
+}
+
+/** 실제로 시청한 작품만 추린다 — 자극물 전제 확인에 쓰는 값 */
+export function watchedTitleIds(familiarity: Record<string, FamiliarityLevel>): string[] {
+  return Object.keys(familiarity).filter((id) => familiarity[id] === "watched");
+}

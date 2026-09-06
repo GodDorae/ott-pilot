@@ -4,52 +4,53 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { GENRES, GENRE_LABELS, type Genre } from "@/lib/experiment";
 import { DISPLAY_NAME_MAX } from "@/lib/copy";
-import type { Title } from "@/lib/stimuli";
+import {
+  FAMILIARITY_LEVELS,
+  FAMILIARITY_QUESTION,
+  type FamiliarityLevel,
+  type Title,
+} from "@/lib/stimuli";
 import { postJson } from "@/lib/client-api";
 
 /**
  * 2-2 개인화 화면 — 호칭 · 선호 장르 · 시청 경험 확인
  *
- * 장르를 고르면 그 장르에서 보게 될 12편이 나오고, 본 적 있는 작품을 고르게 한다.
+ * 장르를 고르면 그 장르에서 보게 될 12편이 나오고, 각 작품을 얼마나 아는지 3단계로 받는다.
  * 이 작품들은 '이미 알고 있으면 안 된다'는 기준으로 고른 것이라, 그 가정이 참여자마다
  * 실제로 성립하는지 확인해야 평가가 추천 근거 때문인지 원래 아는 작품이라 그런지 갈라진다.
+ *
+ * 12편 전부에 답하게 한다 — 고르지 않은 것을 '모른다'로 치면 무응답과 구분되지 않는다.
  *
  * 목록은 서버에서 통째로 받아 둔다 — 장르를 바꿀 때마다 요청하면 화면이 끊긴다.
  */
 export default function GenrePicker({
   initial,
   initialName,
-  initialSeen,
+  initialFamiliarity,
   titlesByGenre,
 }: {
   initial: Genre | null;
   initialName: string | null;
-  initialSeen: string[] | null;
+  initialFamiliarity: Record<string, FamiliarityLevel> | null;
   titlesByGenre: Record<Genre, Title[]>;
 }) {
   const router = useRouter();
   const [genre, setGenre] = useState<Genre | null>(initial);
   const [name, setName] = useState(initialName ?? "");
-  const [seen, setSeen] = useState<string[]>(initialSeen ?? []);
-  /** '본 작품 없음'을 눌렀는지 — 빈 배열과 미응답을 구분하기 위해 별도로 둔다 */
-  const [noneSeen, setNoneSeen] = useState((initialSeen?.length ?? -1) === 0);
+  const [familiarity, setFamiliarity] = useState<Record<string, FamiliarityLevel>>(
+    initialFamiliarity ?? {},
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const titles = genre ? titlesByGenre[genre] : [];
-  const answeredSeen = noneSeen || seen.length > 0;
-  const complete = genre !== null && answeredSeen;
+  const remaining = titles.filter((t) => !familiarity[t.id]).length;
+  const complete = genre !== null && remaining === 0;
 
   function chooseGenre(g: Genre) {
     setGenre(g);
-    // 장르가 바뀌면 이전 장르의 작품 선택은 의미가 없다
-    setSeen([]);
-    setNoneSeen(false);
-  }
-
-  function toggleTitle(id: string) {
-    setNoneSeen(false);
-    setSeen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    // 장르가 바뀌면 이전 장르의 작품 응답은 의미가 없다
+    setFamiliarity({});
   }
 
   async function next() {
@@ -60,7 +61,7 @@ export default function GenrePicker({
       const r = await postJson("/api/session/genre", {
         genre,
         displayName: name,
-        seenTitleIds: noneSeen ? [] : seen,
+        familiarity,
       });
       if (!r.ok) throw new Error(r.error);
       router.push("/stimulus/1");
@@ -129,52 +130,65 @@ export default function GenrePicker({
       {genre && (
         <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
           <legend className="px-1 text-sm font-bold">
-            이 중 본 적 있는 작품<span className="ml-1 text-accent">*</span>
+            {FAMILIARITY_QUESTION}
+            <span className="ml-1 text-accent">*</span>
           </legend>
           <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">
-            {GENRE_LABELS[genre]} 작품 {titles.length}편입니다. 이미 보신 작품을 모두 골라
-            주세요. 없으면 아래 &lsquo;본 작품이 없습니다&rsquo;를 눌러 주세요.
+            {GENRE_LABELS[genre]} 작품 {titles.length}편입니다. 작품마다 하나씩 골라 주세요.
           </p>
 
-          <div className="mt-4 space-y-2">
-            {titles.map((t) => (
-              <label
+          {/*
+            넓은 화면은 표(제목 | 3단계), 좁은 화면은 제목 아래 버튼 세 개.
+            sm:contents 로 같은 마크업을 두 배치에 그대로 쓴다 — 좁은 화면에서는
+            보기 라벨이 각 줄에 붙고, 넓은 화면에서는 맨 위 머리글 한 번으로 끝난다.
+          */}
+          <div className="mt-4 overflow-hidden rounded-xl border border-line">
+            <div className="hidden bg-bg sm:grid sm:grid-cols-[1fr_repeat(3,7.5rem)] sm:items-center sm:gap-2 sm:border-b sm:border-line sm:px-3 sm:py-2.5">
+              <span />
+              {FAMILIARITY_LEVELS.map((l) => (
+                <span key={l.value} className="text-center text-xs font-medium text-muted">
+                  {l.label}
+                </span>
+              ))}
+            </div>
+
+            {titles.map((t, i) => (
+              <div
                 key={t.id}
                 className={
-                  "flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 text-sm leading-relaxed break-keep transition " +
-                  (seen.includes(t.id)
-                    ? "border-accent bg-accent/5"
-                    : "border-line hover:border-muted/50")
+                  "grid gap-2 px-3 py-3 sm:grid-cols-[1fr_repeat(3,7.5rem)] sm:items-center " +
+                  (i > 0 ? "border-t border-line " : "") +
+                  (familiarity[t.id] ? "bg-accent/5" : "")
                 }
               >
-                <input
-                  type="checkbox"
-                  checked={seen.includes(t.id)}
-                  onChange={() => toggleTitle(t.id)}
-                  className="mt-0.5 accent-[var(--accent)]"
-                />
-                <span>{t.title}</span>
-              </label>
+                <p className="text-sm leading-relaxed font-medium break-keep">{t.title}</p>
+                <div className="flex gap-2 sm:contents">
+                  {FAMILIARITY_LEVELS.map((l) => (
+                    <label
+                      key={l.value}
+                      className={
+                        "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border p-2 text-center text-[11px] leading-tight break-keep transition sm:border-0 sm:bg-transparent sm:p-0 " +
+                        (familiarity[t.id] === l.value
+                          ? "border-accent bg-accent/10"
+                          : "border-line hover:border-muted/50")
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name={t.id}
+                        value={l.value}
+                        checked={familiarity[t.id] === l.value}
+                        onChange={() => setFamiliarity((p) => ({ ...p, [t.id]: l.value }))}
+                        aria-label={t.title + " — " + l.label}
+                        className="accent-[var(--accent)]"
+                      />
+                      <span className="sm:hidden">{l.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-
-          <label
-            className={
-              "mt-3 flex cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-sm font-medium break-keep transition " +
-              (noneSeen ? "border-accent bg-accent/5" : "border-line hover:border-muted/50")
-            }
-          >
-            <input
-              type="checkbox"
-              checked={noneSeen}
-              onChange={(e) => {
-                setNoneSeen(e.target.checked);
-                if (e.target.checked) setSeen([]);
-              }}
-              className="accent-[var(--accent)]"
-            />
-            <span>본 작품이 없습니다</span>
-          </label>
         </fieldset>
       )}
 
@@ -194,8 +208,8 @@ export default function GenrePicker({
           ? "이동 중…"
           : !genre
             ? "장르를 골라 주세요"
-            : !answeredSeen
-              ? "본 적 있는 작품을 표시해 주세요"
+            : remaining > 0
+              ? "남은 작품 " + remaining + "편"
               : "다음"}
       </button>
     </div>

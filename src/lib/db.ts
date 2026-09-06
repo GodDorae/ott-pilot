@@ -23,6 +23,7 @@ import {
   type SetId,
   type UsageCondition,
 } from "./experiment";
+import type { FamiliarityLevel } from "./stimuli";
 import type { ContextSnapshot } from "./copy";
 import { ATTENTION_CHECK } from "./items";
 
@@ -51,8 +52,10 @@ export type ParticipantRow = {
   preferred_genre: Genre | null;
   /** 자극물 화면에 표시할 호칭(실명 아님). 분석에 쓰지 않는다. */
   display_name: string | null;
-  /** 선택한 장르 12편 중 이미 본 작품 id. 빈 배열 = 없음, null = 미응답 */
+  /** 선택한 장르 12편 중 '시청한 적 있다' 로 답한 작품 id */
   seen_title_ids: string[] | null;
+  /** 작품 id → 전혀 모른다 | 이름만 들어봤다 | 시청한 적 있다. null = 미응답 */
+  title_familiarity: Record<string, FamiliarityLevel> | null;
   context_snapshot: ContextSnapshot | null;
   /** 파일럿 / 본실험 */
   phase: Phase;
@@ -81,7 +84,9 @@ export type ParticipantRow = {
   rank_collab: number | null;
   rank_context: number | null;
   open_reason: string | null;
-  open_opinion: string | null;
+  open_feeling: string | null;
+  open_notable: string | null;
+  open_missing: string | null;
   posttest_at: string | null;
 
   // 선별 제외 / 후속 인터뷰
@@ -243,6 +248,7 @@ export async function createParticipant(input: {
     preferred_genre: null,
     display_name: null,
     seen_title_ids: null,
+    title_familiarity: null,
     context_snapshot: null,
     screened_out_at: null,
     screened_out_reason: null,
@@ -421,9 +427,21 @@ export function setDisplayName(id: string, displayName: string | null) {
   return patchParticipant(id, { display_name: displayName });
 }
 
-/** 이미 본 적 있다고 답한 작품 (빈 배열이면 '본 작품 없음') */
-export function setSeenTitles(id: string, ids: string[]) {
-  return patchParticipant(id, { seen_title_ids: ids });
+/**
+ * 작품별 시청 경험 (3단계) 저장.
+ *
+ * 원자료(jsonb)와 함께 '시청한 적 있다' 목록을 따로 둔다 — 자극물 전제를 볼 때
+ * 가장 자주 쓰는 값이라, 매번 jsonb 를 풀어보지 않아도 되게 한다.
+ */
+export function setTitleFamiliarity(
+  id: string,
+  familiarity: Record<string, FamiliarityLevel>,
+  watchedIds: string[],
+) {
+  return patchParticipant(id, {
+    title_familiarity: familiarity,
+    seen_title_ids: watchedIds,
+  });
 }
 
 /** 사전 문항 한 섹션 분량 저장 — 컬럼명은 presurvey.ts 의 정의에서만 나온다 */

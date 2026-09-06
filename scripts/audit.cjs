@@ -124,6 +124,20 @@ async function wipe() {
 const MINE = "&user_agent=like.*" + UA_TAG + "*";
 
 /**
+ * 시청 경험 응답 만들기 — 그 장르 12편 전부에 답해야 통과한다.
+ * 기본은 전부 '전혀 모른다'. watched/heard 로 일부만 다르게 줄 수 있다.
+ */
+function familiarityOf(genre, { watched = [], heard = [] } = {}) {
+  const out = {};
+  for (const set of ["A", "B", "C"])
+    for (let i = 1; i <= 4; i++) {
+      const id = `${genre}-${set}-${i}`;
+      out[id] = watched.includes(id) ? "watched" : heard.includes(id) ? "heard" : "unknown";
+    }
+  return out;
+}
+
+/**
  * 이 스크립트가 만든 참여자의 응답만 읽는다.
  *
  * screen_responses 에는 참여자를 가리키는 필드밖에 없어서 그냥 세면
@@ -142,11 +156,12 @@ async function complete(opts = {}) {
   await s("/api/session/start", {});
   await s("/api/session/presurvey", DEMO);
   await s("/api/session/presurvey", USAGE);
-  await s("/api/session/genre", { genre: opts.genre || "action", displayName: opts.name, seenTitleIds: opts.seen ?? [] });
+  const g = opts.genre || "action";
+  await s("/api/session/genre", { genre: g, displayName: opts.name, familiarity: familiarityOf(g, opts.seen) });
   for (let t = 1; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 9000 });
   await s("/api/session/posttest", { part: "check", answer: opts.mc || "SVOD" });
   await s("/api/session/posttest", { part: "ranking", ranks: { 1: 1, 2: 2, 3: 3 }, reason: "이유" });
-  await s("/api/session/posttest", { part: "open", open: { open_opinion: "없음" } });
+  await s("/api/session/posttest", { part: "open", open: { open_feeling: "없음", open_notable: "없음", open_missing: "없음" } });
   await s("/done");
   return s;
 }
@@ -205,7 +220,7 @@ async function complete(opts = {}) {
     await exp("/pre", "200");
     await exp("/stimulus/1", "/pre");
 
-    await s("/api/session/genre", { genre: "action", displayName: "건빵", seenTitleIds: [] });
+    await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: familiarityOf("action") });
     await exp("/stimulus/1", "200");
     await exp("/stimulus/2", "/stimulus/1");
     await exp("/post/check", "/stimulus/1");
@@ -218,7 +233,7 @@ async function complete(opts = {}) {
     await s("/api/session/start", {});
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
-    await s("/api/session/genre", { genre: "thriller", displayName: "건빵", seenTitleIds: [] });
+    await s("/api/session/genre", { genre: "thriller", displayName: "건빵", familiarity: familiarityOf("thriller") });
     for (let t = 1; t <= 3; t++) {
       const r = await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 8000 });
       const want = t < 3 ? "/stimulus/" + (t + 1) : "/post/check";
@@ -260,7 +275,7 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await bad("기타인데 입력 없음", { section: "usage", answers: { ...USAGE.answers, ott_platform: "other" } });
     await s("/api/session/presurvey", USAGE);
-    await s("/api/session/genre", { genre: "drama", seenTitleIds: [] });
+    await s("/api/session/genre", { genre: "drama", familiarity: familiarityOf("drama") });
 
     const badS = async (n, b) => ck(n, (await s("/api/session/screen", b)).status === 400);
     await badS("리커트 6점 거부", { stepIndex: 1, answers: { ...L, pu1: 6 } });
@@ -279,8 +294,8 @@ async function complete(opts = {}) {
     await badP("순위 누락", { part: "ranking", ranks: { 1: 1, 2: 2 }, reason: "r" });
     await badP("선택 이유 누락", { part: "ranking", ranks: { 1: 1, 2: 2, 3: 3 } });
     ck("순위+이유 저장", (await s("/api/session/posttest", { part: "ranking", ranks: { 1: 3, 2: 1, 3: 2 }, reason: "두번째" })).json?.next === "/post/open");
-    await badP("주관식 빈칸 거부", { part: "open", open: { open_opinion: "   " } });
-    ck("주관식 없음 허용", (await s("/api/session/posttest", { part: "open", open: { open_opinion: "없음" } })).json?.next === "/done");
+    await badP("주관식 빈칸 거부", { part: "open", open: { open_feeling: "없음", open_notable: "   ", open_missing: "없음" } });
+    ck("주관식 없음 허용", (await s("/api/session/posttest", { part: "open", open: { open_feeling: "없음", open_notable: "없음", open_missing: "없음" } })).json?.next === "/done");
     ck("/done 200", (await s("/done")).status === 200);
 
     const p = (await rest("participants?select=presentation_order,rank_content,rank_collab,rank_context&mc_usage_answer=eq.TVOD" + MINE))[0];
@@ -300,11 +315,20 @@ async function complete(opts = {}) {
     await s("/api/session/start", {});
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
-    ck("다른 장르 작품 id 거부", (await s("/api/session/genre", { genre: "action", seenTitleIds: ["drama-A-1"] })).status === 400);
-    ck("없는 id 거부", (await s("/api/session/genre", { genre: "action", seenTitleIds: ["zzz"] })).status === 400);
-    ck("시청 확인 저장", (await s("/api/session/genre", { genre: "action", displayName: "건빵", seenTitleIds: ["action-A-1", "action-C-4"] })).json?.next === "/stimulus/1");
-    const p = (await rest("participants?select=seen_title_ids&is_dev=eq.false" + MINE))[0];
-    ck("저장값 2편", (p.seen_title_ids ?? []).length === 2, JSON.stringify(p.seen_title_ids));
+    ck("다른 장르 작품 id 거부", (await s("/api/session/genre", { genre: "action", familiarity: { "drama-A-1": "watched" } })).status === 400);
+    ck("없는 id 거부", (await s("/api/session/genre", { genre: "action", familiarity: { zzz: "watched" } })).status === 400);
+    ck("모르는 단계값 거부", (await s("/api/session/genre", { genre: "action", familiarity: { "action-A-1": "maybe" } })).status === 400);
+    // 12편을 다 채우지 않으면 통과하지 못한다 — 무응답과 '모른다'가 섞이면 안 된다
+    const partial = familiarityOf("action");
+    delete partial["action-C-4"];
+    ck("일부만 답하면 거부", (await s("/api/session/genre", { genre: "action", familiarity: partial })).status === 400);
+
+    const answers = familiarityOf("action", { watched: ["action-A-1", "action-C-4"], heard: ["action-B-2"] });
+    ck("시청 확인 저장", (await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: answers })).json?.next === "/stimulus/1");
+    const p = (await rest("participants?select=seen_title_ids,title_familiarity&is_dev=eq.false" + MINE))[0];
+    ck("watched 만 seen_title_ids 로", (p.seen_title_ids ?? []).length === 2, JSON.stringify(p.seen_title_ids));
+    ck("3단계 원자료 12편", Object.keys(p.title_familiarity ?? {}).length === 12, String(Object.keys(p.title_familiarity ?? {}).length));
+    ck("heard 단계 보존", p.title_familiarity?.["action-B-2"] === "heard", p.title_familiarity?.["action-B-2"]);
 
     const st = htmlOnly((await s("/stimulus/1")).text);
     {
@@ -330,15 +354,15 @@ async function complete(opts = {}) {
     ck("3화면 합계 12편 (장르 전체)", new Set(rows.flatMap((r) => r.title_ids)).size === 12);
     ck("모두 선택 장르 작품", rows.flatMap((r) => r.title_ids).every((id) => id.startsWith("action-")));
 
-    // '본 작품 없음' = 빈 배열, 미응답과 구분
+    // 전부 '모른다' = 빈 배열, 미응답(null)과 구분
     await wipe();
     const s2 = sess();
     await s2("/api/session/start", {});
     await s2("/api/session/presurvey", DEMO);
     await s2("/api/session/presurvey", USAGE);
-    await s2("/api/session/genre", { genre: "comedy", seenTitleIds: [] });
+    await s2("/api/session/genre", { genre: "comedy", familiarity: familiarityOf("comedy") });
     const p2 = (await rest("participants?select=seen_title_ids&is_dev=eq.false" + MINE))[0];
-    ck("본 작품 없음 = 빈 배열", Array.isArray(p2.seen_title_ids) && p2.seen_title_ids.length === 0, JSON.stringify(p2.seen_title_ids));
+    ck("전부 모른다 = 빈 배열", Array.isArray(p2.seen_title_ids) && p2.seen_title_ids.length === 0, JSON.stringify(p2.seen_title_ids));
   }
 
   // ── 6c
@@ -349,7 +373,7 @@ async function complete(opts = {}) {
     await s("/api/session/start", {});
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
-    await s("/api/session/genre", { genre: "action", seenTitleIds: [] });
+    await s("/api/session/genre", { genre: "action", familiarity: familiarityOf("action") });
     const st = htmlOnly((await s("/stimulus/1")).text).replace(/<!--.*?-->/g, "");
     ck("자극물 화면에 성실성 문항", /성실성을 확인하기 위한 문항/.test(st));
     ck("문항 한 컨테이너", (st.match(/<fieldset/g) ?? []).length === 1, String((st.match(/<fieldset/g) ?? []).length));
@@ -382,7 +406,7 @@ async function complete(opts = {}) {
     ck("인구통계 후 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition === null);
     await s("/api/session/presurvey", USAGE);
     ck("사전조사 후에도 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition === null);
-    await s("/api/session/genre", { genre: "action", seenTitleIds: [] });
+    await s("/api/session/genre", { genre: "action", familiarity: familiarityOf("action") });
     ck("장르 제출 시 배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition !== null);
     ck("pending 마커 1", (await rest("pending_assignments?select=id")).length === 1);
 
@@ -433,7 +457,7 @@ async function complete(opts = {}) {
       await s("/api/session/start", {});
       await s("/api/session/presurvey", DEMO);
       await s("/api/session/presurvey", USAGE);
-      await s("/api/session/genre", { genre: "action", displayName: "  가나다라마바  ", seenTitleIds: [] });
+      await s("/api/session/genre", { genre: "action", displayName: "  가나다라마바  ", familiarity: familiarityOf("action") });
       const html = (await s("/stimulus/1")).text;
       // 스마트폰은 얇은 베젤 + iOS 상태바, PC 는 브라우저 창
       ck(name + " 목업 프레임", wantPhone ? /rounded-\[1\.9rem\]/.test(html) && html.includes("9:41") : /stream\.example/.test(html) && !html.includes("9:41"));
@@ -465,7 +489,7 @@ async function complete(opts = {}) {
       const rk = await s("/post/ranking");
       ck(name + " 순위 미리보기 3개", ["1", "2", "3"].every((n) => rk.text.includes("추천 화면 " + n)));
       ck(name + " 근거유형 워딩 미노출", !/콘텐츠 기반|협업 기반|맥락 인식 기반/.test(rk.text));
-      ck(name + " 선택 이유 같은 화면", /1위로 고른 추천 화면/.test(rk.text));
+      ck(name + " 선택 이유 같은 화면", /각 순위\(1~3위\)로 추천 화면을 고른 이유/.test(rk.text));
       ck(name + " 미리보기에도 목업", wantPhone ? /rounded-\[1\.9rem\]/.test(rk.text) : /stream\.example/.test(rk.text));
     }
 
@@ -474,7 +498,7 @@ async function complete(opts = {}) {
     await s("/api/session/start", {});
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
-    await s("/api/session/genre", { genre: "comedy", displayName: "   ", seenTitleIds: [] });
+    await s("/api/session/genre", { genre: "comedy", displayName: "   ", familiarity: familiarityOf("comedy") });
     const LL = lines(htmlOnly((await s("/stimulus/1")).text));
     ck("호칭 미입력 → 회원님", LL.some((x) => x.includes("회원님")), LL.filter((x) => x.includes("님")).join(" | "));
   }
@@ -532,7 +556,7 @@ async function complete(opts = {}) {
     const csv = buf.toString("utf8").replace(/^\ufeff/, "");
     const [h, ...rows] = csv.trim().split(/\r?\n/);
     const H = h.split(",");
-    for (const c of ["phase", "participant_code", "has_display_name", "is_mobile", "device", "seen_count", "seen_title_ids", "screened_out", "screened_out_reason", "mc_usage_correct", "rank_content", "open_reason", "open_opinion", "followup_agreed", "pu_mean", "attention_check", "attention_passed", "dwell_ms"])
+    for (const c of ["phase", "participant_code", "has_display_name", "is_mobile", "device", "watched_count", "heard_count", "unknown_count", "seen_title_ids", "title_familiarity", "screened_out", "screened_out_reason", "mc_usage_correct", "rank_content", "open_reason", "open_feeling", "open_notable", "open_missing", "followup_agreed", "pu_mean", "attention_check", "attention_passed", "dwell_ms"])
       ck("컬럼: " + c, H.includes(c));
     ck("display_name 미노출", !H.includes("display_name"));
     ck("연락처 미노출", !H.includes("followup_email") && !H.includes("followup_phone"));

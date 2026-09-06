@@ -38,7 +38,7 @@ export default async function PrePage() {
         <GenrePicker
           initial={participant.preferred_genre}
           initialName={participant.display_name}
-          initialSeen={participant.seen_title_ids}
+          initialFamiliarity={participant.title_familiarity}
           titlesByGenre={titlesByGenre}
         />
       </div>

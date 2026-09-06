@@ -36,7 +36,9 @@ const POST_TEST_DEFAULTS: Record<string, string | number | null> = {
   rank_collab: 2,
   rank_context: 3,
   open_reason: "(미리보기)",
-  open_opinion: "(미리보기)",
+  open_feeling: "(미리보기)",
+  open_notable: "(미리보기)",
+  open_missing: "(미리보기)",
 };
 
 /** /dev 링크로 지정할 수 있는 조건들 */
