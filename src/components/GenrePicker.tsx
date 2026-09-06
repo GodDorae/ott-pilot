@@ -130,8 +130,9 @@ export default function GenrePicker({
       {genre && (
         <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
           <legend className="px-1 text-sm font-bold">
+            {/* 별표를 붙여 두어 문항이 한 줄을 꽉 채워도 홀로 다음 줄로 넘어가지 않게 한다 */}
             {FAMILIARITY_QUESTION}
-            <span className="ml-1 text-accent">*</span>
+            <span className="text-accent">*</span>
           </legend>
           <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">
             {GENRE_LABELS[genre]} 작품 {titles.length}편입니다. 작품마다 하나씩 골라 주세요.
@@ -168,8 +169,10 @@ export default function GenrePicker({
                       key={l.value}
                       className={
                         // min-w-0 이 없으면 flex 항목이 글자 폭 아래로 못 줄어들어
-                        // 좁은 화면에서 세 번째 보기가 화면 밖으로 밀린다
-                        "flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-1.5 py-2 text-center text-[11px] leading-tight break-keep transition sm:border-0 sm:bg-transparent sm:p-0 " +
+                        // 좁은 화면에서 세 번째 보기가 화면 밖으로 밀린다.
+                        // 좁은 화면에서는 라디오를 글자 위에 올린다 — 나란히 두면
+                        // 남는 폭이 좁아 '전혀 모른다' 같은 짧은 보기까지 두 줄로 접힌다.
+                        "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border px-1 py-2 text-center text-[11px] leading-tight break-keep transition sm:flex-row sm:border-0 sm:bg-transparent sm:p-0 " +
                         (familiarity[t.id] === l.value
                           ? "border-accent bg-accent/10"
                           : "border-line hover:border-muted/50")
