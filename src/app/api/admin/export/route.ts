@@ -64,6 +64,9 @@ const HEADERS = [
   "ai2",
   "ai3",
   "ai_mean",
+  // 성실성 확인 — 정답 4
+  "attention_check",
+  "attention_passed",
   "dwell_ms",
 ] as const;
 
@@ -148,6 +151,8 @@ export async function GET(req: Request) {
         r.ai2,
         r.ai3,
         mean([r.ai1, r.ai2, r.ai3]),
+        r.attention_check,
+        r.attention_passed,
         r.dwell_ms,
       ].map(cell);
     })

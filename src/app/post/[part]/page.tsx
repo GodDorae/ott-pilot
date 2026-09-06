@@ -4,7 +4,7 @@ import DeviceFrame from "@/components/DeviceFrame";
 import { OpenEndedForm, RankingForm, UsageCheckForm } from "@/components/PostTestForms";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
-import { STAGE_LABELS } from "@/lib/steps";
+import { STAGE_LABELS, stepByPath } from "@/lib/steps";
 import { getRail } from "@/lib/stimuli";
 import { buildContextSnapshot, greeting, railHeadline, rationaleBanner } from "@/lib/copy";
 import { TOTAL_STEPS, type RationaleType, type SetId, type UsageCondition } from "@/lib/experiment";
@@ -12,8 +12,8 @@ import { TOTAL_STEPS, type RationaleType, type SetId, type UsageCondition } from
 /** 4단계 사후 점검 */
 const PARTS = {
   check: {
-    title: "조작 점검",
-    lead: "방금 보신 화면에 대해 확인 문항 하나만 답해 주세요.",
+    title: "확인 문항",
+    lead: "화면 평가를 마쳤습니다. 마지막으로 하나만 확인하겠습니다.",
   },
   ranking: {
     title: "추천 화면 순위",
@@ -29,6 +29,10 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
   const { part } = await params;
   const meta = PARTS[part as keyof typeof PARTS];
   if (!meta) notFound();
+
+  // 단계 라벨은 steps.ts 정의를 따른다 — 조작점검은 3단계 마지막 스텝이다
+  const step = stepByPath("/post/" + part);
+  const stage = step?.stage ?? 4;
 
   const session = await currentSession();
   if (!session) redirect("/");
@@ -69,7 +73,7 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-5 py-10">
-      <p className="text-xs text-muted">{STAGE_LABELS[4]}</p>
+      <p className="text-xs text-muted">{STAGE_LABELS[stage]}</p>
       <h1 className="mt-1.5 text-lg font-bold break-keep">{meta.title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted break-keep">{meta.lead}</p>
 

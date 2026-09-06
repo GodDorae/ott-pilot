@@ -11,11 +11,11 @@ import {
 } from "@/lib/posttest";
 
 /**
- * 4단계 사후 문항 저장 — 한 번에 한 파트.
+ * 3단계 마지막 확인 + 4단계 사후 문항 저장 — 한 번에 한 파트.
  *
- *   check    4-1 조작점검 (조절변수)
- *   ranking  4-2 추천 화면 순위 + 선택 이유 (한 화면에서 함께 받는다)
- *   open     4-3 주관식
+ *   check    3-4 조작점검 (조절변수) — 3단계 마지막 스텝
+ *   ranking  4-1 추천 화면 순위 + 선택 이유 (한 화면에서 함께 받는다)
+ *   open     4-2 주관식
  */
 export async function POST(req: Request) {
   const participant = await currentParticipant();

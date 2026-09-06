@@ -122,7 +122,7 @@ export function UsageCheckForm() {
   return (
     <div>
       <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
-        <legend className="px-1 text-xs font-bold text-accent">4-1</legend>
+        <legend className="px-1 text-xs font-bold text-accent">3-4</legend>
         <p className="text-sm leading-relaxed font-medium break-keep">
           {USAGE_MANIPULATION_CHECK.question}
         </p>
@@ -196,7 +196,7 @@ export function RankingForm({ previews }: { previews: ReactNode[] }) {
   return (
     <div>
       <fieldset className="rounded-xl border border-line bg-card p-4 sm:p-5">
-        <legend className="px-1 text-xs font-bold text-accent">4-2</legend>
+        <legend className="px-1 text-xs font-bold text-accent">4-1</legend>
         <p className="text-sm leading-relaxed font-medium break-keep">{RANK_TASK.question}</p>
         <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">{RANK_TASK.help}</p>
 
@@ -275,7 +275,7 @@ export function OpenEndedForm() {
     <div className="space-y-4">
       {OPEN_QUESTIONS.map((q, i) => (
         <div key={q.id} className="rounded-xl border border-line bg-card p-4 sm:p-5">
-          <p className="mb-1.5 text-xs font-bold text-accent">4-3-{i + 1}</p>
+          <p className="mb-1.5 text-xs font-bold text-accent">4-2-{i + 1}</p>
           <Textarea
             id={q.id}
             label={q.label}

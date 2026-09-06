@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
-import { ALL_ITEMS, INTENTION_ITEMS, USEFULNESS_ITEMS } from "@/lib/items";
+import { ALL_ITEMS, ATTENTION_CHECK, INTENTION_ITEMS, USEFULNESS_ITEMS } from "@/lib/items";
 
 /**
  * Trial 별 종속변수 문항 폼 (유용성 3 + 수용의도 3).
@@ -24,7 +24,9 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
   }, []);
 
   const answered = ALL_ITEMS.filter((i) => values[i.key]).length;
-  const complete = answered === ALL_ITEMS.length;
+  const attention = values[ATTENTION_CHECK.key];
+  const complete = answered === ALL_ITEMS.length && Boolean(attention);
+  const remaining = ALL_ITEMS.length - answered + (attention ? 0 : 1);
 
   function set(key: string, value: number) {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -41,6 +43,7 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
         body: JSON.stringify({
           stepIndex,
           answers: values,
+          attentionCheck: attention ?? null,
           dwellMs: shownAt.current === null ? null : Date.now() - shownAt.current,
         }),
       });
@@ -73,6 +76,14 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
         onChange={set}
       />
 
+      {/* 성실성 확인 — 다른 문항과 같은 모양이라야 변별력이 있다 */}
+      <LikertBlock
+        legend="확인 문항"
+        items={[{ key: ATTENTION_CHECK.key, text: ATTENTION_CHECK.text }]}
+        values={values}
+        onChange={set}
+      />
+
       {error && (
         <p role="alert" className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
           {error}
@@ -92,7 +103,7 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
               ? stepIndex < 3
                 ? "평가 완료"
                 : "다음 단계로"
-              : "남은 문항 " + (ALL_ITEMS.length - answered) + "개"}
+              : "남은 문항 " + remaining + "개"}
         </button>
       </div>
     </div>

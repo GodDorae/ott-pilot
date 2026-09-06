@@ -24,6 +24,9 @@ import {
   type UsageCondition,
 } from "./experiment";
 import type { ContextSnapshot } from "./copy";
+import { ATTENTION_CHECK } from "./items";
+
+const ATTENTION_CORRECT = ATTENTION_CHECK.correctValue;
 import { INSTRUMENT_VERSION, SURVEY_PHASE, type Phase } from "./phase";
 
 export type ParticipantRow = {
@@ -96,6 +99,8 @@ export type ScreenResponseInput = {
   setId: SetId;
   titleIds: string[];
   answers: Record<string, number>;
+  /** 성실성 확인 문항 응답 (정답 4) */
+  attentionCheck: number | null;
   dwellMs: number | null;
 };
 
@@ -113,6 +118,8 @@ export type ScreenResponseRow = {
   ai1: number | null;
   ai2: number | null;
   ai3: number | null;
+  attention_check: number | null;
+  attention_passed: boolean | null;
   dwell_ms: number | null;
   created_at: string;
 };
@@ -453,6 +460,9 @@ export async function saveScreenResponse(input: ScreenResponseInput) {
     ai1: input.answers.ai1 ?? null,
     ai2: input.answers.ai2 ?? null,
     ai3: input.answers.ai3 ?? null,
+    attention_check: input.attentionCheck,
+    attention_passed:
+      input.attentionCheck === null ? null : input.attentionCheck === ATTENTION_CORRECT,
     dwell_ms: input.dwellMs,
   };
 

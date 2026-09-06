@@ -184,6 +184,15 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           hint="나머지는 PC·태블릿"
         />
         <Stat
+          label="성실성 통과"
+          value={(() => {
+            const done = responses.filter((r) => r.attention_passed !== null);
+            if (done.length === 0) return "-";
+            return Math.round((done.filter((r) => r.attention_passed).length / done.length) * 100) + "%";
+          })()}
+          hint="화면 단위 · 낮으면 응답 제외 검토"
+        />
+        <Stat
           label="이미 본 작품"
           value={(() => {
             const answered = participants.filter((p) => p.seen_title_ids !== null);

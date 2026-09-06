@@ -30,10 +30,10 @@ export const STEPS: Step[] = [
   { n: 5, id: "t1", path: "/stimulus/1", label: "추천 화면 1 + 평가", stage: 3, ref: "3" },
   { n: 6, id: "t2", path: "/stimulus/2", label: "추천 화면 2 + 평가", stage: 3, ref: "3" },
   { n: 7, id: "t3", path: "/stimulus/3", label: "추천 화면 3 + 평가", stage: 3, ref: "3" },
-  { n: 8, id: "p1", path: "/post/check", label: "조작 점검 (이용조건)", stage: 4, ref: "4-1" },
-  { n: 9, id: "p2", path: "/post/ranking", label: "추천 화면 순위 + 이유", stage: 4, ref: "4-2" },
-  { n: 10, id: "p3", path: "/post/open", label: "주관식 응답", stage: 4, ref: "4-3" },
-  { n: 11, id: "s11", path: "/done", label: "완료 + 후속 인터뷰 모집", stage: 4, ref: "4-4" },
+  { n: 8, id: "p1", path: "/post/check", label: "조작 점검 (이용조건)", stage: 3, ref: "3-4" },
+  { n: 9, id: "p2", path: "/post/ranking", label: "추천 화면 순위 + 이유", stage: 4, ref: "4-1" },
+  { n: 10, id: "p3", path: "/post/open", label: "주관식 응답", stage: 4, ref: "4-2" },
+  { n: 11, id: "s11", path: "/done", label: "완료 + 후속 인터뷰 모집", stage: 4, ref: "4-3" },
 ];
 
 export const TOTAL_STEP_COUNT = STEPS.length;

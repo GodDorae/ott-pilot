@@ -35,3 +35,18 @@ export const INTENTION_ITEMS: LikertItem[] = [
 ];
 
 export const ALL_ITEMS = [...USEFULNESS_ITEMS, ...INTENTION_ITEMS];
+
+/**
+ * 성실성 확인 문항 (attention check)
+ *
+ * 화면마다 측정 문항 끝에 하나씩 둔다. 문항을 읽지 않고 같은 값만 찍고 넘어가는
+ * 응답을 걸러내기 위한 것이다.
+ *
+ * 틀려도 진행을 막지 않는다 — 막으면 참여자가 정답을 맞출 때까지 고치게 되어,
+ * 걸러내려던 응답이 그대로 통과해 버린다. 값만 기록하고 분석에서 제외 여부를 정한다.
+ */
+export const ATTENTION_CHECK = {
+  key: "attention_check",
+  text: "본 문항은 설문 응답의 성실성을 확인하기 위한 문항입니다. 아래 척도에서 ‘그렇다(4)’를 선택해 주세요.",
+  correctValue: 4,
+} as const;

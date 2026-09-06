@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { TOTAL_STEPS, type RationaleType, type SetId } from "@/lib/experiment";
-import { ALL_ITEMS, LIKERT_MAX, LIKERT_MIN } from "@/lib/items";
+import { ALL_ITEMS, ATTENTION_CHECK, LIKERT_MAX, LIKERT_MIN } from "@/lib/items";
 import { getRail } from "@/lib/stimuli";
 import { saveScreenResponse } from "@/lib/db";
 import { currentParticipant } from "@/lib/session";
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     stepIndex?: number;
     answers?: Record<string, number>;
+    attentionCheck?: number | null;
     dwellMs?: number | null;
   };
 
@@ -44,6 +45,19 @@ export async function POST(req: Request) {
     }
   }
 
+  // 성실성 확인 문항 — 틀려도 통과시키고 값만 기록한다 (막으면 고쳐 맞춰버린다)
+  const attention = body.attentionCheck;
+  if (
+    !Number.isInteger(attention) ||
+    (attention as number) < LIKERT_MIN ||
+    (attention as number) > LIKERT_MAX
+  ) {
+    return NextResponse.json(
+      { error: "응답하지 않은 문항이 있습니다: " + ATTENTION_CHECK.key },
+      { status: 400 },
+    );
+  }
+
   const rationaleType = participant.presentation_order[stepIndex - 1] as RationaleType;
   const setId = participant.set_mapping[rationaleType] as SetId;
   const genre = participant.preferred_genre;
@@ -56,6 +70,7 @@ export async function POST(req: Request) {
     setId,
     titleIds: getRail(genre, setId).map((t) => t.id),
     answers,
+    attentionCheck: attention as number,
     dwellMs: typeof body.dwellMs === "number" ? Math.round(body.dwellMs) : null,
   });
 
