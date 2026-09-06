@@ -12,7 +12,7 @@ import { currentParticipant } from "@/lib/session";
 export async function POST(req: Request) {
   const participant = await currentParticipant();
   if (!participant) {
-    return NextResponse.json({ error: "세션이 없습니다." }, { status: 401 });
+    return NextResponse.json({ error: "설문 세션이 만료되었습니다. 처음부터 다시 시작해 주세요." }, { status: 401 });
   }
   if (!participant.preferred_genre) {
     return NextResponse.json({ error: "선호 장르가 아직 없습니다." }, { status: 409 });

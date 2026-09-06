@@ -23,7 +23,7 @@ import { nextStepPath } from "@/lib/flow";
 export async function POST(req: Request) {
   const participant = await currentParticipant();
   if (!participant) {
-    return NextResponse.json({ error: "세션이 없습니다." }, { status: 401 });
+    return NextResponse.json({ error: "설문 세션이 만료되었습니다. 처음부터 다시 시작해 주세요." }, { status: 401 });
   }
 
   const body = (await req.json()) as {

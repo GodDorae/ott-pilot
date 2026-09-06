@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { OTHER_MAX_LENGTH, type PreSection } from "@/lib/presurvey";
+import { postJson } from "@/lib/client-api";
 
 /** 사전 문항 섹션 하나를 렌더링한다 (A, B 공용) */
 export default function PreSurveyForm({
@@ -48,14 +49,13 @@ export default function PreSurveyForm({
     setPending(true);
     setError(null);
     try {
-      const res = await fetch("/api/session/presurvey", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ section: section.key, answers, others }),
+      const r = await postJson("/api/session/presurvey", {
+        section: section.key,
+        answers,
+        others,
       });
-      const data = (await res.json()) as { next?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "저장에 실패했습니다.");
-      router.push(data.next ?? section.next);
+      if (!r.ok) throw new Error(r.error);
+      router.push((r.data.next as string) ?? section.next);
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
       setPending(false);

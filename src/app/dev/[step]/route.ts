@@ -24,7 +24,11 @@ export async function GET(req: Request, ctx: RouteContext<"/dev/[step]">) {
   }
 
   const overrides = parseOverrides(url.searchParams);
-  const participant = await ensureDevSession(await currentParticipant(), overrides);
+  const participant = await ensureDevSession(
+    await currentParticipant(),
+    overrides,
+    req.headers.get("user-agent"),
+  );
 
   const res = NextResponse.redirect(new URL(target.path, url.origin), { status: 303 });
   res.cookies.set(SESSION_COOKIE, participant.id, sessionCookieOptions);

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { GENRES, GENRE_LABELS, type Genre } from "@/lib/experiment";
 import { DISPLAY_NAME_MAX } from "@/lib/copy";
 import type { Title } from "@/lib/stimuli";
+import { postJson } from "@/lib/client-api";
 
 /**
  * 2-2 개인화 화면 — 호칭 · 선호 장르 · 시청 경험 확인
@@ -56,13 +57,12 @@ export default function GenrePicker({
     setPending(true);
     setError(null);
     try {
-      const res = await fetch("/api/session/genre", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ genre, displayName: name, seenTitleIds: noneSeen ? [] : seen }),
+      const r = await postJson("/api/session/genre", {
+        genre,
+        displayName: name,
+        seenTitleIds: noneSeen ? [] : seen,
       });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "저장할 수 없습니다.");
+      if (!r.ok) throw new Error(r.error);
       router.push("/stimulus/1");
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장할 수 없습니다.");

@@ -55,7 +55,8 @@ function sess(ua) {
       method: method || (body !== undefined ? "POST" : "GET"),
       headers: {
         "content-type": "application/json",
-        ...(ua ? { "user-agent": ua } : {}),
+        // 표식을 붙여, 정리할 때 이 스크립트가 만든 행만 지울 수 있게 한다
+        "user-agent": (ua ? ua + " " : "") + UA_TAG,
         ...(jar ? { cookie: jar } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -88,14 +89,39 @@ const MOB = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/
 const PC = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120";
 /** RSC 페이로드(<script self.__next_f>)를 떼고 렌더된 HTML 만 남긴다 — 문자열이 두 번 세지는 걸 막는다 */
 const htmlOnly = (h) => h.split("self.__next_f")[0];
+/**
+ * 검사가 만든 참여자에게 붙이는 표식.
+ *
+ * 예전에는 정리할 때 participants 를 통째로 비웠다. 그러면 브라우저로 설문을 보고 있던
+ * 세션의 행까지 사라져서, 다음 버튼을 누를 때마다 "세션이 만료되었습니다"가 떴다.
+ * 이제 표식이 붙은 행만 지운다.
+ */
+const UA_TAG = "ott-audit";
+
 const lines = (h) => h.replace(/<!--.*?-->/g, "").replace(/<[^>]+>/g, "\n").split("\n").map((x) => x.trim()).filter(Boolean);
 
+/** 이 스크립트가 만든 참여자만 지운다 (다른 사람이 보고 있는 세션은 건드리지 않는다) */
 async function wipe() {
-  for (const t of ["participants", "pending_assignments"]) {
-    const l = await rest(t + "?select=id");
-    for (const r of l) await fetch(env.SUPABASE_URL + "/rest/v1/" + t + "?id=eq." + r.id, { method: "DELETE", headers: SH });
-  }
+  const mine = await rest("participants?select=id&user_agent=like.*" + UA_TAG + "*");
+  for (const r of mine)
+    await fetch(env.SUPABASE_URL + "/rest/v1/participants?id=eq." + r.id, {
+      method: "DELETE",
+      headers: SH,
+    });
+  // 진행 중 마커는 참여자와 함께 지워지지 않으므로, 주인 없는 것만 걷어낸다
+  const pend = await rest("pending_assignments?select=id");
+  const alive = new Set(
+    (await rest("participants?select=pending_id&pending_id=not.is.null")).map((p) => p.pending_id),
+  );
+  for (const r of pend.filter((x) => !alive.has(x.id)))
+    await fetch(env.SUPABASE_URL + "/rest/v1/pending_assignments?id=eq." + r.id, {
+      method: "DELETE",
+      headers: SH,
+    });
 }
+
+/** 검사 대상 — 이 스크립트가 만든 행만 (다른 사람의 진행 중 세션을 세지 않는다) */
+const MINE = "&user_agent=like.*" + UA_TAG + "*";
 
 async function complete(opts = {}) {
   const s = sess(opts.ua);
@@ -153,7 +179,7 @@ async function complete(opts = {}) {
     await exp("/stimulus/1", "/survey/demographics");
     await exp("/post/ranking", "/survey/demographics");
     await exp("/done", "/survey/demographics");
-    ck("미완주자 완료 처리 안 됨", (await rest("participants?select=id&is_dev=eq.false&completed_at=not.is.null")).length === 0);
+    ck("미완주자 완료 처리 안 됨", (await rest("participants?select=id&is_dev=eq.false&completed_at=not.is.null" + MINE)).length === 0);
     await exp("/survey/demographics", "200");
 
     await s("/api/session/presurvey", DEMO);
@@ -205,7 +231,7 @@ async function complete(opts = {}) {
       ck("  종료 화면 200", (await s("/screened-out")).status === 200);
       ck("  이후 진행 차단", (await s("/pre")).loc === "/screened-out");
       ck("  API 도 차단", (await s("/api/session/genre", { genre: "action" })).status === 409);
-      ck("  사유 기록 " + reason, (await rest("participants?select=id&screened_out_reason=eq." + reason)).length >= 1);
+      ck("  사유 기록 " + reason, (await rest("participants?select=id&screened_out_reason=eq." + reason + MINE)).length >= 1);
     }
   }
 
@@ -243,7 +269,7 @@ async function complete(opts = {}) {
     ck("주관식 없음 허용", (await s("/api/session/posttest", { part: "open", open: { open_opinion: "없음" } })).json?.next === "/done");
     ck("/done 200", (await s("/done")).status === 200);
 
-    const p = (await rest("participants?select=presentation_order,rank_content,rank_collab,rank_context&mc_usage_answer=eq.TVOD"))[0];
+    const p = (await rest("participants?select=presentation_order,rank_content,rank_collab,rank_context&mc_usage_answer=eq.TVOD" + MINE))[0];
     const want = {};
     p.presentation_order.forEach((r, i) => (want[r] = [3, 1, 2][i]));
     ck("화면번호 → 근거유형 순위 매핑", p.rank_content === want.content && p.rank_collab === want.collab && p.rank_context === want.context, JSON.stringify([p.presentation_order, p.rank_content, p.rank_collab, p.rank_context]));
@@ -263,7 +289,7 @@ async function complete(opts = {}) {
     ck("다른 장르 작품 id 거부", (await s("/api/session/genre", { genre: "action", seenTitleIds: ["drama-A-1"] })).status === 400);
     ck("없는 id 거부", (await s("/api/session/genre", { genre: "action", seenTitleIds: ["zzz"] })).status === 400);
     ck("시청 확인 저장", (await s("/api/session/genre", { genre: "action", displayName: "건빵", seenTitleIds: ["action-A-1", "action-C-4"] })).json?.next === "/stimulus/1");
-    const p = (await rest("participants?select=seen_title_ids&is_dev=eq.false"))[0];
+    const p = (await rest("participants?select=seen_title_ids&is_dev=eq.false" + MINE))[0];
     ck("저장값 2편", (p.seen_title_ids ?? []).length === 2, JSON.stringify(p.seen_title_ids));
 
     const st = htmlOnly((await s("/stimulus/1")).text);
@@ -293,7 +319,7 @@ async function complete(opts = {}) {
     await s2("/api/session/presurvey", DEMO);
     await s2("/api/session/presurvey", USAGE);
     await s2("/api/session/genre", { genre: "comedy", seenTitleIds: [] });
-    const p2 = (await rest("participants?select=seen_title_ids&is_dev=eq.false"))[0];
+    const p2 = (await rest("participants?select=seen_title_ids&is_dev=eq.false" + MINE))[0];
     ck("본 작품 없음 = 빈 배열", Array.isArray(p2.seen_title_ids) && p2.seen_title_ids.length === 0, JSON.stringify(p2.seen_title_ids));
   }
 
@@ -335,16 +361,16 @@ async function complete(opts = {}) {
     const s = sess();
     await s("/api/session/start", {});
     await s("/api/session/presurvey", DEMO);
-    ck("인구통계 후 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false"))[0].usage_condition === null);
+    ck("인구통계 후 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition === null);
     await s("/api/session/presurvey", USAGE);
-    ck("사전조사 후에도 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false"))[0].usage_condition === null);
+    ck("사전조사 후에도 미배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition === null);
     await s("/api/session/genre", { genre: "action", seenTitleIds: [] });
-    ck("장르 제출 시 배정", (await rest("participants?select=usage_condition&is_dev=eq.false"))[0].usage_condition !== null);
+    ck("장르 제출 시 배정", (await rest("participants?select=usage_condition&is_dev=eq.false" + MINE))[0].usage_condition !== null);
     ck("pending 마커 1", (await rest("pending_assignments?select=id")).length === 1);
 
     await wipe();
     for (let i = 0; i < 12; i++) await complete({ genre: ["action", "romance", "comedy", "thriller", "drama", "scifi"][i % 6] });
-    const rows = await rest("participants?select=usage_condition,sequence_index,mapping_index,phase&is_dev=eq.false");
+    const rows = await rest("participants?select=usage_condition,sequence_index,mapping_index,phase&is_dev=eq.false" + MINE);
     // 남은 행이 섞이면 분포가 어긋나 보인다 — 원인을 분명히 하려고 먼저 확인한다
     ck("검사 대상 12명뿐", rows.length === 12, String(rows.length));
     ck("배정 안 된 참여자 없음", rows.every((r) => r.sequence_index !== null), JSON.stringify(rows.filter((r) => r.sequence_index === null).length));
@@ -384,7 +410,7 @@ async function complete(opts = {}) {
       }
       ck(name + " 호칭 4자 절단", greetLine?.includes("가나다라님"), greetLine);
       ck(name + " 호칭이 3조건 전부에", heads.every((h) => h?.includes("가나다라님")), heads.join(" | "));
-      const snap = (await rest("participants?select=context_snapshot,is_mobile&display_name=eq.가나다라"))[0];
+      const snap = (await rest("participants?select=context_snapshot,is_mobile&display_name=eq.가나다라" + MINE))[0];
       ck(name + " 맥락 source=access_time", snap?.context_snapshot?.source === "access_time");
       ck(name + " 맥락 기기 문구", snap?.context_snapshot?.device === (wantPhone ? "스마트폰으로" : "큰 화면으로"), snap?.context_snapshot?.device);
       ck(name + " is_mobile 컬럼 저장", snap?.is_mobile === wantPhone, String(snap?.is_mobile));
@@ -424,7 +450,7 @@ async function complete(opts = {}) {
     const banner = page.text.slice(i - 100, i + 1200).replace(/<!--.*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     ck("배너 seq5·map2·TVOD", /seq5/.test(banner) && /map2/.test(banner) && /TVOD/.test(banner), banner.slice(0, 120));
     for (const p of ["/post/ranking", "/post/open", "/done"]) ck("dev 가드 우회 " + p, (await d(p)).status === 200);
-    ck("dev 는 실참여자 아님", (await rest("participants?select=id&is_dev=eq.false")).length === 0);
+    ck("dev 는 실참여자 아님", (await rest("participants?select=id&is_dev=eq.false" + MINE)).length === 0);
     ck("dev 는 pending 안 만듦", (await rest("pending_assignments?select=id")).length === 0);
   }
 
@@ -473,7 +499,7 @@ async function complete(opts = {}) {
   // ── 12
   S("12. 정리");
   await wipe();
-  ck("participants 0", (await rest("participants?select=id")).length === 0);
+  ck("participants 0", (await rest("participants?select=id" + MINE)).length === 0);
   ck("screen_responses 0", (await rest("screen_responses?select=id")).length === 0);
   ck("pending 0", (await rest("pending_assignments?select=id")).length === 0);
 

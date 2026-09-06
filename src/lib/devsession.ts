@@ -109,6 +109,7 @@ const DEV_SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 export async function ensureDevSession(
   existing: ParticipantRow | null,
   overrides: DevOverrides,
+  userAgent?: string | null,
 ): Promise<ParticipantRow> {
   // 지난 미리보기 행이 쌓이지 않도록 만들 때마다 걷어낸다
   await deleteDevSessions(new Date(Date.now() - DEV_SESSION_TTL_MS));
@@ -119,7 +120,7 @@ export async function ensureDevSession(
       : await createParticipant({
           participantCode: makeParticipantCode(),
           assignmentSeq: await nextAssignmentSeq(),
-          userAgent: "dev-preview",
+          userAgent: userAgent ? "dev-preview " + userAgent : "dev-preview",
           isMobile: false,
           isDev: true,
         });

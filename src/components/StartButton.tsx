@@ -19,8 +19,9 @@ export default function StartButton() {
     setError(null);
     try {
       const res = await fetch("/api/session/start", { method: "POST" });
-      if (!res.ok) throw new Error("세션을 시작할 수 없습니다.");
-      router.push("/survey/usage");
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "세션을 시작할 수 없습니다.");
+      router.push("/survey/demographics");
     } catch (e) {
       setError(e instanceof Error ? e.message : "세션을 시작할 수 없습니다.");
       setPending(false);

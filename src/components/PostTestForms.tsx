@@ -13,6 +13,7 @@ import {
   USAGE_MANIPULATION_CHECK,
   validateRanking,
 } from "@/lib/posttest";
+import { postJson } from "@/lib/client-api";
 
 /** 사후 파트가 공유하는 제출 처리 */
 function useSubmit(part: string) {
@@ -24,14 +25,9 @@ function useSubmit(part: string) {
     setPending(true);
     setError(null);
     try {
-      const res = await fetch("/api/session/posttest", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ part, ...payload }),
-      });
-      const data = (await res.json()) as { next?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "저장에 실패했습니다.");
-      router.push(data.next ?? "/done");
+      const r = await postJson("/api/session/posttest", { part, ...payload });
+      if (!r.ok) throw new Error(r.error);
+      router.push((r.data.next as string) ?? "/done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
       setPending(false);
@@ -314,12 +310,8 @@ export function FollowupForm({ initial }: { initial: Record<string, string | nul
     if (!any || state === "saving") return;
     setState("saving");
     try {
-      const res = await fetch("/api/session/followup", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      if (!res.ok) throw new Error();
+      const r = await postJson("/api/session/followup", values);
+      if (!r.ok) throw new Error(r.error);
       setState("saved");
     } catch {
       setState("error");

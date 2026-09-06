@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
 import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
+import { postJson } from "@/lib/client-api";
 
 /**
  * Trial 별 종속변수 문항 폼 (유용성 3 + 수용의도 3).
@@ -37,19 +38,14 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
     setPending(true);
     setError(null);
     try {
-      const res = await fetch("/api/session/screen", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          stepIndex,
-          answers: values,
-          attentionCheck: attention ?? null,
-          dwellMs: shownAt.current === null ? null : Date.now() - shownAt.current,
-        }),
+      const r = await postJson("/api/session/screen", {
+        stepIndex,
+        answers: values,
+        attentionCheck: attention ?? null,
+        dwellMs: shownAt.current === null ? null : Date.now() - shownAt.current,
       });
-      const data = (await res.json()) as { next?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "저장에 실패했습니다.");
-      router.push(data.next ?? "/done");
+      if (!r.ok) throw new Error(r.error);
+      router.push((r.data.next as string) ?? "/done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
       setPending(false);
