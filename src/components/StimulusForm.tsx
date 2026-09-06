@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
-import { ALL_ITEMS, ATTENTION_CHECK, INTENTION_ITEMS, USEFULNESS_ITEMS } from "@/lib/items";
+import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
 
 /**
  * Trial 별 종속변수 문항 폼 (유용성 3 + 수용의도 3).
@@ -62,27 +62,8 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
         위 화면을 보고 느낀 그대로 답해 주세요. 정답은 없습니다.
       </p>
 
-      <LikertBlock
-        legend="이 추천이 얼마나 유용하다고 느꼈나요?"
-        items={USEFULNESS_ITEMS}
-        values={values}
-        onChange={set}
-      />
-
-      <LikertBlock
-        legend="이 추천을 받아들이고 싶은 정도는 어떤가요?"
-        items={INTENTION_ITEMS}
-        values={values}
-        onChange={set}
-      />
-
-      {/* 성실성 확인 — 다른 문항과 같은 모양이라야 변별력이 있다 */}
-      <LikertBlock
-        legend="확인 문항"
-        items={[{ key: ATTENTION_CHECK.key, text: ATTENTION_CHECK.text }]}
-        values={values}
-        onChange={set}
-      />
+      {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
+      <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
 
       {error && (
         <p role="alert" className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">

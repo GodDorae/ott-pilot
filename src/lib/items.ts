@@ -50,3 +50,16 @@ export const ATTENTION_CHECK = {
   text: "본 문항은 설문 응답의 성실성을 확인하기 위한 문항입니다. 아래 척도에서 ‘그렇다(4)’를 선택해 주세요.",
   correctValue: 4,
 } as const;
+
+/**
+ * 자극물 화면에 실제로 놓이는 순서.
+ *
+ * 유용성 3 → 성실성 확인 1 → 수용의도 3
+ * 성실성 문항을 가운데 끼워 두면 앞뒤 문항과 섞여 눈에 덜 띈다. 끝에 붙이면
+ * "마지막 하나는 확인용이겠거니" 하고 알아채기 쉽다.
+ */
+export const TRIAL_ITEMS: LikertItem[] = [
+  ...USEFULNESS_ITEMS,
+  { key: ATTENTION_CHECK.key, text: ATTENTION_CHECK.text },
+  ...INTENTION_ITEMS,
+];
