@@ -537,7 +537,11 @@ async function complete(opts = {}) {
       const html = (await s("/stimulus/1")).text;
       // 스마트폰은 얇은 베젤 + iOS 상태바, PC 는 브라우저 창
       ck(name + " 목업 프레임", wantPhone ? /rounded-\[1\.9rem\]/.test(html) && html.includes("9:41") : /stream\.example/.test(html) && !html.includes("9:41"));
-      ck(name + " 2분할 레이아웃", /md:h-screen md:flex-row/.test(html) && /md:overflow-y-auto/.test(html));
+      // 2분할은 가로·세로 여유가 둘 다 있을 때만 켠다 (wide 변형)
+      ck(
+        name + " 2분할 레이아웃",
+        /wide:h-screen wide:flex-row/.test(html) && /wide:overflow-y-auto/.test(html),
+      );
       // "오직 이곳에서만" 은 목업 화면 안에만 있는 문구다
       ck(
         name + " 목업이 문항보다 앞(왼쪽)",

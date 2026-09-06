@@ -54,7 +54,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
       <SplitScreen
         left={
           <div
-            className="flex w-full flex-col md:min-h-0 md:flex-1"
+            className="flex w-full flex-col wide:min-h-0 wide:flex-1"
             style={deviceFitVars(ctx.isMobile)}
           >
             {/*
@@ -74,7 +74,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
               목업은 남은 높이를 그대로 받는다. 넓은 화면에서는 왼쪽 칸에 스크롤이
               없으므로, 위 안내가 차지하고 남은 만큼으로 줄어들어야 아래쪽이 안 잘린다.
             */}
-            <div className="mt-3 flex w-full justify-center md:min-h-0 md:flex-1">
+            <div className="mt-3 flex w-full justify-center wide:min-h-0 wide:flex-1">
               <DeviceFrame isMobile={ctx.isMobile}>
                 <OttScreen
                   rationale={rationale}
@@ -92,7 +92,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
         right={
           <>
             {/* 진행 표시 + 안내 — 스크롤과 무관하게 칸 맨 위에 붙어 있다 */}
-            <div className="shrink-0 border-b border-line px-5 pt-6 pb-4 md:px-8 md:pt-10">
+            <div className="shrink-0 border-b border-line px-5 pt-6 pb-4 wide:px-8 wide:pt-10">
               <div className="mx-auto w-full max-w-lg">
                 <div className="flex items-center gap-2">
                   {Array.from({ length: TOTAL_STEPS }, (_, i) => (

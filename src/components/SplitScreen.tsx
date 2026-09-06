@@ -28,14 +28,14 @@ export default function SplitScreen({
   right: ReactNode;
 }) {
   return (
-    <div className="flex w-full flex-1 flex-col overflow-x-hidden md:h-screen md:flex-row md:overflow-hidden">
+    <div className="flex w-full flex-1 flex-col overflow-x-hidden wide:h-screen wide:flex-row wide:overflow-hidden">
       {/* 왼쪽 — 자극물 목업 */}
-      <div className="flex w-full shrink-0 flex-col items-center justify-center border-b border-line bg-bg px-4 py-6 md:h-screen md:w-1/2 md:border-r md:border-b-0 md:px-8">
-        <div className="flex w-full max-w-md flex-col md:min-h-0 md:flex-1">{left}</div>
+      <div className="flex w-full shrink-0 flex-col items-center justify-center border-b border-line bg-bg px-4 py-6 wide:h-screen wide:w-1/2 wide:border-r wide:border-b-0 wide:px-8">
+        <div className="flex w-full max-w-md flex-col wide:min-h-0 wide:flex-1">{left}</div>
       </div>
 
       {/* 오른쪽 — 측정 문항 (여기만 스크롤) */}
-      <div className="flex w-full min-w-0 flex-col md:h-screen md:w-1/2">{right}</div>
+      <div className="flex w-full min-w-0 flex-col wide:h-screen wide:w-1/2">{right}</div>
     </div>
   );
 }

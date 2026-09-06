@@ -29,7 +29,12 @@ export default function DevBannerView({
   const off = "px-1 opacity-30";
 
   return (
-    <div className="fixed top-1.5 right-2 z-[60] flex items-center gap-1.5 rounded-md bg-black/80 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur-sm">
+    /*
+      한 줄로 고정한다. 좁은 화면에서 줄바꿈되면 두 줄이 되어 화면 맨 위 내용
+      (자극물의 "추천 화면 N" 머리글 등)을 덮어, 정작 확인하려는 것을 가린다.
+      넘치는 만큼은 배너 안에서 옆으로 밀어 본다.
+    */
+    <div className="fixed top-1.5 right-2 left-2 z-[60] ml-auto flex w-fit max-w-[calc(100%-1rem)] items-center gap-1.5 overflow-x-auto rounded-md bg-black/80 px-2.5 py-1 font-mono text-[11px] whitespace-nowrap text-white backdrop-blur-sm">
       <a href={"/dev?" + query} className="underline decoration-dotted">
         /dev
       </a>

@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 /*
+  2분할 자극물 화면을 켜는 조건.
+
+  가로 폭만 보면 안 된다. 가로로 눕힌 폰(844×390)도 md 를 넘기므로 2분할이 켜지는데,
+  왼쪽 칸에 남는 세로가 없어 목업이 90px 까지 줄어든다 — 근거유형 배너를 읽을 수 없는
+  크기라 조작 자체가 전달되지 않는다. 세로가 모자라면 차라리 위아래로 쌓고 스크롤한다.
+*/
+@custom-variant wide (@media (min-width: 768px) and (min-height: 700px));
+
+/*
   두 개의 시각 레이어를 쓴다.
   - 자극물 레이어(.ott-*): OTT 앱처럼 보여야 하는 부분. 어둡고 포스터 중심.
   - 설문 레이어: 응답 문항. 옅은 라벤더 바탕에 흰 카드 — "이건 설문이다"가 분명하게.
@@ -157,7 +166,7 @@ body {
   width: 100%;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (min-height: 700px) {
   .device-fit {
     width: min(19rem, calc((100dvh - var(--device-reserve, 13rem)) * var(--screen-ratio, 0.4931)));
     max-width: 100%;
