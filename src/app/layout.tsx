@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import DevBanner from "@/components/DevBanner";
-import FixedTopProgress from "@/components/FixedTopProgress";
 
 /**
  * 본문 서체.
@@ -31,7 +30,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={noto.variable + " h-full antialiased"}>
       <body className="min-h-full flex flex-col">
-        <FixedTopProgress />
         <DevBanner />
         {children}
       </body>

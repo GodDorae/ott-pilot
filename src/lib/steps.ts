@@ -1,5 +1,5 @@
 /**
- * 설문 단계 목록 — /dev 미리보기, 상단 진행바, 개발 배너가 공유한다.
+ * 설문 단계 목록 — /dev 미리보기와 개발 배너가 공유한다.
  */
 
 export type Step = {
@@ -50,7 +50,7 @@ export function stepByNumber(n: number): Step | undefined {
   return STEPS.find((s) => s.n === n);
 }
 
-/** 현재 경로가 몇 번째 단계인지 (진행바용). 설문 단계가 아니면 null. */
+/** 현재 경로가 몇 번째 단계인지. 설문 단계가 아니면 null. */
 export function stepByPath(pathname: string): Step | null {
   return STEPS.find((s) => s.path === pathname) ?? null;
 }
