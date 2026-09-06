@@ -48,6 +48,8 @@ export type ParticipantRow = {
   preferred_genre: Genre | null;
   /** 자극물 화면에 표시할 호칭(실명 아님). 분석에 쓰지 않는다. */
   display_name: string | null;
+  /** 선택한 장르 12편 중 이미 본 작품 id. 빈 배열 = 없음, null = 미응답 */
+  seen_title_ids: string[] | null;
   context_snapshot: ContextSnapshot | null;
   /** 파일럿 / 본실험 */
   phase: Phase;
@@ -233,6 +235,7 @@ export async function createParticipant(input: {
     assigned_at: null,
     preferred_genre: null,
     display_name: null,
+    seen_title_ids: null,
     context_snapshot: null,
     screened_out_at: null,
     screened_out_reason: null,
@@ -409,6 +412,11 @@ export function setPreferredGenre(id: string, genre: Genre) {
 /** 화면 표시용 호칭 저장 (2-2 개인화 단계) */
 export function setDisplayName(id: string, displayName: string | null) {
   return patchParticipant(id, { display_name: displayName });
+}
+
+/** 이미 본 적 있다고 답한 작품 (빈 배열이면 '본 작품 없음') */
+export function setSeenTitles(id: string, ids: string[]) {
+  return patchParticipant(id, { seen_title_ids: ids });
 }
 
 /** 사전 문항 한 섹션 분량 저장 — 컬럼명은 presurvey.ts 의 정의에서만 나온다 */

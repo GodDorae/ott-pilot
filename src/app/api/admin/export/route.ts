@@ -22,6 +22,9 @@ const HEADERS = [
   // 응답 기기 — 목업 프레임과 맥락 문구를 함께 결정한 값
   "is_mobile",
   "device",
+  // 저인지도 가정 검증 — 그 장르 12편 중 이미 본 편수
+  "seen_count",
+  "seen_title_ids",
   // A. 인구통계 / B. OTT 이용 현황
   "age_group",
   "gender",
@@ -105,6 +108,8 @@ export async function GET(req: Request) {
         p.display_name !== null,
         p.is_mobile,
         p.is_mobile === null ? "" : p.is_mobile ? "mobile" : "desktop",
+        p.seen_title_ids === null ? "" : p.seen_title_ids.length,
+        (p.seen_title_ids ?? []).join("|"),
         p.age_group,
         p.gender,
         p.ott_platform,

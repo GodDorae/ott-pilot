@@ -184,6 +184,16 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           hint="나머지는 PC·태블릿"
         />
         <Stat
+          label="이미 본 작품"
+          value={(() => {
+            const answered = participants.filter((p) => p.seen_title_ids !== null);
+            if (answered.length === 0) return "-";
+            const total = answered.reduce((a, p) => a + (p.seen_title_ids?.length ?? 0), 0);
+            return (total / answered.length).toFixed(1) + "편";
+          })()}
+          hint="1인 평균 / 12편 중"
+        />
+        <Stat
           label="선별 제외"
           value={String(participants.filter((p) => p.screened_out_at).length)}
           hint="OTT 이용 경험 없음"

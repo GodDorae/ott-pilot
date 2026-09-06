@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { GENRES, type Genre } from "@/lib/experiment";
+import { genreTitles } from "@/lib/stimuli";
 import {
   assignAssignment,
   saveContextSnapshot,
   setDisplayName,
   setPreferredGenre,
+  setSeenTitles,
 } from "@/lib/db";
 import { buildContextSnapshot, normalizeDisplayName } from "@/lib/copy";
 import { currentParticipant } from "@/lib/session";
@@ -24,7 +26,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "세션이 없습니다." }, { status: 401 });
   }
 
-  const body = (await req.json()) as { genre?: string; displayName?: string };
+  const body = (await req.json()) as {
+    genre?: string;
+    displayName?: string;
+    seenTitleIds?: string[];
+  };
   if (!body.genre || !GENRES.includes(body.genre as Genre)) {
     return NextResponse.json({ error: "장르 값이 올바르지 않습니다." }, { status: 400 });
   }
@@ -35,7 +41,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "사전 문항을 먼저 완료해 주세요." }, { status: 409 });
   }
 
+  // 시청 경험은 그 장르 작품에 한해서만 받는다 (다른 장르 id 가 섞여 들어오지 않도록)
+  const allowed = new Set(genreTitles(body.genre as Genre).map((t) => t.id));
+  const seen = (body.seenTitleIds ?? []).filter((id) => allowed.has(id));
+  if ((body.seenTitleIds ?? []).some((id) => !allowed.has(id))) {
+    return NextResponse.json({ error: "작품 값이 올바르지 않습니다." }, { status: 400 });
+  }
+
   await setPreferredGenre(participant.id, body.genre as Genre);
+  await setSeenTitles(participant.id, seen);
   // 호칭은 선택 입력 — 비워두면 화면에서 '회원님'으로 나간다
   await setDisplayName(participant.id, normalizeDisplayName(body.displayName));
 
