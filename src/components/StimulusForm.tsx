@@ -90,7 +90,7 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
         </p>
       )}
 
-      <div className="sticky bottom-0 -mx-4 border-t border-line bg-bg/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-4">
+      <div className="sticky bottom-0 -mx-5 border-t border-line bg-bg/95 px-5 py-3 backdrop-blur md:-mx-8 md:px-8">
         <button
           type="button"
           onClick={submit}

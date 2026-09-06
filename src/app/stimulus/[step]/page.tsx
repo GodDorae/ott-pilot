@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Rail from "@/components/Rail";
 import DeviceFrame from "@/components/DeviceFrame";
+import SplitScreen from "@/components/SplitScreen";
 import StimulusForm from "@/components/StimulusForm";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
@@ -15,6 +16,10 @@ import {
 
 /**
  * 자극물 화면 1개 = 근거유형 1수준.
+ *
+ * 왼쪽에 자극물(목업), 오른쪽에 측정 문항을 놓는다. 넓은 화면에서는 문항을 끝까지
+ * 내려도 자극물이 왼쪽에 남아 있어, 배너 문구를 다시 보면서 답할 수 있다.
+ *
  * 어떤 근거유형과 어떤 포스터 세트가 나올지는 전부 DB의 배정에서 유도한다.
  */
 export default async function StimulusPage({ params }: PageProps<"/stimulus/[step]">) {
@@ -29,7 +34,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
   const { participant } = session;
 
   // 사전 문항이 끝나기 전에 자극물을 보여주지 않고, trial 을 앞질러 갈 수도 없다
-  const trialsDone = participant.is_dev ? TOTAL_STEPS : session.trialsDone;
+  const trialsDone = participant.is_dev ? stepIndex - 1 : session.trialsDone;
   const to = guard(participant, "/stimulus/" + stepIndex, trialsDone);
   if (to) redirect(to);
   if (!participant.preferred_genre) redirect("/pre");
@@ -44,38 +49,40 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
   const ctx = participant.context_snapshot ?? buildContextSnapshot(new Date(), false);
 
   return (
-    <main className="flex-1">
-      {/* 진행 표시 */}
-      <div className="mx-auto w-full max-w-xl px-5 pt-6">
-        <div className="flex items-center gap-2">
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-            <span key={i} className="step-dot" data-on={i < stepIndex} />
-          ))}
-          <span className="shrink-0 text-xs text-muted tabular-nums">
-            {stepIndex} / {TOTAL_STEPS}
-          </span>
-        </div>
-      </div>
+    <main className="flex flex-1 flex-col">
+      <SplitScreen
+        left={
+          <div className="flex flex-col items-center gap-3">
+            <DeviceFrame isMobile={ctx.isMobile}>
+              <Rail
+                headline={railHeadline(rationale, genre, participant.display_name)}
+                banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
+                titles={titles}
+                usageCondition={participant.usage_condition as UsageCondition}
+                displayName={participant.display_name}
+                greetingText={greeting(new Date(participant.started_at), participant.display_name)}
+              />
+            </DeviceFrame>
+            <p className="text-xs text-muted">추천 화면 {stepIndex}</p>
+          </div>
+        }
+        right={
+          <>
+            {/* 진행 표시 */}
+            <div className="mb-5 flex items-center gap-2">
+              {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+                <span key={i} className="step-dot" data-on={i < stepIndex} />
+              ))}
+              <span className="shrink-0 text-xs text-muted tabular-nums">
+                {stepIndex} / {TOTAL_STEPS}
+              </span>
+            </div>
 
-      {/* 자극물 — 접속 기기에 맞춘 목업 안에 넣는다 */}
-      <div className="mx-auto mt-5 w-full max-w-xl px-4">
-        <DeviceFrame isMobile={ctx.isMobile}>
-          <Rail
-            headline={railHeadline(rationale, genre, participant.display_name)}
-            banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
-            titles={titles}
-            usageCondition={participant.usage_condition as UsageCondition}
-            displayName={participant.display_name}
-            greetingText={greeting(new Date(participant.started_at), participant.display_name)}
-          />
-        </DeviceFrame>
-      </div>
-
-      {/* 측정 문항 */}
-      <div className="mx-auto mt-6 w-full max-w-xl px-5 pb-10">
-        {/* key: 단계가 바뀌면 폼을 리마운트해 이전 화면의 응답이 남지 않게 한다 */}
-        <StimulusForm key={stepIndex} stepIndex={stepIndex} />
-      </div>
+            {/* key: 단계가 바뀌면 폼을 리마운트해 이전 화면의 응답이 남지 않게 한다 */}
+            <StimulusForm key={stepIndex} stepIndex={stepIndex} />
+          </>
+        }
+      />
     </main>
   );
 }

@@ -22,7 +22,7 @@ export default function DeviceFrame({
       <div
         className={
           "mx-auto w-full rounded-[2rem] bg-neutral-900 p-2 shadow-xl ring-1 ring-black/20 " +
-          (compact ? "max-w-[15rem]" : "max-w-[22rem]")
+          (compact ? "max-w-[15rem]" : "max-w-[20rem]")
         }
       >
         {/* 노치 */}
@@ -42,7 +42,7 @@ export default function DeviceFrame({
     <div
       className={
         "mx-auto w-full overflow-hidden rounded-xl bg-neutral-900 shadow-xl ring-1 ring-black/20 " +
-        (compact ? "max-w-full" : "max-w-3xl")
+        (compact ? "max-w-full" : "max-w-xl")
       }
     >
       {/* 브라우저 상단 바 */}
