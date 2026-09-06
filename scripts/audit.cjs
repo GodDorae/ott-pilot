@@ -1,4 +1,5 @@
 /* eslint-disable */
+// CommonJS 로 둔다 — package.json 에 type:module 이 없어 .cjs 가 아니면 require 가 막힌다
 /**
  * 전수 검사 — 흐름 / 가드 / 검증 / 배정 / 개인화 / 목업 / dev / 관리자 / CSV
  * 실행: AUDIT_BASE=<url> node audit.js [pilot|main]
