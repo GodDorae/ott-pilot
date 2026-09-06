@@ -123,6 +123,20 @@ async function wipe() {
 /** 검사 대상 — 이 스크립트가 만든 행만 (다른 사람의 진행 중 세션을 세지 않는다) */
 const MINE = "&user_agent=like.*" + UA_TAG + "*";
 
+/**
+ * 이 스크립트가 만든 참여자의 응답만 읽는다.
+ *
+ * screen_responses 에는 참여자를 가리키는 필드밖에 없어서 그냥 세면
+ * 실제 응답자·다른 미리보기 세션의 행까지 딸려 들어온다. 같은 Supabase 를
+ * 로컬과 배포가 공유하므로, 검사 결과가 남의 데이터에 흔들리면 안 된다.
+ */
+async function myScreens(select) {
+  const mine = await rest("participants?select=id" + MINE);
+  if (mine.length === 0) return [];
+  const ids = mine.map((r) => r.id).join(",");
+  return rest("screen_responses?select=" + select + "&participant_id=in.(" + ids + ")");
+}
+
 async function complete(opts = {}) {
   const s = sess(opts.ua);
   await s("/api/session/start", {});
@@ -294,19 +308,23 @@ async function complete(opts = {}) {
 
     const st = htmlOnly((await s("/stimulus/1")).text);
     {
-      const imgs = [...st.matchAll(/src="(\/posters\/[^"]+)"/g)].map((m) => m[1]);
-      ck("한 화면에 포스터 4장", imgs.length === 4, String(imgs.length));
+      // chrome/ 은 조건 무관 장식용 줄(상단 포스터·오직 이곳에서만)이라 따로 센다
+      const imgs = [...st.matchAll(/src="(\/posters\/(?!chrome\/)[^"]+)"/g)].map((m) => m[1]);
+      const chrome = [...st.matchAll(/src="(\/posters\/chrome\/[^"]+)"/g)].map((m) => m[1]);
+      ck("한 화면에 실험 포스터 4장", imgs.length === 4, String(imgs.length));
+      ck("장식용 줄 7장", chrome.length === 7, String(chrome.length));
       ck("텍스트 카드 없음", !/POSTER/.test(st));
-      ck("4번째는 peek(반투명)", /opacity-45/.test(st));
+      // 4번째는 화면 밖으로 잘려 일부만 보인다 — 스크린리더에는 노출하지 않는다
+      ck("4번째는 화면 끝에서 잘림", /overflow-hidden/.test(st) && (st.match(/aria-hidden/g) ?? []).length > 0);
       let ok = 0;
-      for (const u of imgs) {
+      for (const u of [...imgs, ...chrome]) {
         const r = await fetch(B + u);
         if (r.status === 200 && r.headers.get("content-type") === "image/webp") ok++;
       }
-      ck("포스터 webp 200 응답", ok === imgs.length, ok + "/" + imgs.length);
+      ck("포스터 webp 200 응답", ok === imgs.length + chrome.length, ok + "/" + (imgs.length + chrome.length));
     }
     for (let t = 1; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 5000 });
-    const rows = await rest("screen_responses?select=step_index,set_id,title_ids&order=step_index");
+    const rows = await myScreens("step_index,set_id,title_ids&order=step_index");
     ck("각 화면 title_ids 4개", rows.every((r) => r.title_ids.length === 4));
     ck("세 화면 세트 서로 다름", new Set(rows.map((r) => r.set_id)).size === 3);
     ck("3화면 합계 12편 (장르 전체)", new Set(rows.flatMap((r) => r.title_ids)).size === 12);
@@ -344,7 +362,7 @@ async function complete(opts = {}) {
     }
     for (const [i, a] of [[1, 4], [2, 2], [3, 4]])
       await s("/api/session/screen", { stepIndex: i, answers: L, attentionCheck: a, dwellMs: 5000 });
-    const rows = await rest("screen_responses?select=step_index,attention_check,attention_passed&order=step_index");
+    const rows = await myScreens("step_index,attention_check,attention_passed&order=step_index");
     ck("3화면 모두 기록", rows.length === 3);
     ck("정답 4 → 통과", rows[0].attention_passed === true && rows[2].attention_passed === true);
     ck("오답 2 → 실패", rows[1].attention_passed === false, String(rows[1].attention_check));
@@ -369,19 +387,41 @@ async function complete(opts = {}) {
     ck("pending 마커 1", (await rest("pending_assignments?select=id")).length === 1);
 
     await wipe();
+    /*
+      균형은 "이 12명 안에서 6:6"이 아니라 "phase 전체에서 축별로 고르게"가 참이다.
+      카운터는 phase 안의 모든 실제 참여자를 세므로, 앞서 실제 응답자가 한 명이라도
+      있으면 이 12명만 떼어 보았을 때 3:1 같은 모양이 나온다 — 배정이 틀린 게 아니다.
+      그래서 검사 전 분포를 찍어 두고, 검사 후 phase 전체 분포가 균형인지 본다.
+      (같은 Supabase 를 실제 응답자와 공유하므로 남의 행은 지우지 않는다.)
+    */
+    const tally = (rows, f) => rows.reduce((o, r) => ((o[r[f]] = (o[r[f]] || 0) + 1), o), {});
+    const allRows = () =>
+      rest("participants?select=usage_condition,sequence_index,mapping_index,phase&is_dev=eq.false&sequence_index=not.is.null&phase=eq." + PHASE);
+    const before = await allRows();
+
     for (let i = 0; i < 12; i++) await complete({ genre: ["action", "romance", "comedy", "thriller", "drama", "scifi"][i % 6] });
+
     const rows = await rest("participants?select=usage_condition,sequence_index,mapping_index,phase&is_dev=eq.false" + MINE);
-    // 남은 행이 섞이면 분포가 어긋나 보인다 — 원인을 분명히 하려고 먼저 확인한다
     ck("검사 대상 12명뿐", rows.length === 12, String(rows.length));
     ck("배정 안 된 참여자 없음", rows.every((r) => r.sequence_index !== null), JSON.stringify(rows.filter((r) => r.sequence_index === null).length));
-    const t = (f) => rows.reduce((o, r) => ((o[r[f]] = (o[r[f]] || 0) + 1), o), {});
-    const seq = t("sequence_index"), usg = t("usage_condition"), map = t("mapping_index");
-    ck("시퀀스 6종 각 2명", Object.keys(seq).length === 6 && Object.values(seq).every((v) => v === 2), JSON.stringify(seq));
-    ck("이용조건 6:6", usg.SVOD === 6 && usg.TVOD === 6, JSON.stringify(usg));
-    ck("세트매칭 각 4명", Object.values(map).every((v) => v === 4), JSON.stringify(map));
     ck("전원 현재 phase", rows.every((r) => r.phase === PHASE));
+
+    const after = await allRows();
+    ck("검사분 12명만 늘어남", after.length === before.length + 12, before.length + " → " + after.length);
+    /** 각 수준의 인원 차가 1명 이하면 균형 (n 이 수준 수의 배수가 아니면 1 차이는 불가피) */
+    const balanced = (f, levels) => {
+      const t = tally(after, f);
+      const counts = levels.map((k) => t[k] ?? 0);
+      return { ok: Math.max(...counts) - Math.min(...counts) <= 1, counts };
+    };
+    const bSeq = balanced("sequence_index", [0, 1, 2, 3, 4, 5]);
+    const bUsg = balanced("usage_condition", ["SVOD", "TVOD"]);
+    const bMap = balanced("mapping_index", [0, 1, 2]);
+    ck("시퀀스 6종 균형", bSeq.ok, JSON.stringify(bSeq.counts) + " (기존 " + before.length + "명 포함)");
+    ck("이용조건 균형", bUsg.ok, JSON.stringify(bUsg.counts));
+    ck("세트매칭 3종 균형", bMap.ok, JSON.stringify(bMap.counts));
     ck("완료 후 pending 0", (await rest("pending_assignments?select=id")).length === 0);
-    ck("응답 36행", (await rest("screen_responses?select=id")).length === 36);
+    ck("응답 36행", (await myScreens("id")).length === 36);
   }
 
   // ── 8
@@ -395,21 +435,27 @@ async function complete(opts = {}) {
       await s("/api/session/presurvey", USAGE);
       await s("/api/session/genre", { genre: "action", displayName: "  가나다라마바  ", seenTitleIds: [] });
       const html = (await s("/stimulus/1")).text;
-      ck(name + " 목업 프레임", wantPhone ? /rounded-\[2rem\]/.test(html) : /stream\.example/.test(html));
+      // 스마트폰은 얇은 베젤 + iOS 상태바, PC 는 브라우저 창
+      ck(name + " 목업 프레임", wantPhone ? /rounded-\[1\.9rem\]/.test(html) && html.includes("9:41") : /stream\.example/.test(html) && !html.includes("9:41"));
       ck(name + " 2분할 레이아웃", /md:h-screen md:flex-row/.test(html) && /md:overflow-y-auto/.test(html));
-      ck(name + " 목업이 문항보다 앞(왼쪽)", html.indexOf("STREAM") >= 0 && html.indexOf("STREAM") < html.indexOf("볼 만한 작품을 찾는 데"));
+      // "오직 이곳에서만" 은 목업 화면 안에만 있는 문구다
+      ck(
+        name + " 목업이 문항보다 앞(왼쪽)",
+        html.indexOf("오직 이곳에서만") >= 0 &&
+          html.indexOf("오직 이곳에서만") < html.indexOf("볼 만한 작품을 찾는 데"),
+      );
       ck(name + " 리커트 5칸", /grid-cols-5/.test(html));
+      // 헤드라인은 목업 문구 3종 중 하나 — 조건마다 다르지만 호칭은 셋 다 들어간다
+      const HEADLINES = [/님 취향과 비슷한 작품/, /님과 비슷한 시청자의 픽/, /님께 지금 딱 맞는 작품/];
       const heads = [];
-      let greetLine = null;
       for (let t = 1; t <= 3; t++) {
-        const h = lines((await s("/stimulus/" + t)).text);
-        const kk = h.findIndex((x) => /이에요, |반가워요, |이네요, /.test(x));
-        if (t === 1) greetLine = h[kk];
-        heads.push(h[kk + 1]);
+        const h = lines(htmlOnly((await s("/stimulus/" + t)).text));
+        heads.push(h.find((x) => HEADLINES.some((re) => re.test(x))) ?? "");
         await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 5000 });
       }
-      ck(name + " 호칭 4자 절단", greetLine?.includes("가나다라님"), greetLine);
-      ck(name + " 호칭이 3조건 전부에", heads.every((h) => h?.includes("가나다라님")), heads.join(" | "));
+      ck(name + " 호칭 4자 절단", heads[0].includes("가나다라님") && !heads[0].includes("가나다라마"), heads[0]);
+      ck(name + " 호칭이 3조건 전부에", heads.every((h) => h.includes("가나다라님")), heads.join(" | "));
+      ck(name + " 조건별 헤드라인 3종", new Set(heads).size === 3, heads.join(" | "));
       const snap = (await rest("participants?select=context_snapshot,is_mobile&display_name=eq.가나다라" + MINE))[0];
       ck(name + " 맥락 source=access_time", snap?.context_snapshot?.source === "access_time");
       ck(name + " 맥락 기기 문구", snap?.context_snapshot?.device === (wantPhone ? "스마트폰으로" : "큰 화면으로"), snap?.context_snapshot?.device);
@@ -420,7 +466,7 @@ async function complete(opts = {}) {
       ck(name + " 순위 미리보기 3개", ["1", "2", "3"].every((n) => rk.text.includes("추천 화면 " + n)));
       ck(name + " 근거유형 워딩 미노출", !/콘텐츠 기반|협업 기반|맥락 인식 기반/.test(rk.text));
       ck(name + " 선택 이유 같은 화면", /1위로 고른 추천 화면/.test(rk.text));
-      ck(name + " 미리보기에도 목업", wantPhone ? /rounded-\[2rem\]/.test(rk.text) : /stream\.example/.test(rk.text));
+      ck(name + " 미리보기에도 목업", wantPhone ? /rounded-\[1\.9rem\]/.test(rk.text) : /stream\.example/.test(rk.text));
     }
 
     await wipe();
@@ -429,9 +475,8 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "comedy", displayName: "   ", seenTitleIds: [] });
-    const LL = lines((await s("/stimulus/1")).text);
-    const k = LL.findIndex((x) => /이에요, |반가워요, |이네요, /.test(x));
-    ck("호칭 미입력 → 회원님", LL[k]?.includes("회원님"), LL[k]);
+    const LL = lines(htmlOnly((await s("/stimulus/1")).text));
+    ck("호칭 미입력 → 회원님", LL.some((x) => x.includes("회원님")), LL.filter((x) => x.includes("님")).join(" | "));
   }
 
   // ── 9
@@ -500,7 +545,7 @@ async function complete(opts = {}) {
   S("12. 정리");
   await wipe();
   ck("participants 0", (await rest("participants?select=id" + MINE)).length === 0);
-  ck("screen_responses 0", (await rest("screen_responses?select=id")).length === 0);
+  ck("screen_responses 0", (await myScreens("id")).length === 0);
   ck("pending 0", (await rest("pending_assignments?select=id")).length === 0);
 
   console.log("\n" + "═".repeat(70));

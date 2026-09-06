@@ -15,7 +15,7 @@ import {
   type Genre,
   type UsageCondition,
 } from "./experiment";
-import { buildContextSnapshot } from "./copy";
+import { buildContextSnapshot, isMobileUserAgent } from "./copy";
 import {
   assignAssignment,
   createParticipant,
@@ -114,6 +114,11 @@ export async function ensureDevSession(
   // 지난 미리보기 행이 쌓이지 않도록 만들 때마다 걷어낸다
   await deleteDevSessions(new Date(Date.now() - DEV_SESSION_TTL_MS));
 
+  // 미리보기도 실제 접속 기기를 따른다 — 목업 프레임(스마트폰/브라우저)과
+  // 맥락 조건 문구("스마트폰으로"/"큰 화면으로")가 여기서 갈리므로,
+  // 항상 PC 로 고정해 두면 정작 확인하려는 화면을 볼 수 없다.
+  const isMobile = isMobileUserAgent(userAgent ?? null);
+
   const participant =
     existing?.is_dev
       ? existing
@@ -121,7 +126,7 @@ export async function ensureDevSession(
           participantCode: makeParticipantCode(),
           assignmentSeq: await nextAssignmentSeq(),
           userAgent: userAgent ? "dev-preview " + userAgent : "dev-preview",
-          isMobile: false,
+          isMobile,
           isDev: true,
         });
 
@@ -132,7 +137,7 @@ export async function ensureDevSession(
   await setDisplayName(participant.id, "건빵");
   await saveContextSnapshot(
     participant.id,
-    buildContextSnapshot(new Date(), false),
+    buildContextSnapshot(new Date(), isMobile),
   );
 
   const cell =

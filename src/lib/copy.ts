@@ -1,10 +1,10 @@
 /**
  * 자극물 화면 카피 — 근거유형별 헤드라인/배너, 이용조건별 결제 문구
  *
- * 화면 구조:
+ * 문구는 실험물 UI 목업(OttScreen)의 것을 그대로 옮겼다. 화면 구조:
  *   [레일 제목 — 조건별 헤드라인]
- *   [포스터 3개 + peek 1개]
- *   [강조색 배너 — 근거유형 설명 문구]
+ *   [붉은 배너 — 근거유형 설명 문구]
+ *   [포스터 3개 + 일부만 보이는 1개]
  */
 
 import { GENRE_LABELS, type Genre, type RationaleType, type UsageCondition } from "./experiment";
@@ -22,6 +22,8 @@ export function normalizeDisplayName(raw: string | null | undefined): string | n
 export type ContextSnapshot = {
   weekday: string;
   daypart: string;
+  /** "주말을 시작하며" 처럼 요일·시간대를 함께 반영한 상황 묘사 */
+  scene: string;
   device: string;
   /** 완성된 맥락 문구 */
   phrase: string;
@@ -60,16 +62,32 @@ function inSurveyTimezone(now: Date): { weekdayIndex: number; hour: number } {
   return { weekdayIndex: Math.max(0, EN_WEEKDAYS.indexOf(weekday)), hour };
 }
 
-type Daypart = { label: string; scene: string };
+/** 실제 접속 시각 기준 시간대 이름 */
+function daypartLabel(hour: number): string {
+  if (hour < 6) return "새벽";
+  if (hour < 11) return "오전";
+  if (hour < 14) return "점심시간";
+  if (hour < 18) return "오후";
+  if (hour < 22) return "저녁";
+  return "밤";
+}
 
-/** 실제 접속 시각 기준 시간대 */
-function daypartFromHour(hour: number): Daypart {
-  if (hour < 6) return { label: "새벽", scene: "잠들기 전 조용히" };
-  if (hour < 11) return { label: "오전", scene: "하루를 시작하며 가볍게" };
-  if (hour < 14) return { label: "점심시간", scene: "짧게 틈내어" };
-  if (hour < 18) return { label: "오후", scene: "느긋하게" };
-  if (hour < 22) return { label: "저녁", scene: "하루를 마치고 편하게" };
-  return { label: "밤", scene: "불 끄고 몰입해서" };
+/**
+ * 상황 묘사 — 요일까지 함께 본다.
+ *
+ * 시간대만 보면 금요일 저녁과 화요일 저녁이 같은 문구가 된다. 맥락 인식 조건이
+ * 내세우는 근거는 '지금 이 상황' 이므로, 주말이 걸린 시점은 그렇게 말해야 한다.
+ */
+function scenePhrase(weekdayIndex: number, hour: number): string {
+  const isWeekend = weekdayIndex === 0 || weekdayIndex === 6;
+  if (weekdayIndex === 5 && hour >= 18) return "주말을 시작하며";
+  if (isWeekend) return "주말을 여유롭게 보내며";
+  if (hour < 6) return "잠들기 전 조용히";
+  if (hour < 11) return "하루를 시작하며";
+  if (hour < 14) return "짧게 틈내어";
+  if (hour < 18) return "잠깐 쉬어가며";
+  if (hour < 22) return "하루를 마무리하며";
+  return "불 끄고 몰입해서";
 }
 
 /**
@@ -86,17 +104,18 @@ function daypartFromHour(hour: number): Daypart {
 export function buildContextSnapshot(now: Date, isMobile: boolean): ContextSnapshot {
   const { weekdayIndex, hour } = inSurveyTimezone(now);
   const weekday = WEEKDAYS[weekdayIndex];
-  const daypart = daypartFromHour(hour);
+  const daypart = daypartLabel(hour);
+  const scene = scenePhrase(weekdayIndex, hour);
   // 모바일이면 스마트폰, 그 외(PC·태블릿)는 큰 화면
   const device = isMobile ? "스마트폰으로" : "큰 화면으로";
 
   return {
     weekday,
-    daypart: daypart.label,
+    daypart,
+    scene,
     device,
     isMobile,
-    phrase:
-      weekday + " " + daypart.label + ", " + device + " " + daypart.scene + " 보기 좋은 작품입니다",
+    phrase: `${weekday} ${daypart}, ${scene} ${device} 보기 좋은 작품`,
     source: "access_time",
   };
 }
@@ -115,65 +134,68 @@ export function honorific(displayName: string | null): string {
 }
 
 /**
- * 헤더 인사말 — 접속 시각의 시간대를 반영한다.
+ * 레일 제목 — 조건별 헤드라인. 실험물 UI 목업의 문구를 그대로 쓴다.
  *
- * ⚠️ 세 근거유형 조건 모두에 똑같이 들어간다. 특정 조건에만 개인화 요소가 붙으면
+ * 호칭은 세 조건에 모두 들어간다. 특정 조건에만 개인화 요소가 붙으면
  * 그 조건이 '더 개인화된 화면'이 되어 근거유형 효과와 뒤섞인다.
- *
- * 요일은 여기 넣지 않는다. 요일·기기까지 언급하는 것은 맥락 인식 조건의 조작 그 자체이므로,
- * 모든 조건에 깔면 그 조건의 대비가 흐려진다. 인사말은 시간대까지만 쓴다.
  */
-export function greeting(now: Date, displayName: string | null): string {
-  const { hour } = inSurveyTimezone(now);
-  const part =
-    hour < 6
-      ? "늦은 밤이네요"
-      : hour < 11
-        ? "좋은 아침이에요"
-        : hour < 18
-          ? "반가워요"
-          : "좋은 저녁이에요";
-  return part + ", " + honorific(displayName);
-}
-
-/**
- * 레일 제목 — 조건별 헤드라인.
- * 호칭은 세 조건에 모두 들어간다 (위와 같은 이유).
- */
-export function railHeadline(
-  rationale: RationaleType,
-  genre: Genre,
-  displayName: string | null,
-): string {
+export function railHeadline(rationale: RationaleType, displayName: string | null): string {
   const who = honorific(displayName);
-  const g = GENRE_LABELS[genre];
   switch (rationale) {
     case "content":
-      return `${who}이 최근 시청한 ${g} 작품과 분위기가 비슷한 작품`;
+      return `${who} 취향과 비슷한 작품`;
     case "collab":
-      return `${who}과 취향이 비슷한 이용자들이 많이 본 작품`;
+      return `${who}과 비슷한 시청자의 픽`;
     case "context":
-      return `지금 ${who}의 상황에 어울리는 작품`;
+      return `${who}께 지금 딱 맞는 작품`;
   }
 }
 
-/** 강조색 배너 — 근거유형 조작의 핵심 문구 */
+/** 배너 문구 조각. strong 인 구간이 화면에서 굵게 나온다 */
+export type BannerSegment = { text: string; strong?: boolean };
+
+/**
+ * 배너 — 근거유형 조작의 핵심 문구.
+ *
+ * 굵게 처리하는 구간은 조작의 근거를 직접 말하는 부분이다(무엇을 근거로 골랐는가).
+ * 세 조건 모두 굵은 구간이 두 군데씩이라 시각적 강조량이 같다.
+ */
 export function rationaleBanner(
   rationale: RationaleType,
   genre: Genre,
   ctx: ContextSnapshot,
   displayName: string | null,
-): string {
+): BannerSegment[] {
   const who = honorific(displayName);
   switch (rationale) {
     case "content":
-      return `${who}이 최근 시청하신 ${GENRE_LABELS[genre]} 작품과 분위기가 유사한 작품입니다`;
+      return [
+        { text: `최근 시청하신 ${GENRE_LABELS[genre]}`, strong: true },
+        { text: " 작품과 분위기가 " },
+        { text: "유사한", strong: true },
+        { text: " 작품" },
+      ];
     case "collab":
-      return `${who}과 취향이 비슷한 이용자들이 많이 시청한 작품입니다`;
+      return [
+        { text: `${who}과 취향이 ` },
+        { text: "비슷한 사용자들", strong: true },
+        { text: "이 많이 " },
+        { text: "시청한", strong: true },
+        { text: " 작품" },
+      ];
     case "context":
-      // 스냅샷에는 맥락만 담고, 호칭은 여기서 붙인다 (세 조건 모두 동일하게)
-      return `${who}이 ` + ctx.phrase;
+      return [
+        { text: `${ctx.weekday} ${ctx.daypart}`, strong: true },
+        { text: `, ${ctx.scene ?? ""} ` },
+        { text: ctx.device, strong: true },
+        { text: " 보기 좋은 작품" },
+      ];
   }
+}
+
+/** 배너 문구를 한 줄 텍스트로 (기록·검증용) */
+export function bannerPlainText(segments: BannerSegment[]): string {
+  return segments.map((s) => s.text).join("");
 }
 
 /** 이용조건 문구 — 피험자 간 변수 */

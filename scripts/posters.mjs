@@ -9,6 +9,9 @@
  *
  * 저장 파일명은 작품 id (예: action-A-1.webp) 를 쓴다.
  * URL 에 한글이 들어가지 않고, 어떤 파일이 어느 자리인지 이름만 봐도 분명해진다.
+ *
+ * '그 외 포스터' 폴더(상단 포스터 · 오직 이곳에서만)는 실험 자극이 아니라 화면 장식이라
+ * 제목 매칭 없이 posters/chrome/ 으로 따로 내보낸다. 세 조건에서 똑같이 쓰인다.
  */
 
 import fs from "node:fs";
@@ -22,6 +25,15 @@ const CHECK_ONLY = process.argv.includes("--check");
 /** 포스터가 화면에 놓이는 최대 폭(약 192px)의 2배 — 고해상도 화면까지 커버 */
 const WIDTH = 400;
 const QUALITY = 78;
+
+/**
+ * 장식용 포스터는 목업(1500px 기준)에서 잘라낸 것이라 원본 폭이 제각각이다.
+ * 같은 배율로 줄여야 이미 잘려 있는 조각(hero-4, only-3)의 비율이 어긋나지 않는다.
+ * 800 = 화면 표시폭(약 400px)의 2배.
+ */
+const CHROME_SCALE = 800 / 1500;
+const CHROME_DIR = "그 외 포스터";
+const CHROME_KINDS = { 상단포스터: "hero", 오직이곳에서만: "only" };
 
 /** 원본 폴더명 → 장르 키 */
 const GENRE_DIRS = {
@@ -89,6 +101,38 @@ function readCatalog() {
     }
   }
   return catalog;
+}
+
+/** 장식용 포스터 → public/posters/chrome/{hero|only}-N.webp */
+async function convertChrome(dirsOnDisk) {
+  const actual = dirsOnDisk.find((d) => norm(d) === norm(CHROME_DIR));
+  if (!actual) {
+    console.log(`  ! 폴더 없음: ${CHROME_DIR}`);
+    return;
+  }
+  const out = path.join(OUT, "chrome");
+  if (!CHECK_ONLY) fs.mkdirSync(out, { recursive: true });
+
+  for (const sub of fs.readdirSync(path.join(SOURCE, actual))) {
+    const dir = path.join(SOURCE, actual, sub);
+    if (!fs.statSync(dir).isDirectory()) continue;
+    const kind = CHROME_KINDS[norm(sub)];
+    if (!kind) {
+      console.log(`  ? 모르는 폴더: ${nfc(sub)}`);
+      continue;
+    }
+    const files = fs.readdirSync(dir).filter((f) => /\.(png|jpe?g|webp)$/i.test(f)).sort();
+    let i = 1;
+    for (const f of files) {
+      const src = path.join(dir, f);
+      const meta = await sharp(src).metadata();
+      const width = Math.round(meta.width * CHROME_SCALE);
+      const dest = path.join(out, `${kind}-${i}.webp`);
+      console.log(`  ${kind}-${i}  ${meta.width}×${meta.height} → ${width}px  ← ${nfc(f)}`);
+      if (!CHECK_ONLY) await sharp(src).resize({ width }).webp({ quality: 80 }).toFile(dest);
+      i++;
+    }
+  }
 }
 
 async function main() {
@@ -186,6 +230,9 @@ async function main() {
   console.log(
     `\n변환 완료 ${rows.length}개 · ${(before / 1024 / 1024).toFixed(1)}MB → ${(after / 1024 / 1024).toFixed(1)}MB`,
   );
+
+  console.log("\n장식용 포스터 (조건 무관)");
+  await convertChrome(dirsOnDisk);
 }
 
 main();

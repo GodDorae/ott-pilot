@@ -100,3 +100,23 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/*
+  자극물 목업의 최대 폭.
+
+  화면(OttScreen)은 1500:3248 비율로 고정이라 폭을 정하면 높이가 따라온다.
+  2분할 화면에서는 왼쪽 칸이 화면 높이에 갇혀 있으므로, 남은 세로 공간에서
+  역산한 폭을 함께 걸어 둔다 — 그러지 않으면 낮은 노트북에서 목업 아래쪽
+  (하단 탭바, 두 번째 레일)이 잘려 나간다.
+*/
+.device-fit {
+  width: 100%;
+  max-width: 19rem;
+}
+
+@media (min-width: 768px) {
+  .device-fit {
+    /* 0.4618 = 1500 / 3248, 9rem = 기기 프레임 바깥 여백 + 안내 문구 자리 */
+    max-width: min(19rem, calc((100dvh - 9rem) * 0.4618));
+  }
+}

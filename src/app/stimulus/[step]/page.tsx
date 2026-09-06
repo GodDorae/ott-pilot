@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation";
-import Rail from "@/components/Rail";
+import OttScreen from "@/components/OttScreen";
 import DeviceFrame from "@/components/DeviceFrame";
 import SplitScreen from "@/components/SplitScreen";
 import StimulusForm from "@/components/StimulusForm";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
 import { getRail } from "@/lib/stimuli";
-import { buildContextSnapshot, greeting, railHeadline, rationaleBanner } from "@/lib/copy";
+import { buildContextSnapshot, railHeadline, rationaleBanner, usageNotice } from "@/lib/copy";
 import {
   TOTAL_STEPS,
   type RationaleType,
@@ -54,15 +54,21 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
         left={
           <div className="flex flex-col items-center gap-3">
             <DeviceFrame isMobile={ctx.isMobile}>
-              <Rail
-                headline={railHeadline(rationale, genre, participant.display_name)}
+              <OttScreen
+                rationale={rationale}
+                headline={railHeadline(rationale, participant.display_name)}
                 banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
                 titles={titles}
                 usageCondition={participant.usage_condition as UsageCondition}
                 displayName={participant.display_name}
-                greetingText={greeting(new Date(participant.started_at), participant.display_name)}
+                isMobile={ctx.isMobile}
               />
             </DeviceFrame>
+            {/* 이용조건 안내 — 화면 밖에 둔다. 목업 안에는 '구매' 배지만 있고,
+                금액·이용 기간은 참여자가 계속 확인할 수 있어야 한다. */}
+            <p className="max-w-xs text-center text-xs leading-relaxed text-muted break-keep">
+              {usageNotice(participant.usage_condition as UsageCondition).detail}
+            </p>
             <p className="text-xs text-muted">추천 화면 {stepIndex}</p>
           </div>
         }

@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation";
-import Rail from "@/components/Rail";
+import OttScreen from "@/components/OttScreen";
 import DeviceFrame from "@/components/DeviceFrame";
 import { OpenEndedForm, RankingForm, UsageCheckForm } from "@/components/PostTestForms";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
 import { STAGE_LABELS, stepByPath } from "@/lib/steps";
 import { getRail } from "@/lib/stimuli";
-import { buildContextSnapshot, greeting, railHeadline, rationaleBanner } from "@/lib/copy";
+import { buildContextSnapshot, railHeadline, rationaleBanner } from "@/lib/copy";
 import { TOTAL_STEPS, type RationaleType, type SetId, type UsageCondition } from "@/lib/experiment";
 
 /** 4단계 사후 점검 */
@@ -50,21 +50,20 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
   if (part === "ranking" && participant.preferred_genre && participant.presentation_order) {
     const genre = participant.preferred_genre;
     const ctx = participant.context_snapshot ?? buildContextSnapshot(new Date(), false);
-    const greetingText = greeting(new Date(participant.started_at), participant.display_name);
 
     previews = participant.presentation_order.map((r) => {
       const rationale = r as RationaleType;
       const setId = participant.set_mapping?.[rationale] as SetId;
       return (
         <DeviceFrame key={rationale} isMobile={ctx.isMobile} compact>
-          <Rail
-            compact
-            headline={railHeadline(rationale, genre, participant.display_name)}
+          <OttScreen
+            rationale={rationale}
+            headline={railHeadline(rationale, participant.display_name)}
             banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
             titles={getRail(genre, setId)}
             usageCondition={participant.usage_condition as UsageCondition}
             displayName={participant.display_name}
-            greetingText={greetingText}
+            isMobile={ctx.isMobile}
           />
         </DeviceFrame>
       );
