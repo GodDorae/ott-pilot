@@ -7,7 +7,12 @@ import StimulusForm from "@/components/StimulusForm";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
 import { getRail } from "@/lib/stimuli";
-import { buildContextSnapshot, railHeadline, rationaleBanner, usageNotice } from "@/lib/copy";
+import {
+  buildContextSnapshot,
+  railHeadline,
+  rationaleBanner,
+  usageNotice,
+} from "@/lib/copy";
 import {
   TOTAL_STEPS,
   type RationaleType,
@@ -23,10 +28,16 @@ import {
  *
  * 어떤 근거유형과 어떤 포스터 세트가 나올지는 전부 DB의 배정에서 유도한다.
  */
-export default async function StimulusPage({ params }: PageProps<"/stimulus/[step]">) {
+export default async function StimulusPage({
+  params,
+}: PageProps<"/stimulus/[step]">) {
   const { step } = await params;
   const stepIndex = Number(step);
-  if (!Number.isInteger(stepIndex) || stepIndex < 1 || stepIndex > TOTAL_STEPS) {
+  if (
+    !Number.isInteger(stepIndex) ||
+    stepIndex < 1 ||
+    stepIndex > TOTAL_STEPS
+  ) {
     notFound();
   }
 
@@ -39,15 +50,19 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
   const to = guard(participant, "/stimulus/" + stepIndex, trialsDone);
   if (to) redirect(to);
   if (!participant.preferred_genre) redirect("/pre");
-  if (!participant.presentation_order || !participant.set_mapping) redirect("/pre");
+  if (!participant.presentation_order || !participant.set_mapping)
+    redirect("/pre");
 
-  const rationale = participant.presentation_order[stepIndex - 1] as RationaleType;
+  const rationale = participant.presentation_order[
+    stepIndex - 1
+  ] as RationaleType;
   const setId = participant.set_mapping[rationale] as SetId;
   const genre = participant.preferred_genre;
   const titles = getRail(genre, setId);
 
   // 사전 문항 직후 저장한 맥락 정보를 재사용해 3화면 간 문구가 흔들리지 않게 한다
-  const ctx = participant.context_snapshot ?? buildContextSnapshot(new Date(), false);
+  const ctx =
+    participant.context_snapshot ?? buildContextSnapshot(new Date(), false);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -64,9 +79,14 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
               폭은 목업과 똑같이 맞춘다 (.device-fit) — 목업보다 넓으면 따로 노는 덩어리로 보인다.
             */}
             <div className="device-fit shrink-0 space-y-2.5">
-              <h2 className="text-base font-bold break-keep">추천 화면 {stepIndex}</h2>
+              <h2 className="text-base font-bold break-keep">
+                추천 화면 {stepIndex}
+              </h2>
               <NoticeCard>
-                {usageNotice(participant.usage_condition as UsageCondition).detail}
+                {
+                  usageNotice(participant.usage_condition as UsageCondition)
+                    .detail
+                }
               </NoticeCard>
             </div>
 
@@ -79,7 +99,12 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
                 <OttScreen
                   rationale={rationale}
                   headline={railHeadline(rationale, participant.display_name)}
-                  banner={rationaleBanner(rationale, genre, ctx, participant.display_name)}
+                  banner={rationaleBanner(
+                    rationale,
+                    genre,
+                    ctx,
+                    participant.display_name,
+                  )}
                   titles={titles}
                   usageCondition={participant.usage_condition as UsageCondition}
                   displayName={participant.display_name}
@@ -95,7 +120,11 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
               <div className="mx-auto w-full max-w-lg">
                 <div className="flex items-center gap-2">
                   {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-                    <span key={i} className="step-dot" data-on={i < stepIndex} />
+                    <span
+                      key={i}
+                      className="step-dot"
+                      data-on={i < stepIndex}
+                    />
                   ))}
                   <span className="shrink-0 text-xs text-muted tabular-nums">
                     {stepIndex} / {TOTAL_STEPS}
@@ -108,7 +137,11 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
             </div>
 
             {/* key: 단계가 바뀌면 폼을 리마운트해 이전 화면의 응답이 남지 않게 한다 */}
-            <StimulusForm key={stepIndex} stepIndex={stepIndex} />
+            <StimulusForm
+              key={stepIndex}
+              stepIndex={stepIndex}
+              skipWait={participant.is_dev}
+            />
           </>
         }
       />

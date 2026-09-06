@@ -5,13 +5,22 @@ import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
 import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
 import { postJson } from "@/lib/client-api";
+import { CountdownHint, useCountdown } from "./Countdown";
+import { MIN_DWELL_SECONDS } from "@/lib/pacing";
 
 /**
  * Trial 별 종속변수 문항 폼 (유용성 3 + 수용의도 3).
  * 근거유형·세트는 서버가 배정에서 유도하므로 여기서는 stepIndex 만 보낸다.
  * 근거유형 조작점검은 trial 마다 묻지 않고 4단계에서 한 번만 확인한다.
  */
-export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
+export default function StimulusForm({
+  stepIndex,
+  skipWait = false,
+}: {
+  stepIndex: number;
+  /** /dev 미리보기에서는 최소 체류 시간을 기다리지 않는다 */
+  skipWait?: boolean;
+}) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
@@ -27,14 +36,19 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
   const answered = ALL_ITEMS.filter((i) => values[i.key]).length;
   const attention = values[ATTENTION_CHECK.key];
   const complete = answered === ALL_ITEMS.length && Boolean(attention);
-  const remaining = ALL_ITEMS.length - answered + (attention ? 0 : 1);
+  const unanswered = ALL_ITEMS.length - answered + (attention ? 0 : 1);
+
+  // 목업을 실제로 볼 시간을 준다 — 문항에는 그 전에도 답할 수 있고, 막히는 건 제출뿐이다
+  const { remaining: secondsLeft, done: waited } = useCountdown(
+    skipWait ? 0 : MIN_DWELL_SECONDS.stimulus,
+  );
 
   function set(key: string, value: number) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
   async function submit() {
-    if (!complete || pending) return;
+    if (!complete || !waited || pending) return;
     setPending(true);
     setError(null);
     try {
@@ -81,17 +95,20 @@ export default function StimulusForm({ stepIndex }: { stepIndex: number }) {
           <button
             type="button"
             onClick={submit}
-            disabled={!complete || pending}
+            disabled={!complete || !waited || pending}
             className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
           >
             {pending
               ? "저장 중…"
-              : complete
-                ? stepIndex < 3
-                  ? "평가 완료"
-                  : "다음 단계로"
-                : "남은 문항 " + remaining + "개"}
+              : !complete
+                ? "남은 문항 " + unanswered + "개"
+                : !waited
+                  ? "잠시 후 넘어갈 수 있습니다"
+                  : stepIndex < 3
+                    ? "평가 완료"
+                    : "다음 단계로"}
           </button>
+          <CountdownHint remaining={secondsLeft} done={waited} />
         </div>
       </div>
     </>

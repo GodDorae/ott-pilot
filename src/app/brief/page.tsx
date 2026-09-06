@@ -49,7 +49,7 @@ export default async function BriefPage() {
       </div>
 
       <div className="mt-8">
-        <BriefContinue />
+        <BriefContinue skipWait={participant.is_dev} />
       </div>
     </main>
   );
