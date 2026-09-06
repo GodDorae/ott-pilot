@@ -7,7 +7,9 @@
  * 세트를 나누는 이유: 세 화면에 같은 포스터가 나오면 참여자가 "설명 문구만 바뀌는구나"를
  * 눈치챈다. 어느 세트가 어느 근거유형에 붙을지는 참여자마다 순환시킨다(SET_MAPPINGS).
  *
- * 포스터 이미지: 지금은 제목 텍스트 카드. `posterUrl` 을 채우면 이미지로 바뀐다.
+ * 포스터 이미지: public/posters/<작품 id>.webp 에 있다.
+ * 원본 PNG 를 scripts/posters.mjs 로 폭 400px WebP 로 변환한 것 (201MB → 1.9MB).
+ * 이미지가 없는 작품은 제목 텍스트 카드로 대신 그려진다.
  * (저작권 처리는 인수인계 문서 1.3의 미해결 사항)
  */
 
@@ -76,10 +78,10 @@ export const CATALOG: Record<Genre, Record<SetId, Title[]>> = Object.fromEntries
     Object.fromEntries(
       SET_IDS.map((set) => [
         set,
-        TITLES[genre][set].map((title, i) => ({
-          id: `${genre}-${set}-${i + 1}`,
-          title,
-        })),
+        TITLES[genre][set].map((title, i) => {
+          const id = `${genre}-${set}-${i + 1}`;
+          return { id, title, posterUrl: `/posters/${id}.webp` };
+        }),
       ]),
     ) as Record<SetId, Title[]>,
   ]),
