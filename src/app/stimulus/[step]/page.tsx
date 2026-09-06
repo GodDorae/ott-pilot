@@ -55,7 +55,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
         left={
           <div
             className="flex w-full flex-col wide:min-h-0 wide:flex-1"
-            style={deviceFitVars(ctx.isMobile)}
+            style={deviceFitVars()}
           >
             {/*
               화면 번호와 이용조건은 목업 **위**에 놓는다.
@@ -75,7 +75,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
               없으므로, 위 안내가 차지하고 남은 만큼으로 줄어들어야 아래쪽이 안 잘린다.
             */}
             <div className="mt-3 flex w-full justify-center wide:min-h-0 wide:flex-1">
-              <DeviceFrame isMobile={ctx.isMobile}>
+              <DeviceFrame>
                 <OttScreen
                   rationale={rationale}
                   headline={railHeadline(rationale, participant.display_name)}
@@ -83,7 +83,6 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
                   titles={titles}
                   usageCondition={participant.usage_condition as UsageCondition}
                   displayName={participant.display_name}
-                  isMobile={ctx.isMobile}
                 />
               </DeviceFrame>
             </div>

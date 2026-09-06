@@ -124,7 +124,13 @@ export function buildContextSnapshot(now: Date, isMobile: boolean): ContextSnaps
   const daypart = daypartLabel(hour);
   const scene = scenePhrase(weekdayIndex, hour);
   // 모바일이면 스마트폰, 그 외(PC·태블릿)는 큰 화면
-  const device = isMobile ? "스마트폰으로" : "큰 화면으로";
+  /*
+    자극물은 접속 기기와 무관하게 언제나 스마트폰 화면이다.
+    PC 용 목업 자료가 없어 화면을 기기별로 나눌 수 없고, 나눌 수 있더라도
+    참여자마다 다른 화면을 보면 그 차이가 근거유형 효과에 섞인다.
+    실제 접속 기기는 participants.is_mobile 에 그대로 남아 공변량으로 쓸 수 있다.
+  */
+  const device = "스마트폰으로";
 
   return {
     weekday,

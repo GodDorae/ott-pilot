@@ -25,14 +25,12 @@ export function usageBrief(condition: UsageCondition): string {
 /**
  * 상황 제시문 — 두 조건 공통.
  *
- * 첫 문장의 기기는 참여자가 실제로 접속한 기기에 맞춘다. 목업 프레임(스마트폰/브라우저 창)과
- * 맥락 인식 조건 문구("스마트폰으로"/"큰 화면으로")가 이미 접속 기기를 따르므로,
- * 안내문만 "모바일 앱"으로 고정하면 PC 참여자에게는 화면과 글이 어긋난다.
+ * 접속 기기와 무관하게 모바일 상황으로 고정한다 — 자극물이 언제나 스마트폰 화면이라
+ * 안내문만 기기별로 갈리면 화면과 글이 어긋난다.
  */
-export function briefScene(isMobile: boolean): string[] {
-  const where = isMobile ? "모바일 OTT 앱에서" : "PC 로 OTT 서비스에 접속해";
+export function briefScene(): string[] {
   return [
-    `당신은 지금 ${where} 볼 콘텐츠를 탐색하고 있는 상황입니다.`,
+    "당신은 지금 모바일 OTT 앱에서 볼 콘텐츠를 탐색하고 있는 상황입니다.",
     "홈 화면을 둘러보던 중 콘텐츠 추천 영역을 발견했습니다.",
     "이후 해당 경험을 바탕으로 이어지는 문항에 응답해 주세요.",
   ];

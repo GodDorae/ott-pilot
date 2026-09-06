@@ -122,9 +122,9 @@ export type ScreenResponseRow = {
   pu1: number | null;
   pu2: number | null;
   pu3: number | null;
-  ai1: number | null;
-  ai2: number | null;
-  ai3: number | null;
+  ra1: number | null;
+  ra2: number | null;
+  ra3: number | null;
   attention_check: number | null;
   attention_passed: boolean | null;
   dwell_ms: number | null;
@@ -483,9 +483,9 @@ export async function saveScreenResponse(input: ScreenResponseInput) {
     pu1: input.answers.pu1 ?? null,
     pu2: input.answers.pu2 ?? null,
     pu3: input.answers.pu3 ?? null,
-    ai1: input.answers.ai1 ?? null,
-    ai2: input.answers.ai2 ?? null,
-    ai3: input.answers.ai3 ?? null,
+    ra1: input.answers.ra1 ?? null,
+    ra2: input.answers.ra2 ?? null,
+    ra3: input.answers.ra3 ?? null,
     attention_check: input.attentionCheck,
     attention_passed:
       input.attentionCheck === null ? null : input.attentionCheck === ATTENTION_CORRECT,

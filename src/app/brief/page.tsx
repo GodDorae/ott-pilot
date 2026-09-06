@@ -24,7 +24,7 @@ export default async function BriefPage() {
   if (!participant.usage_condition) redirect("/pre");
 
   const condition = participant.usage_condition as UsageCondition;
-  const scene = briefScene(participant.is_mobile ?? false);
+  const scene = briefScene();
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-5 py-12">

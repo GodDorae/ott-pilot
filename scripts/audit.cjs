@@ -84,7 +84,7 @@ const USAGE = {
   section: "usage",
   answers: { ott_platform: "netflix", ott_tenure: "over_1y", rec_selection_freq: "often", primary_device: "smartphone", viewing_timeslot: "evening" },
 };
-const L = { pu1: 4, pu2: 5, pu3: 3, ai1: 4, ai2: 4, ai3: 5 };
+const L = { pu1: 4, pu2: 5, pu3: 3, ra1: 4, ra2: 4, ra3: 5 };
 const MOB = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605 Mobile/15E148";
 const PC = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120";
 /** RSC 페이로드(<script self.__next_f>)를 떼고 렌더된 HTML 만 남긴다 — 문자열이 두 번 세지는 걸 막는다 */
@@ -324,7 +324,7 @@ async function complete(opts = {}) {
     await badS("문항 누락", { stepIndex: 1, answers: { pu1: 3 } });
     await badS("성실성 문항 누락", { stepIndex: 1, answers: L });
     await badS("성실성 범위 밖", { stepIndex: 1, answers: L, attentionCheck: 6 });
-    ck("리커트 5점 허용", (await s("/api/session/screen", { stepIndex: 1, answers: { pu1: 5, pu2: 5, pu3: 5, ai1: 1, ai2: 1, ai3: 1 }, attentionCheck: 4, dwellMs: 5000 })).status === 200);
+    ck("리커트 5점 허용", (await s("/api/session/screen", { stepIndex: 1, answers: { pu1: 5, pu2: 5, pu3: 5, ra1: 1, ra2: 1, ra3: 1 }, attentionCheck: 4, dwellMs: 5000 })).status === 200);
     for (let t = 2; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, dwellMs: 5000 });
 
     const badP = async (n, b) => ck(n, (await s("/api/session/posttest", b)).status === 400);
@@ -536,7 +536,9 @@ async function complete(opts = {}) {
       await s("/api/session/brief", {});
       const html = (await s("/stimulus/1")).text;
       // 스마트폰은 얇은 베젤 + iOS 상태바, PC 는 브라우저 창
-      ck(name + " 목업 프레임", wantPhone ? /rounded-\[1\.9rem\]/.test(html) && html.includes("9:41") : /stream\.example/.test(html) && !html.includes("9:41"));
+      // 접속 기기와 무관하게 언제나 스마트폰 목업이다 (PC 용 실험물 자료가 없다)
+      ck(name + " 스마트폰 목업", html.includes("rounded-[1.9rem]") && html.includes("9:41"));
+      ck(name + " 브라우저 창 안 씀", !/stream.example/.test(html));
       // 2분할은 가로·세로 여유가 둘 다 있을 때만 켠다 (wide 변형)
       ck(
         name + " 2분할 레이아웃",
@@ -562,7 +564,7 @@ async function complete(opts = {}) {
       ck(name + " 조건별 헤드라인 3종", new Set(heads).size === 3, heads.join(" | "));
       const snap = (await rest("participants?select=context_snapshot,is_mobile&display_name=eq.가나다라" + MINE))[0];
       ck(name + " 맥락 source=access_time", snap?.context_snapshot?.source === "access_time");
-      ck(name + " 맥락 기기 문구", snap?.context_snapshot?.device === (wantPhone ? "스마트폰으로" : "큰 화면으로"), snap?.context_snapshot?.device);
+      ck(name + " 맥락 기기 문구 고정", snap?.context_snapshot?.device === "스마트폰으로", snap?.context_snapshot?.device);
       ck(name + " is_mobile 컬럼 저장", snap?.is_mobile === wantPhone, String(snap?.is_mobile));
 
       await s("/api/session/posttest", { part: "check", answer: "SVOD" });
@@ -570,7 +572,7 @@ async function complete(opts = {}) {
       ck(name + " 순위 미리보기 3개", ["1", "2", "3"].every((n) => rk.text.includes("추천 화면 " + n)));
       ck(name + " 근거유형 워딩 미노출", !/콘텐츠 기반|협업 기반|맥락 인식 기반/.test(rk.text));
       ck(name + " 선택 이유 같은 화면", /각 순위\(1~3위\)로 추천 화면을 고른 이유/.test(rk.text));
-      ck(name + " 미리보기에도 목업", wantPhone ? /rounded-\[1\.9rem\]/.test(rk.text) : /stream\.example/.test(rk.text));
+      ck(name + " 미리보기에도 목업", rk.text.includes("rounded-[1.9rem]"));
     }
 
     await wipe();
@@ -666,9 +668,23 @@ async function complete(opts = {}) {
     ck("코드북 머리글", cb[0] === "column,code,section,question,type,values", cb[0]);
     ck("코드북 행 = CSV 컬럼 수", cb.length - 1 === H.length, cb.length - 1 + " / " + H.length);
     ck("설명 없는 컬럼 0", !cb.some((l) => l.includes("설명 없음")), cb.filter((l) => l.includes("설명 없음")).join(" "));
-    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4", "mc_usage_answer"], ["4-2-2", "open_notable"], ["PU1", "pu1"], ["RA3", "ai3"]])
+    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4", "mc_usage_answer"], ["4-2-2", "open_notable"], ["PU1", "pu1"], ["RA3", "ra3"]])
       ck("코드북 " + code + " → " + col, cb.some((l) => l.startsWith(col + "," + code + ",")), cb.find((l) => l.startsWith(col + ",")) ?? "없음");
     ck("코드북에 권한 필요", (await fetch(B + "/api/admin/export?format=codebook")).status === 401);
+
+    /*
+      CSV 와 survey_export 뷰가 같은 열을 같은 순서로 내야 한다.
+      Supabase 에서 바로 뽑은 자료와 관리자 화면에서 받은 자료를 그대로 이어 붙이려면
+      열이 어긋나면 안 된다 — 예전에 CSV 에만 있던 열과 뷰에만 있던 열이 따로 있었다.
+    */
+    const viewRow = (await rest("survey_export?select=*&limit=1"))[0];
+    if (!viewRow) ck("뷰 열 = CSV 열", false, "뷰에 행이 없어 비교 못 함");
+    else {
+      const viewCols = Object.keys(viewRow);
+      ck("뷰 열 수 = CSV 열 수", viewCols.length === H.length, viewCols.length + " / " + H.length);
+      const diff = H.map((c, i) => (c === viewCols[i] ? null : i + ":" + c + "≠" + viewCols[i])).filter(Boolean);
+      ck("뷰 열 이름·순서 일치", diff.length === 0, diff.slice(0, 5).join(" "));
+    }
   }
 
   // ── 12

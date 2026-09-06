@@ -82,7 +82,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   // 근거유형별 평균 (표본이 작을 때는 어디까지나 눈대중용)
   const byRationale = RATIONALE_TYPES.map((rt) => {
     const rows = responses.filter((r) => r.rationale_type === rt);
-    const avg = (keys: ("pu1" | "pu2" | "pu3" | "ai1" | "ai2" | "ai3")[]) => {
+    const avg = (keys: ("pu1" | "pu2" | "pu3" | "ra1" | "ra2" | "ra3")[]) => {
       const nums = rows.flatMap((r) => keys.map((k) => r[k]).filter((v): v is number => v !== null));
       return nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : "-";
     };
@@ -90,7 +90,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       rationale: rt,
       n: rows.length,
       pu: avg(["pu1", "pu2", "pu3"]),
-      ai: avg(["ai1", "ai2", "ai3"]),
+      ra: avg(["ra1", "ra2", "ra3"]),
       dwell: (() => {
         const ms = rows.map((r) => r.dwell_ms).filter((v): v is number => v !== null);
         return ms.length
@@ -319,7 +319,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 <td className="py-2 pr-3">{RATIONALE_LABELS[row.rationale]}</td>
                 <td className="py-2 pr-3 tabular-nums">{row.n}</td>
                 <td className="py-2 pr-3 tabular-nums">{row.pu}</td>
-                <td className="py-2 pr-3 tabular-nums">{row.ai}</td>
+                <td className="py-2 pr-3 tabular-nums">{row.ra}</td>
                 <td className="py-2 pr-3 tabular-nums">{row.dwell}</td>
               </tr>
             ))}

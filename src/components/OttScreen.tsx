@@ -141,8 +141,17 @@ function Img({ src, alt, crop }: { src: string; alt: string; crop?: string }) {
 
 function CastIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} aria-hidden>
-      <path d="M3 17.5a3.5 3.5 0 0 1 3.5 3.5M3 13.5a7.5 7.5 0 0 1 7.5 7.5" strokeLinecap="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      aria-hidden
+    >
+      <path
+        d="M3 17.5a3.5 3.5 0 0 1 3.5 3.5M3 13.5a7.5 7.5 0 0 1 7.5 7.5"
+        strokeLinecap="round"
+      />
       <circle cx="3.4" cy="20.6" r="1" fill="currentColor" stroke="none" />
       <path
         d="M8.5 5.5h11.2A1.8 1.8 0 0 1 21.5 7.3v9.4a1.8 1.8 0 0 1-1.8 1.8h-5.4"
@@ -156,8 +165,18 @@ function CastIcon() {
 
 function DownloadIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path d="M12 3v11m0 0 4.5-4.5M12 14l-4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        d="M12 3v11m0 0 4.5-4.5M12 14l-4.5-4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <path d="M5 19.5h14" strokeLinecap="round" strokeWidth={2.6} />
     </svg>
   );
@@ -165,7 +184,13 @@ function DownloadIcon() {
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
       <circle cx="10.6" cy="10.6" r="7.1" />
       <path d="m16 16 5 5" strokeLinecap="round" />
     </svg>
@@ -175,7 +200,13 @@ function SearchIcon() {
 /** 최근 시청 — 되감기 화살표가 달린 시계 (내용 기반 조건) */
 function HistoryIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      aria-hidden
+    >
       <path
         d="M3.4 8.2A9 9 0 1 1 3 12"
         strokeLinecap="round"
@@ -190,29 +221,37 @@ function HistoryIcon() {
 /** 비슷한 사용자들 — 두 사람 (협업 필터링 조건) */
 function PeopleIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      aria-hidden
+    >
       <circle cx="9.2" cy="8" r="3.5" />
-      <path d="M2.8 19.4c.6-3.4 3.2-5.4 6.4-5.4s5.8 2 6.4 5.4" strokeLinecap="round" />
-      <path d="M16.4 5c1.9.3 3.2 1.8 3.2 3.6a3.6 3.6 0 0 1-2.4 3.4" strokeLinecap="round" />
+      <path
+        d="M2.8 19.4c.6-3.4 3.2-5.4 6.4-5.4s5.8 2 6.4 5.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16.4 5c1.9.3 3.2 1.8 3.2 3.6a3.6 3.6 0 0 1-2.4 3.4"
+        strokeLinecap="round"
+      />
       <path d="M18.2 14.6c1.7.7 2.8 2.2 3.1 4.2" strokeLinecap="round" />
     </svg>
   );
 }
 
-/** 큰 화면 (맥락 인식 조건 · PC) */
-function MonitorIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} aria-hidden>
-      <rect x="2.4" y="3.8" width="19.2" height="13" rx="1.8" />
-      <path d="M12 16.8v3.4M8.4 20.2h7.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-/** 스마트폰 (맥락 인식 조건 · 모바일) */
+/** 스마트폰 — 맥락 인식 조건 아이콘 (자극물은 언제나 스마트폰 화면이다) */
 function PhoneIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      aria-hidden
+    >
       <rect x="6.2" y="2.4" width="11.6" height="19.2" rx="2.4" />
       <path d="M10.4 18.6h3.2" strokeLinecap="round" />
     </svg>
@@ -229,8 +268,22 @@ function HomeIcon() {
 
 function TrendingIcon() {
   return (
-    <svg viewBox="2.6 2.25 17.85 17.15" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden>
-      <rect x="2.6" y="6.6" width="12.6" height="12.8" rx="1.8" fill="currentColor" stroke="none" />
+    <svg
+      viewBox="2.6 2.25 17.85 17.15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      aria-hidden
+    >
+      <rect
+        x="2.6"
+        y="6.6"
+        width="12.6"
+        height="12.8"
+        rx="1.8"
+        fill="currentColor"
+        stroke="none"
+      />
       <path d="M6.6 6.6V4.9a1.8 1.8 0 0 1 1.8-1.8h9.4a1.8 1.8 0 0 1 1.8 1.8v9.4a1.8 1.8 0 0 1-1.8 1.8h-2.6" />
       <path d="m7.6 10 4.4 3-4.4 3z" fill="#000" stroke="none" />
     </svg>
@@ -246,7 +299,6 @@ export default function OttScreen({
   titles,
   usageCondition,
   displayName,
-  isMobile,
 }: {
   rationale: RationaleType;
   /** 레일 제목 — 조건별 헤드라인 */
@@ -257,8 +309,6 @@ export default function OttScreen({
   titles: Title[];
   usageCondition: UsageCondition;
   displayName: string | null;
-  /** 맥락 조건 아이콘을 접속 기기에 맞춘다 */
-  isMobile: boolean;
 }) {
   const visible = titles.slice(0, VISIBLE_PER_SET);
   const peek = titles[VISIBLE_PER_SET];
@@ -266,7 +316,11 @@ export default function OttScreen({
   const who = honorific(displayName);
 
   const BannerIcon =
-    rationale === "content" ? HistoryIcon : rationale === "collab" ? PeopleIcon : isMobile ? PhoneIcon : MonitorIcon;
+    rationale === "content"
+      ? HistoryIcon
+      : rationale === "collab"
+        ? PeopleIcon
+        : PhoneIcon;
 
   return (
     <div
@@ -288,7 +342,8 @@ export default function OttScreen({
         className="absolute inset-x-0 top-0"
         style={{
           height: u(M.fadeH),
-          background: "linear-gradient(180deg, #000 0%, #0a0505 36%, #2a1c1b 78%, #51372f 100%)",
+          background:
+            "linear-gradient(180deg, #000 0%, #0a0505 36%, #2a1c1b 78%, #51372f 100%)",
         }}
         aria-hidden
       />
@@ -311,58 +366,102 @@ export default function OttScreen({
             className="shrink-0 overflow-hidden"
             style={{ width: u(M.heroW), borderRadius: u(M.posterRadius) }}
           >
-            <Img src={`/posters/chrome/${name}.webp`} alt="" crop={M.heroCrop} />
+            <Img
+              src={`/posters/chrome/${name}.webp`}
+              alt=""
+              crop={M.heroCrop}
+            />
           </div>
         ))}
         <div
           className="shrink-0 overflow-hidden"
           style={{ width: u(M.heroPeekW), borderRadius: u(M.posterRadius) }}
         >
-          <Img src={`/posters/chrome/${HERO_PEEK}.webp`} alt="" crop={M.heroCrop} />
+          <Img
+            src={`/posters/chrome/${HERO_PEEK}.webp`}
+            alt=""
+            crop={M.heroCrop}
+          />
         </div>
       </div>
 
-      {/* 상태바 — 스마트폰 프레임에서만. 브라우저 창에는 이런 줄이 없다 */}
-      {isMobile && (
-        <div
-          className="absolute flex items-center"
+      {/* 상태바 */}
+      <div
+        className="absolute flex items-center"
+        style={{
+          left: u(M.pad),
+          right: u(M.statusIconsRight),
+          top: u(M.statusY),
+          height: u(M.statusH),
+        }}
+        aria-hidden
+      >
+        <span
+          className="font-semibold"
           style={{
-            left: u(M.pad),
-            right: u(M.statusIconsRight),
-            top: u(M.statusY),
-            height: u(M.statusH),
+            marginLeft: u(M.statusTimeIndent),
+            fontSize: u(M.statusTimeSize),
           }}
-          aria-hidden
         >
-          <span
-            className="font-semibold"
-            style={{ marginLeft: u(M.statusTimeIndent), fontSize: u(M.statusTimeSize) }}
+          9:41
+        </span>
+        <div
+          className="ml-auto flex items-center"
+          style={{ gap: u(M.statusIconGap) }}
+        >
+          {/* 신호 */}
+          <svg
+            viewBox="0 0 20 14"
+            fill="currentColor"
+            style={{ height: u(M.statusIconH) }}
           >
-            9:41
-          </span>
-          <div className="ml-auto flex items-center" style={{ gap: u(M.statusIconGap) }}>
-            {/* 신호 */}
-            <svg viewBox="0 0 20 14" fill="currentColor" style={{ height: u(M.statusIconH) }}>
-              <rect x="0" y="9.5" width="3" height="4.5" rx="1" />
-              <rect x="4.6" y="6.8" width="3" height="7.2" rx="1" />
-              <rect x="9.2" y="4" width="3" height="10" rx="1" />
-              <rect x="13.8" y="0.6" width="3" height="13.4" rx="1" />
-            </svg>
-            {/* 와이파이 */}
-            <svg viewBox="0 0 20 12" fill="currentColor" style={{ height: u(M.statusIconH) }}>
-              <path d="M10 11.6 7.5 8.6a3.3 3.3 0 0 1 5 0Z" />
-              <path d="M10 4.1c1.85 0 3.55.72 4.8 1.9l1.75-2.1A10.2 10.2 0 0 0 10 1.3a10.2 10.2 0 0 0-6.55 2.6L5.2 6A6.9 6.9 0 0 1 10 4.1Z" />
-              <path d="M10 .4c2.8 0 5.4 1 7.35 2.7l1.6-1.95A13.2 13.2 0 0 0 10-1.5 13.2 13.2 0 0 0 1.05 1.15l1.6 1.95A11.2 11.2 0 0 1 10 .4Z" />
-            </svg>
-            {/* 배터리 */}
-            <svg viewBox="0 0 26 14" fill="none" style={{ height: u(M.statusIconH) }}>
-              <rect x="0.7" y="0.7" width="22.6" height="12.6" rx="3.6" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.2" />
-              <rect x="2.4" y="2.4" width="19.2" height="9.2" rx="2.3" fill="currentColor" />
-              <path d="M24.8 5v4a2.3 2.3 0 0 0 0-4Z" fill="currentColor" fillOpacity="0.45" />
-            </svg>
-          </div>
+            <rect x="0" y="9.5" width="3" height="4.5" rx="1" />
+            <rect x="4.6" y="6.8" width="3" height="7.2" rx="1" />
+            <rect x="9.2" y="4" width="3" height="10" rx="1" />
+            <rect x="13.8" y="0.6" width="3" height="13.4" rx="1" />
+          </svg>
+          {/* 와이파이 */}
+          <svg
+            viewBox="0 0 20 12"
+            fill="currentColor"
+            style={{ height: u(M.statusIconH) }}
+          >
+            <path d="M10 11.6 7.5 8.6a3.3 3.3 0 0 1 5 0Z" />
+            <path d="M10 4.1c1.85 0 3.55.72 4.8 1.9l1.75-2.1A10.2 10.2 0 0 0 10 1.3a10.2 10.2 0 0 0-6.55 2.6L5.2 6A6.9 6.9 0 0 1 10 4.1Z" />
+            <path d="M10 .4c2.8 0 5.4 1 7.35 2.7l1.6-1.95A13.2 13.2 0 0 0 10-1.5 13.2 13.2 0 0 0 1.05 1.15l1.6 1.95A11.2 11.2 0 0 1 10 .4Z" />
+          </svg>
+          {/* 배터리 */}
+          <svg
+            viewBox="0 0 26 14"
+            fill="none"
+            style={{ height: u(M.statusIconH) }}
+          >
+            <rect
+              x="0.7"
+              y="0.7"
+              width="22.6"
+              height="12.6"
+              rx="3.6"
+              stroke="currentColor"
+              strokeOpacity="0.45"
+              strokeWidth="1.2"
+            />
+            <rect
+              x="2.4"
+              y="2.4"
+              width="19.2"
+              height="9.2"
+              rx="2.3"
+              fill="currentColor"
+            />
+            <path
+              d="M24.8 5v4a2.3 2.3 0 0 0 0-4Z"
+              fill="currentColor"
+              fillOpacity="0.45"
+            />
+          </svg>
         </div>
-      )}
+      </div>
 
       {/* 헤더 — 호칭 + 앱 아이콘. 세 조건 모두 동일하다 */}
       <div
@@ -381,13 +480,22 @@ export default function OttScreen({
           className="flex items-center"
           style={{ gap: u(M.headerIconGap), transform: `translateY(${u(12)})` }}
         >
-          <span style={{ width: u(M.headerIconSize), height: u(M.headerIconSize) }}>
+          <span
+            style={{ width: u(M.headerIconSize), height: u(M.headerIconSize) }}
+          >
             <CastIcon />
           </span>
-          <span style={{ width: u(M.headerIconSize - 8), height: u(M.headerIconSize) }}>
+          <span
+            style={{
+              width: u(M.headerIconSize - 8),
+              height: u(M.headerIconSize),
+            }}
+          >
             <DownloadIcon />
           </span>
-          <span style={{ width: u(M.headerIconSize), height: u(M.headerIconSize) }}>
+          <span
+            style={{ width: u(M.headerIconSize), height: u(M.headerIconSize) }}
+          >
             <SearchIcon />
           </span>
         </div>
@@ -396,7 +504,12 @@ export default function OttScreen({
       {/* 레일 제목 — 조건별 헤드라인 */}
       <div
         className="absolute flex items-center"
-        style={{ left: u(M.sparkleX), right: u(M.pad), top: u(M.title1Y), gap: u(M.sparkleGap) }}
+        style={{
+          left: u(M.sparkleX),
+          right: u(M.pad),
+          top: u(M.title1Y),
+          gap: u(M.sparkleGap),
+        }}
       >
         {/* 스파클 — 개인화 추천 표식 */}
         <svg
@@ -466,7 +579,10 @@ export default function OttScreen({
           style={{ fontSize: u(M.bannerTextSize), color: "#f0f0f0" }}
         >
           {banner.map((seg, i) => (
-            <span key={i} className={seg.strong ? "font-bold text-white" : undefined}>
+            <span
+              key={i}
+              className={seg.strong ? "font-bold text-white" : undefined}
+            >
               {seg.text}
             </span>
           ))}
@@ -476,7 +592,12 @@ export default function OttScreen({
       {/* 실험 포스터 줄 — 여기에 배정된 세트가 들어간다 */}
       <div
         className="absolute flex"
-        style={{ left: u(M.pad), top: u(M.rail1Y), height: u(M.heroH), gap: u(M.gap) }}
+        style={{
+          left: u(M.pad),
+          top: u(M.rail1Y),
+          height: u(M.heroH),
+          gap: u(M.gap),
+        }}
       >
         {visible.map((t) => (
           <figure
@@ -509,7 +630,12 @@ export default function OttScreen({
       </h2>
       <div
         className="absolute flex"
-        style={{ left: u(M.pad), top: u(M.rail2Y), height: u(M.rail2H), gap: u(M.gap) }}
+        style={{
+          left: u(M.pad),
+          top: u(M.rail2Y),
+          height: u(M.rail2H),
+          gap: u(M.gap),
+        }}
         aria-hidden
       >
         {ONLY_IMAGES.map((name) => (
@@ -562,7 +688,8 @@ export default function OttScreen({
                   className="grid h-full w-full place-items-center"
                   style={{
                     borderRadius: u(12),
-                    background: "linear-gradient(160deg, #f0464b 0%, #d9081b 100%)",
+                    background:
+                      "linear-gradient(160deg, #f0464b 0%, #d9081b 100%)",
                   }}
                 >
                   <span
@@ -576,7 +703,10 @@ export default function OttScreen({
             </span>
             <span
               className="absolute whitespace-nowrap font-medium"
-              style={{ top: u(M.tabLabelY - M.tabIconY), fontSize: u(M.tabLabelSize) }}
+              style={{
+                top: u(M.tabLabelY - M.tabIconY),
+                fontSize: u(M.tabLabelSize),
+              }}
             >
               {tab.label}
             </span>

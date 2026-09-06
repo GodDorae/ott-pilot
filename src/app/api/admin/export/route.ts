@@ -19,18 +19,14 @@ const HEADERS = [
   "usage_condition",
   "preferred_genre",
   "preferred_genre_label",
-  // 호칭 자체는 싣지 않는다 (익명성) — 개인화가 걸렸는지만 남긴다
   "has_display_name",
-  // 응답 기기 — 목업 프레임과 맥락 문구를 함께 결정한 값
   "is_mobile",
   "device",
-  // 저인지도 가정 검증 — 그 장르 12편 중 이미 본 편수
   "watched_count",
   "heard_count",
   "unknown_count",
   "seen_title_ids",
   "title_familiarity",
-  // A. 인구통계 / B. OTT 이용 현황
   "age_group",
   "gender",
   "ott_platform",
@@ -58,7 +54,11 @@ const HEADERS = [
   "mapping_index",
   "presentation_order",
   "started_at",
+  "assigned_at",
+  "brief_seen_at",
+  "brief_dwell_sec",
   "completed_at",
+  "attention_passed_count",
   "step_index",
   "rationale_type",
   "set_id",
@@ -67,11 +67,10 @@ const HEADERS = [
   "pu2",
   "pu3",
   "pu_mean",
-  "ai1",
-  "ai2",
-  "ai3",
-  "ai_mean",
-  // 성실성 확인 — 정답 4
+  "ra1",
+  "ra2",
+  "ra3",
+  "ra_mean",
   "attention_check",
   "attention_passed",
   "dwell_ms",
@@ -90,6 +89,13 @@ function countLevel(
 ): string {
   if (!familiarity) return "";
   return String(Object.values(familiarity).filter((v) => v === level).length);
+}
+
+/** 3단계 안내를 읽은 시간(초) — 뷰의 brief_dwell_sec 과 같은 계산 */
+function briefDwellSec(p: { assigned_at: string | null; brief_seen_at: string | null }): string {
+  if (!p.assigned_at || !p.brief_seen_at) return "";
+  const sec = (Date.parse(p.brief_seen_at) - Date.parse(p.assigned_at)) / 1000;
+  return Number.isFinite(sec) ? sec.toFixed(1) : "";
 }
 
 function mean(values: (number | null)[]): string {
@@ -131,6 +137,12 @@ export async function GET(req: Request) {
 
   const { participants, responses } = await listAll(phase);
   const byId = new Map(participants.map((p) => [p.id, p]));
+
+  // 뷰가 계산해 주던 참여자 단위 값 — CSV 도 같은 열을 내야 나중에 이어 붙일 수 있다
+  const attentionPassed = new Map<string, number>();
+  for (const r of responses)
+    if (r.attention_passed)
+      attentionPassed.set(r.participant_id, (attentionPassed.get(r.participant_id) ?? 0) + 1);
 
   const rows = responses
     .map((r) => {
@@ -179,7 +191,11 @@ export async function GET(req: Request) {
         p.mapping_index,
         (p.presentation_order ?? []).join(">"),
         p.started_at,
+        p.assigned_at,
+        p.brief_seen_at,
+        briefDwellSec(p),
         p.completed_at,
+        attentionPassed.get(p.id) ?? 0,
         r.step_index,
         r.rationale_type,
         r.set_id,
@@ -188,10 +204,10 @@ export async function GET(req: Request) {
         r.pu2,
         r.pu3,
         mean([r.pu1, r.pu2, r.pu3]),
-        r.ai1,
-        r.ai2,
-        r.ai3,
-        mean([r.ai1, r.ai2, r.ai3]),
+        r.ra1,
+        r.ra2,
+        r.ra3,
+        mean([r.ra1, r.ra2, r.ra3]),
         r.attention_check,
         r.attention_passed,
         r.dwell_ms,

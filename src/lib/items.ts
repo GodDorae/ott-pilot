@@ -29,9 +29,9 @@ export const USEFULNESS_ITEMS: LikertItem[] = [
 
 /** 종속변수 — 추천 수용의도 (RA) */
 export const INTENTION_ITEMS: LikertItem[] = [
-  { key: "ai1", text: "이 추천작을 실제로 시청하고 싶다" },
-  { key: "ai2", text: "상황이 맞으면 이 추천을 따라 볼 의향이 있다" },
-  { key: "ai3", text: "앞으로도 이런 방식의 추천을 참고할 의향이 있다" },
+  { key: "ra1", text: "이 추천작을 실제로 시청하고 싶다" },
+  { key: "ra2", text: "상황이 맞으면 이 추천을 따라 볼 의향이 있다" },
+  { key: "ra3", text: "앞으로도 이런 방식의 추천을 참고할 의향이 있다" },
 ];
 
 export const ALL_ITEMS = [...USEFULNESS_ITEMS, ...INTENTION_ITEMS];

@@ -55,7 +55,7 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
       const rationale = r as RationaleType;
       const setId = participant.set_mapping?.[rationale] as SetId;
       return (
-        <DeviceFrame key={rationale} isMobile={ctx.isMobile} compact>
+        <DeviceFrame key={rationale} compact>
           <OttScreen
             rationale={rationale}
             headline={railHeadline(rationale, participant.display_name)}
@@ -63,7 +63,6 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
             titles={getRail(genre, setId)}
             usageCondition={participant.usage_condition as UsageCondition}
             displayName={participant.display_name}
-            isMobile={ctx.isMobile}
           />
         </DeviceFrame>
       );
