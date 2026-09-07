@@ -427,6 +427,7 @@ async function complete(opts = {}) {
     const st = htmlOnly((await s("/stimulus/1")).text).replace(/<!--.*?-->/g, "");
     ck("자극물 화면에 성실성 문항", /성실성을 확인하기 위한 문항/.test(st));
     ck("자극물 화면에 이해도 문항", /의미가 명확하게 이해되셨나요/.test(st));
+    ck("내용 기반 문구 '자주 시청하신'", !/최근 시청하신/.test(st));
     // 이해도에서 "몇 번이 어려웠다" 고 가리킬 대상이라 번호가 보여야 한다
     for (const n of [1, 2, 3, 4, 5, 6])
       ck("문항 번호 " + n + " 표시", st.includes(">" + n + ".</span>"), String(n));
@@ -598,6 +599,25 @@ async function complete(opts = {}) {
       const snap = (await rest("participants?select=context_snapshot,is_mobile&display_name=eq.가나다라" + MINE))[0];
       ck(name + " 맥락 source=access_time", snap?.context_snapshot?.source === "access_time");
       ck(name + " 맥락 기기 문구 고정", snap?.context_snapshot?.device === "스마트폰으로", snap?.context_snapshot?.device);
+      /*
+        맥락 문구는 요일·시간대·기기만 말한다. 활동을 연상시키는 표현은 쓰지 않는다 —
+        시스템이 알 수 없는 것을 안다고 말하는 셈이고, 맞지 않으면 조작이 거슬린다.
+      */
+      const ctxPhrase = snap?.context_snapshot?.phrase ?? "";
+      const 요일들 = ["월", "화", "수", "목", "금", "토", "일"];
+      ck(
+        name + " 맥락 문구 꼴",
+        요일들.some((d) => ctxPhrase.startsWith(d + "요일 ")) &&
+          ctxPhrase.endsWith(", 스마트폰으로 보기 좋은 작품") &&
+          ctxPhrase.split(", ").length === 2,
+        ctxPhrase,
+      );
+      ck(
+        name + " 활동 연상어 없음",
+        !/출근|퇴근|잠들기|불 끄고|틈내어|쉬어가며|마무리|시작하며|느긋|쫓기지/.test(ctxPhrase),
+        ctxPhrase,
+      );
+      ck(name + " 상황 묘사 자리 없음", snap?.context_snapshot?.scene === undefined, JSON.stringify(snap?.context_snapshot?.scene));
       ck(name + " is_mobile 컬럼 저장", snap?.is_mobile === wantPhone, String(snap?.is_mobile));
 
       await s("/api/session/posttest", { part: "check", answer: "SVOD" });

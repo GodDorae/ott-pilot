@@ -150,7 +150,7 @@ export default function GenrePicker({
           </p>
           {/*
             여기서 장르 이름을 말하지 않는다. 이 목록이 '고른 장르의 작품들'이라고
-            알려주면, 이후 자극물의 추천 근거("최근 시청하신 {장르} 작품과 …")를
+            알려주면, 이후 자극물의 추천 근거("자주 시청하신 {장르} 작품과 …")를
             참여자가 미리 예상하게 된다.
           */}
           <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">

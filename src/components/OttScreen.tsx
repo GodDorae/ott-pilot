@@ -197,7 +197,7 @@ function SearchIcon() {
   );
 }
 
-/** 최근 시청 — 되감기 화살표가 달린 시계 (내용 기반 조건) */
+/** 시청 이력 — 되감기 화살표가 달린 시계 (내용 기반 조건) */
 function HistoryIcon() {
   return (
     <svg

@@ -22,8 +22,6 @@ export function normalizeDisplayName(raw: string | null | undefined): string | n
 export type ContextSnapshot = {
   weekday: string;
   daypart: string;
-  /** "주말을 시작하며" 처럼 요일·시간대를 함께 반영한 상황 묘사 */
-  scene: string;
   device: string;
   /** 완성된 맥락 문구 */
   phrase: string;
@@ -73,42 +71,11 @@ function daypartLabel(hour: number): string {
 }
 
 /**
- * 상황 묘사 — 요일과 시간대를 함께 본다.
+ * 맥락 문구를 만든다 — 참여자가 **지금 실제로** 접속한 요일·시간대 기준.
  *
- * 문장은 "{요일} {시간대}, {상황} {기기} 보기 좋은 작품" 꼴로 조립된다.
- * 앞에 이미 요일과 시간대가 있으므로 여기서 그것을 되풀이하지 않는다 —
- * "토요일 오후, 주말 오후를 느긋하게…" 처럼 같은 말을 두 번 하면 어색해진다.
- *
- * 주말이 걸린 시점(금요일 밤 · 일요일 밤)은 그 사실 자체가 가장 두드러진 맥락이라
- * 시간대보다 우선한다. 맥락 인식 조건이 내세우는 근거가 바로 '지금 이 상황'이다.
- */
-function scenePhrase(weekdayIndex: number, hour: number): string {
-  const isSat = weekdayIndex === 6;
-  const isSun = weekdayIndex === 0;
-  const isWeekend = isSat || isSun;
-
-  // 새벽은 요일과 무관하게 같은 상황이다
-  if (hour < 6) return "잠들기 전 조용히";
-
-  // 주말의 시작과 끝
-  if (weekdayIndex === 5 && hour >= 18) return "주말을 시작하며";
-  if (isSun && hour >= 18) return "주말을 마무리하며";
-
-  if (isWeekend) {
-    if (hour < 11) return "느긋한 아침에";
-    if (hour < 18) return "느긋하게 시간을 보내며";
-    return "시간에 쫓기지 않고"; // 토요일 저녁·밤
-  }
-
-  if (hour < 11) return weekdayIndex === 1 ? "한 주를 시작하며" : "하루를 시작하며";
-  if (hour < 14) return "짧게 틈내어";
-  if (hour < 18) return "잠깐 쉬어가며";
-  if (hour < 22) return "하루를 마무리하며";
-  return "불 끄고 몰입해서";
-}
-
-/**
- * 맥락 문구를 만든다 — 참여자가 **지금 실제로** 접속한 요일·시간대·기기 기준.
+ * 활동을 연상시키는 표현(출근길에·퇴근길에·잠들기 전 …)은 쓰지 않는다.
+ * 시스템이 알 수 없는 것을 안다고 말하는 셈이고, 맞지 않으면 조작이 오히려 거슬린다.
+ * 통제되는 것은 요일·시간대·기기뿐이라 해석도 이쪽이 깔끔하다.
  *
  * 처음에는 B-4·B-5 자기보고(평소 시청 기기·시간대)를 썼는데, 오전에 응답하는데도
  * 평소 시간대인 "오후"가 뜨는 게 어색하다는 피드백이 있었다. 맥락 인식 추천이
@@ -122,8 +89,6 @@ export function buildContextSnapshot(now: Date, isMobile: boolean): ContextSnaps
   const { weekdayIndex, hour } = inSurveyTimezone(now);
   const weekday = WEEKDAYS[weekdayIndex];
   const daypart = daypartLabel(hour);
-  const scene = scenePhrase(weekdayIndex, hour);
-  // 모바일이면 스마트폰, 그 외(PC·태블릿)는 큰 화면
   /*
     자극물은 접속 기기와 무관하게 언제나 스마트폰 화면이다.
     PC 용 목업 자료가 없어 화면을 기기별로 나눌 수 없고, 나눌 수 있더라도
@@ -135,10 +100,9 @@ export function buildContextSnapshot(now: Date, isMobile: boolean): ContextSnaps
   return {
     weekday,
     daypart,
-    scene,
     device,
     isMobile,
-    phrase: `${weekday} ${daypart}, ${scene} ${device} 보기 좋은 작품`,
+    phrase: `${weekday} ${daypart}, ${device} 보기 좋은 작품`,
     source: "access_time",
   };
 }
@@ -193,7 +157,7 @@ export function rationaleBanner(
   switch (rationale) {
     case "content":
       return [
-        { text: `최근 시청하신 ${GENRE_LABELS[genre]}`, strong: true },
+        { text: `자주 시청하신 ${GENRE_LABELS[genre]}`, strong: true },
         { text: " 작품과 분위기가 " },
         { text: "유사한", strong: true },
         { text: " 작품" },
@@ -209,7 +173,7 @@ export function rationaleBanner(
     case "context":
       return [
         { text: `${ctx.weekday} ${ctx.daypart}`, strong: true },
-        { text: `, ${ctx.scene ?? ""} ` },
+        { text: ", " },
         { text: ctx.device, strong: true },
         { text: " 보기 좋은 작품" },
       ];
