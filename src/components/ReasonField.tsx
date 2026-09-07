@@ -40,7 +40,7 @@ export default function ReasonField({
         maxLength={OPEN_MAX_LENGTH_CLARITY}
         rows={3}
         placeholder={placeholder}
-        className="mt-2 w-full resize-y rounded-lg border border-black/15 bg-surface px-3 py-2.5 q-text text-sm leading-relaxed outline-none transition-colors focus:border-accent focus:bg-white"
+        className="pretty-scroll mt-2 w-full resize-y rounded-lg border border-black/15 bg-surface px-3 py-2.5 q-text text-sm leading-relaxed outline-none transition-colors focus:border-accent focus:bg-white"
       />
     </div>
   );

@@ -224,7 +224,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         배정은 사전 문항과 장르 선택을 끝낸 시점에 일어나므로, 그 전에 이탈한 사람은
         아무 칸도 차지하지 않습니다.
       </p>
-      <div className="mt-3 overflow-x-auto">
+      <div className="pretty-scroll mt-3 overflow-x-auto">
         <table className="w-full min-w-[36rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-muted">
@@ -302,7 +302,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
       {/* 근거유형별 요약 */}
       <h2 className="mt-10 text-sm font-bold">근거유형별 요약</h2>
-      <div className="mt-3 overflow-x-auto">
+      <div className="pretty-scroll mt-3 overflow-x-auto">
         <table className="w-full min-w-[30rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-muted">

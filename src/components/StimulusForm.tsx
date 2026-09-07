@@ -142,7 +142,7 @@ export default function StimulusForm({
       반쯤 걸린 채 보인다. 넓은 화면에서는 위쪽만 스크롤하고 버튼은 칸 바닥에 붙는다.
     */
     <>
-      <div className="min-h-0 flex-1 px-5 py-5 wide:overflow-y-auto wide:px-8 wide:py-8">
+      <div className="pretty-scroll pane-scroll min-h-0 flex-1 px-5 py-5 wide:overflow-y-auto wide:px-8 wide:py-8">
         <div className="mx-auto w-full max-w-lg space-y-2.5 wide:max-w-none">
           {intro}
 

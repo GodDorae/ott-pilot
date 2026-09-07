@@ -116,7 +116,7 @@ function Textarea({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-2.5 w-full resize-y rounded-lg border border-line bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-accent"
+        className="pretty-scroll mt-2.5 w-full resize-y rounded-lg border border-line bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-accent"
       />
       <p className="mt-1 text-right text-[11px] text-muted tabular-nums">
         {value.length} / {OPEN_MAX_LENGTH}
