@@ -25,7 +25,8 @@ import {
   INTENTION_ITEMS,
   ITEM_CLARITY,
   LIKERT_LABELS,
-  MEASURED_ITEM_NUMBERS,
+  ITEM_NUMBERS,
+  TRIAL_ITEMS,
   USEFULNESS_ITEMS,
 } from "./items";
 import {
@@ -90,49 +91,53 @@ function preSurveyRows(): CodebookRow[] {
   return rows;
 }
 
-/** 자극물 화면 측정 문항 — 화면에 번호를 붙이지 않는다 (번호가 보이면 구성개념 경계가 드러난다) */
+/**
+ * 자극물 화면 측정 문항.
+ *
+ * code 열에는 **화면에 보이는 번호**(1~7)를 적는다. 참여자에게는 구성개념 이름을
+ * 보여주지 않으므로 PU1·RA3 같은 표기는 화면에 없는 것이고, 이해도 확인 문항에서
+ * 참여자가 가리키는 것도 "3번" 이다. 구성개념은 section 열에 적어 둔다 —
+ * 그러면 이 표 하나로 "3번 → pu3 → 지각된 유용성" 이 한 줄에 따라온다.
+ *
+ * 번호는 TRIAL_ITEMS 에서 그대로 읽는다. 여기서 따로 세면 화면 순서가 바뀔 때
+ * 표만 옛날 번호로 남는다.
+ */
 function trialItemRows(): CodebookRow[] {
   const scale = "3단계 · 추천 화면 평가";
+  const construct = (key: string) =>
+    USEFULNESS_ITEMS.some((i) => i.key === key)
+      ? `${scale} (지각된 유용성)`
+      : INTENTION_ITEMS.some((i) => i.key === key)
+        ? `${scale} (추천 수용의도)`
+        : `${scale} (성실성 확인)`;
+
   return [
-    ...USEFULNESS_ITEMS.map((it, i) => ({
+    ...TRIAL_ITEMS.map((it) => ({
       column: it.key,
-      code: `PU${i + 1}`,
-      section: scale,
+      code: String(it.no),
+      section: construct(it.key),
       question: it.text,
-      type: "5점 리커트",
-      values: LIKERT_SCALE,
+      type: it.key === ATTENTION_CHECK.key ? "5점 리커트 (성실성 확인)" : "5점 리커트",
+      values:
+        it.key === ATTENTION_CHECK.key
+          ? `${LIKERT_SCALE} · 정답 ${ATTENTION_CHECK.correctValue}`
+          : LIKERT_SCALE,
     })),
-    {
-      column: ATTENTION_CHECK.key,
-      code: "",
-      section: scale,
-      question: ATTENTION_CHECK.text,
-      type: "5점 리커트 (성실성 확인)",
-      values: `${LIKERT_SCALE} · 정답 ${ATTENTION_CHECK.correctValue}`,
-    },
     {
       column: "attention_passed",
       code: "",
-      section: scale,
+      section: `${scale} (성실성 확인)`,
       question: `성실성 확인 문항을 맞혔는지 (attention_check = ${ATTENTION_CHECK.correctValue})`,
       type: "논리",
       values: "true=통과 | false=오답",
     },
-    ...INTENTION_ITEMS.map((it, i) => ({
-      column: it.key,
-      code: `RA${i + 1}`,
-      section: scale,
-      question: it.text,
-      type: "5점 리커트",
-      values: LIKERT_SCALE,
-    })),
     {
       column: "unclear_count",
       code: "",
       section: scale,
       question: "이해하기 어려웠다고 고른 문항 수 (파생)",
       type: "정수",
-      values: "0~6 · 0 = 없음 을 골랐거나 고른 문항이 없다",
+      values: "0~7 · 0 = 없음 을 골랐거나 고른 문항이 없다",
     },
     {
       column: "unclear_items",
@@ -140,7 +145,7 @@ function trialItemRows(): CodebookRow[] {
       section: scale,
       question: ITEM_CLARITY.question,
       type: "다중선택 (문항 번호)",
-      values: MEASURED_ITEM_NUMBERS.join(" | ") + " (| 로 구분) · 빈 값 = 없음",
+      values: ITEM_NUMBERS.join(" | ") + " (| 로 구분) · 빈 값 = 없음",
     },
     {
       column: "unclear_reason",

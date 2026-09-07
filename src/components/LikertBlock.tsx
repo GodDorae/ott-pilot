@@ -29,6 +29,7 @@ export default function LikertBlock({
       {items.map((item) => (
         <QuestionCard
           key={item.key}
+          required
           question={
             <span className="flex gap-1.5">
               {item.no && (

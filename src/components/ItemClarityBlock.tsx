@@ -2,7 +2,7 @@
 
 import QuestionCard from "./QuestionCard";
 import ReasonField from "./ReasonField";
-import { ITEM_CLARITY, MEASURED_ITEM_NUMBERS } from "@/lib/items";
+import { ITEM_CLARITY, ITEM_NUMBERS } from "@/lib/items";
 
 /**
  * 문항 이해도 확인 — 측정 문항 바로 아래.
@@ -42,7 +42,7 @@ export default function ItemClarityBlock({
       required
     >
       <div role="group" aria-labelledby="clarity-q" className="flex flex-wrap gap-2">
-        {MEASURED_ITEM_NUMBERS.map((no) => (
+        {ITEM_NUMBERS.map((no) => (
           <label
             key={no}
             className={box + "min-w-14 " + (selected.includes(no) ? on : off)}

@@ -481,14 +481,23 @@ async function complete(opts = {}) {
     ck("자극물 화면에 성실성 문항", /성실성을 확인하기 위한 문항/.test(st));
     ck("자극물 화면에 이해도 문항", /의미가 명확하게 이해되셨나요/.test(st));
     ck("내용 기반 문구 '자주 시청하신'", !/최근 시청하신/.test(st));
-    // 이해도에서 "몇 번이 어려웠다" 고 가리킬 대상이라 번호가 보여야 한다
-    for (const n of [1, 2, 3, 4, 5, 6])
+    /*
+      이해도에서 "몇 번이 어려웠다" 고 가리킬 대상이라 번호가 보여야 한다.
+      성실성 확인 문항에도 번호를 준다 (4번) — 하나만 번호가 없으면 오히려 그 카드가
+      눈에 띈다. 일곱 개가 빠짐없이 이어져야 그 중 하나로 보인다.
+    */
+    for (const n of [1, 2, 3, 4, 5, 6, 7])
       ck("문항 번호 " + n + " 표시", st.includes(">" + n + ".</span>"), String(n));
-    // 성실성 문항에는 번호를 주지 않는다 — 붙으면 그것만 눈에 띈다
     ck(
-      "성실성 문항엔 번호 없음",
-      (st.match(/>[0-9]+\.<\/span>/g) ?? []).length === 6,
+      "번호가 일곱 개 · 빠진 번호 없음",
+      (st.match(/>[0-9]+\.<\/span>/g) ?? []).length === 7,
       String((st.match(/>[0-9]+\.<\/span>/g) ?? []).length),
+    );
+    // 측정 문항은 전부 필수 — 별표가 문항마다 붙어야 한다
+    ck(
+      "리커트 문항 필수 표시",
+      (st.match(/text-required/g) ?? []).length >= 7,
+      String((st.match(/text-required/g) ?? []).length),
     );
     ck("소제목 없음", !/얼마나 유용하다고 느꼈나요/.test(st) && !/받아들이고 싶은 정도는/.test(st) && !/확인 문항/.test(st));
 
@@ -860,7 +869,12 @@ async function complete(opts = {}) {
     ck("코드북 머리글", cb[0] === "column,code,section,question,type,values", cb[0]);
     ck("코드북 행 = CSV 컬럼 수", cb.length - 1 === H.length, cb.length - 1 + " / " + H.length);
     ck("설명 없는 컬럼 0", !cb.some((l) => l.includes("설명 없음")), cb.filter((l) => l.includes("설명 없음")).join(" "));
-    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4", "mc_usage_answer"], ["4-2-2", "open_notable"], ["PU1", "pu1"], ["RA3", "ra3"]])
+    /*
+      코드북 code 열은 참여자 화면에 보이는 번호다. 자극물 문항은 구성개념 이름을
+      화면에 내지 않으므로 PU1·RA3 이 아니라 1·7 이 적혀야 한다 — 이해도 확인에서
+      참여자가 가리키는 것도 그 번호다. 구성개념은 section 열에 있다.
+    */
+    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4", "mc_usage_answer"], ["4-2-2", "open_notable"], ["1", "pu1"], ["4", "attention_check"], ["7", "ra3"]])
       ck("코드북 " + code + " → " + col, cb.some((l) => l.startsWith(col + "," + code + ",")), cb.find((l) => l.startsWith(col + ",")) ?? "없음");
     ck("코드북에 권한 필요", (await fetch(B + "/api/admin/export?format=codebook")).status === 401);
 

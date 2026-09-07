@@ -10,11 +10,12 @@ export type LikertItem = {
   key: string;
   text: string;
   /**
-   * 화면에 보이는 문항 번호 (1~6).
+   * 화면에 보이는 문항 번호 (1~7).
    *
    * 이해도 확인 문항에서 "몇 번이 어려웠다" 고 가리킬 대상이라 번호가 보여야 한다.
-   * 성실성 확인 문항에는 번호를 주지 않는다 — 번호가 붙으면 측정 문항 중 하나로
-   * 보이지 않고 "번호 없는 저건 뭐지" 하고 눈에 띈다.
+   * 성실성 확인 문항에도 번호를 준다 — 처음에는 빼 두었는데, 카드마다 번호가 붙은
+   * 목록에서 하나만 번호가 없으면 오히려 그 카드가 눈에 띈다. 4번으로 끼워 두면
+   * 일곱 문항 중 하나로 보인다. 번호와 컬럼의 대응은 관리자 코드북이 들고 있다.
    */
   no?: number;
 };
@@ -73,15 +74,16 @@ export const TRIAL_ITEMS: LikertItem[] = [
   ...USEFULNESS_ITEMS,
   { key: ATTENTION_CHECK.key, text: ATTENTION_CHECK.text },
   ...INTENTION_ITEMS,
-].map((item, i) =>
-  item.key === ATTENTION_CHECK.key
-    ? item
-    // 성실성 문항을 세지 않고 1부터 이어 붙인다 (유용성 1~3, 수용의도 4~6)
-    : { ...item, no: i < 3 ? i + 1 : i },
-);
+  // 보이는 순서대로 1부터 (유용성 1~3, 성실성 4, 수용의도 5~7)
+].map((item, i) => ({ ...item, no: i + 1 }));
 
-/** 이해도 확인에서 고를 수 있는 문항 번호 */
-export const MEASURED_ITEM_NUMBERS = TRIAL_ITEMS.filter((i) => i.no).map((i) => i.no as number);
+/**
+ * 이해도 확인에서 고를 수 있는 문항 번호 — 화면에 보이는 일곱 개 전부.
+ *
+ * 성실성 확인 문항(4번)도 넣는다. 참여자가 실제로 답한 문항이라 "그건 못 골라요" 가
+ * 될 이유가 없고, 빼 두면 목록에 4번이 없어 그 문항이 특별하다는 단서가 된다.
+ */
+export const ITEM_NUMBERS = TRIAL_ITEMS.map((i) => i.no as number);
 
 /**
  * 문항 이해도 확인 — 화면마다 측정 문항 아래에서 받는다.

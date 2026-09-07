@@ -5,7 +5,7 @@ import {
   ATTENTION_CHECK,
   LIKERT_MAX,
   LIKERT_MIN,
-  MEASURED_ITEM_NUMBERS,
+  ITEM_NUMBERS,
   OPEN_MAX_LENGTH_CLARITY,
 } from "@/lib/items";
 import { getRail } from "@/lib/stimuli";
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const allowedNos = new Set<number>(MEASURED_ITEM_NUMBERS);
+  const allowedNos = new Set<number>(ITEM_NUMBERS);
   const unclearItems = [...new Set(body.unclearItems)].sort((a, b) => a - b);
   if (unclearItems.some((n) => !allowedNos.has(n))) {
     return NextResponse.json({ error: "문항 번호가 올바르지 않습니다." }, { status: 400 });

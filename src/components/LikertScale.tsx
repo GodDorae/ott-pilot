@@ -70,7 +70,7 @@ export function LikertScaleGuide({ className = "" }: { className?: string }) {
   return (
     <div className={"rounded-lg bg-surface px-4 py-3 " + className}>
       <p className="text-xs font-semibold text-muted">5점 척도</p>
-      <ul className="mt-1 space-y-0.5 text-xs text-muted wide:text-[13px]">
+      <ul className="mt-2 space-y-1.5 text-xs leading-snug text-muted wide:text-[13px]">
         {LIKERT_LABELS.map((label, i) => (
           <li key={label} className="break-keep">
             <span className="tabular-nums">{LIKERT_MIN + i}번</span> {label}
