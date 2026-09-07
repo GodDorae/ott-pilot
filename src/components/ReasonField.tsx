@@ -25,7 +25,7 @@ export default function ReasonField({
 }) {
   return (
     <div className="mt-3.5 border-t border-line pt-3.5">
-      <label htmlFor={id} className="block text-sm leading-relaxed font-medium break-keep">
+      <label htmlFor={id} className="q-text block text-sm leading-relaxed font-medium break-keep">
         {label}
         {required && (
           <span className="ml-1 text-required" aria-hidden>
@@ -40,7 +40,7 @@ export default function ReasonField({
         maxLength={OPEN_MAX_LENGTH_CLARITY}
         rows={3}
         placeholder={placeholder}
-        className="mt-2 w-full resize-y rounded-lg border border-black/15 bg-surface px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors focus:border-accent focus:bg-white"
+        className="mt-2 w-full resize-y rounded-lg border border-black/15 bg-surface px-3 py-2.5 q-text text-sm leading-relaxed outline-none transition-colors focus:border-accent focus:bg-white"
       />
     </div>
   );

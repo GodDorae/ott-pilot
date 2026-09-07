@@ -73,7 +73,7 @@ export function NoticeList({ items }: { items: string[] }) {
 export function ScopeBanner({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-lg bg-accent-deep px-4 py-3">
-      <p className="text-[13px] leading-relaxed text-accent-soft break-keep">{children}</p>
+      <p className="text-[13px] leading-relaxed text-accent-soft break-keep wide:text-sm">{children}</p>
     </div>
   );
 }

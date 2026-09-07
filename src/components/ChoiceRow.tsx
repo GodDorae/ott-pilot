@@ -31,7 +31,7 @@ export default function ChoiceRow({
             <label
               key={o.value}
               className={
-                "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm leading-relaxed break-keep transition " +
+                "q-text flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-3 text-sm leading-relaxed break-keep transition " +
                 (on
                   ? "border-accent bg-accent-soft font-semibold text-accent-strong"
                   : "border-black/15 bg-surface hover:border-accent/60 hover:bg-accent-soft/60")

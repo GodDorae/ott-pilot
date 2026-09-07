@@ -56,7 +56,7 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
       const rationale = r as RationaleType;
       const setId = participant.set_mapping?.[rationale] as SetId;
       return (
-        <DeviceFrame key={rationale} compact>
+        <DeviceFrame key={rationale}>
           <OttScreen
             rationale={rationale}
             headline={railHeadline(rationale, participant.display_name)}

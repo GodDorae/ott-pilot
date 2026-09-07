@@ -112,12 +112,6 @@ const M = {
   tabAvatar: 76,
 } as const;
 
-/**
- * 화면 세로/가로 비. 기기 프레임이 "폭 N 일 때의 높이"를 계산하는 데 쓴다.
- * 여기서만 정의해 두어, 목업 높이를 손보면 프레임 상한도 함께 따라오게 한다.
- */
-export const SCREEN_ASPECT = M.screenH / M.screenW;
-
 /** 조건 무관 장식용 포스터 — 상단 줄과 "오직 이곳에서만" 줄 */
 const HERO_IMAGES = ["hero-1", "hero-2", "hero-3"];
 const HERO_PEEK = "hero-4";

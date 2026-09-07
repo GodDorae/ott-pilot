@@ -43,9 +43,9 @@ export default function QuestionCard({
       }
     >
       {label != null && (
-        <p className="mb-1 text-[11px] font-semibold text-faint tabular-nums">{label}</p>
+        <p className="mb-1 text-[11px] font-semibold text-faint tabular-nums wide:text-xs">{label}</p>
       )}
-      <p id={id} className="text-sm leading-relaxed font-medium break-keep">
+      <p id={id} className="q-text text-sm leading-relaxed font-medium break-keep">
         {question}
         {required && (
           <span className="ml-1 text-required" aria-hidden>
@@ -53,7 +53,9 @@ export default function QuestionCard({
           </span>
         )}
       </p>
-      {help && <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">{help}</p>}
+      {help && (
+        <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep wide:text-[13px]">{help}</p>
+      )}
       <div className="mt-3.5">{children}</div>
     </div>
   );

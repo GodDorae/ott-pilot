@@ -35,7 +35,7 @@ export default function LikertScale({
 }) {
   return (
     <div>
-      <div className="mb-1.5 flex text-[10.5px] leading-tight text-faint">
+      <div className="mb-1.5 flex text-[10.5px] leading-tight text-faint wide:text-xs">
         <span className="flex-1 text-left break-keep">{ANCHORS[0]}</span>
         <span className="flex-1 text-center break-keep">{ANCHORS[1]}</span>
         <span className="flex-1 text-right break-keep">{ANCHORS[2]}</span>
@@ -70,7 +70,7 @@ export function LikertScaleGuide({ className = "" }: { className?: string }) {
   return (
     <div className={"rounded-lg bg-surface px-4 py-3 " + className}>
       <p className="text-xs font-semibold text-muted">5점 척도</p>
-      <ul className="mt-1 space-y-0.5 text-xs text-muted">
+      <ul className="mt-1 space-y-0.5 text-xs text-muted wide:text-[13px]">
         {LIKERT_LABELS.map((label, i) => (
           <li key={label} className="break-keep">
             <span className="tabular-nums">{LIKERT_MIN + i}번</span> {label}

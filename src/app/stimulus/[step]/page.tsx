@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import OttScreen from "@/components/OttScreen";
-import DeviceFrame, { deviceFitVars } from "@/components/DeviceFrame";
+import DeviceFrame from "@/components/DeviceFrame";
 import SplitScreen from "@/components/SplitScreen";
 import { CLabel, NoticeCard, ScopeBanner } from "@/components/Notice";
 import { LikertScaleGuide } from "@/components/LikertScale";
@@ -56,7 +56,7 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
     <main className="flex flex-1 flex-col">
       <SplitScreen
         left={
-          <div className="w-full" style={deviceFitVars()}>
+          <div className="w-full">
             {/*
               화면 번호와 이용조건은 목업 **위**에 놓는다.
               아래에 두었을 때는 포스터에 시선을 뺏겨 읽지 않고 지나갔다.
@@ -114,8 +114,8 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
                   </div>
 
                   <CLabel>3단계 · 추천 화면 평가</CLabel>
-                  <p className="text-[15px] font-bold break-keep">추천 화면 {stepIndex} 평가</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted break-keep">
+                  <p className="text-[15px] font-bold break-keep wide:text-base">추천 화면 {stepIndex} 평가</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted break-keep wide:text-[13px]">
                     추천 화면을 보고 느낀 그대로 답해 주세요. 정답은 없습니다.
                   </p>
                   <LikertScaleGuide className="mt-3" />

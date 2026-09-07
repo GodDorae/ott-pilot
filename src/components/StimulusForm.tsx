@@ -143,7 +143,7 @@ export default function StimulusForm({
     */
     <>
       <div className="min-h-0 flex-1 px-5 py-5 wide:overflow-y-auto wide:px-8 wide:py-8">
-        <div className="mx-auto w-full max-w-lg space-y-2.5">
+        <div className="mx-auto w-full max-w-lg space-y-2.5 wide:max-w-none">
           {intro}
 
           {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
@@ -179,7 +179,7 @@ export default function StimulusForm({
 
       {/* 좁은 화면에서는 칸 높이가 정해지지 않아 sticky 로 띄운다 (배경은 불투명) */}
       <div className="sticky bottom-0 shrink-0 border-t border-line bg-bg px-5 py-3 wide:static wide:px-8">
-        <div className="mx-auto w-full max-w-lg">
+        <div className="mx-auto w-full max-w-lg wide:max-w-none">
           <button
             type="button"
             onClick={submit}

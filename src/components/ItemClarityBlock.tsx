@@ -30,7 +30,7 @@ export default function ItemClarityBlock({
   onReason: (v: string) => void;
 }) {
   const box =
-    "flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-semibold break-keep transition ";
+    "q-text flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-3 text-sm font-semibold break-keep transition ";
   const on = "border-accent bg-accent-soft text-accent-strong";
   const off = "border-black/15 bg-surface hover:border-accent/60 hover:bg-accent-soft/60";
 

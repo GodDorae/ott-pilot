@@ -705,11 +705,19 @@ async function complete(opts = {}) {
       // 접속 기기와 무관하게 언제나 스마트폰 목업이다 (PC 용 실험물 자료가 없다)
       ck(name + " 스마트폰 목업", html.includes("rounded-[1.9rem]") && html.includes("9:41"));
       ck(name + " 브라우저 창 안 씀", !/stream.example/.test(html));
-      // 2분할은 가로·세로 여유가 둘 다 있을 때만 켠다 (wide 변형)
+      // 2분할은 폭이 넉넉할 때만 켠다 (wide 변형 = min-width 900px)
       ck(
         name + " 2분할 레이아웃",
-        /wide:h-screen wide:flex-row/.test(html) && /wide:overflow-y-auto/.test(html),
+        /wide:h-dvh wide:flex-row/.test(html) && /wide:overflow-y-auto/.test(html),
       );
+      /*
+        반으로 나누지 않는다. 목업이 368px 고정인데 칸을 절반으로 두면 목업 옆이
+        통째로 비고 그만큼 문항 글줄이 좁아진다 — 왼쪽은 목업 폭 + 여백(.mock-pane),
+        남는 폭은 전부 문항 칸으로 간다.
+      */
+      ck(name + " 반띵 아님", html.includes("mock-pane") && !html.includes("wide:w-1/2"));
+      // 가운데 구분선은 두지 않는다 — 바탕색이 같고 문항이 흰 카드로 떠 있어 경계는 이미 보인다
+      ck(name + " 가운데 구분선 없음", !html.includes("wide:border-r"));
       // "오직 이곳에서만" 은 목업 화면 안에만 있는 문구다
       ck(
         name + " 목업이 문항보다 앞(왼쪽)",
