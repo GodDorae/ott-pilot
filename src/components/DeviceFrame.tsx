@@ -52,7 +52,7 @@ export default function DeviceFrame({
     <div
       className={
         "rounded-[1.9rem] bg-neutral-900 p-[3px] shadow-xl ring-1 ring-white/10 " +
-        (compact ? "mx-auto w-full max-w-[19rem]" : "device-fit")
+        (compact ? "mx-auto w-full max-w-[23rem]" : "device-fit")
       }
       style={compact ? undefined : deviceFitVars()}
     >

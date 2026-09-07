@@ -6,8 +6,12 @@
   가로 폭만 보면 안 된다. 가로로 눕힌 폰(844×390)도 md 를 넘기므로 2분할이 켜지는데,
   왼쪽 칸에 남는 세로가 없어 목업이 90px 까지 줄어든다 — 근거유형 배너를 읽을 수 없는
   크기라 조작 자체가 전달되지 않는다. 세로가 모자라면 차라리 위아래로 쌓고 스크롤한다.
+
+  세로 하한 880px: 왼쪽 칸이 화면 높이에 갇혀 있어 창이 낮으면 목업이 그만큼 작아진다.
+  880px 이면 목업이 340px 이상 나오고 그때 배너 글자가 10px 을 넘는다. 그보다 낮은
+  창에서는 2분할을 포기하고 쌓아서 목업을 크게 보여준다 — 배너를 못 읽으면 조작이 없다.
 */
-@custom-variant wide (@media (min-width: 768px) and (min-height: 700px));
+@custom-variant wide (@media (min-width: 768px) and (min-height: 880px));
 
 /*
   두 개의 시각 레이어를 쓴다.
@@ -167,16 +171,16 @@ body {
 .device-fit {
   margin-inline: auto;
   width: 100%;
-  max-width: 19rem;
+  max-width: 23rem;
 }
 
 .ott-screen-fit {
   width: 100%;
 }
 
-@media (min-width: 768px) and (min-height: 700px) {
+@media (min-width: 768px) and (min-height: 880px) {
   .device-fit {
-    width: min(19rem, calc((100dvh - var(--device-reserve, 13rem)) * var(--screen-ratio, 0.4931)));
+    width: min(23rem, calc((100dvh - var(--device-reserve, 13rem)) * var(--screen-ratio, 0.4931)));
     max-width: 100%;
   }
 }

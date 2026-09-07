@@ -76,7 +76,7 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
     */
     <main
       className={
-        "mx-auto w-full flex-1 px-5 py-10 " + (part === "ranking" ? "max-w-5xl" : "max-w-xl")
+        "mx-auto w-full flex-1 px-5 py-10 " + (part === "ranking" ? "max-w-7xl" : "max-w-xl")
       }
     >
       <p className="text-xs text-muted">{STAGE_LABELS[stage]}</p>

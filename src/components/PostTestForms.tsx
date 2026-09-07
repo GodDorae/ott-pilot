@@ -211,16 +211,26 @@ export function RankingForm({ previews }: { previews: ReactNode[] }) {
         <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">{RANK_TASK.help}</p>
 
         {/*
-          넓은 화면에서는 세 화면을 나란히 놓는다 — 비교 과제라 한눈에 들어와야 한다.
-          좁은 화면에서는 위아래로 쌓되 폭을 꽉 채워 자극물이 작아지지 않게 한다.
+          세 화면을 나란히 놓는 것은 셋 다 제 크기로 들어갈 만큼 넓을 때만이다.
+          어중간한 폭에서 3열로 나누면 목업이 270px 로 줄고 배너 글자가 8px 이 된다 —
+          비교하라고 나란히 놓았는데 정작 무엇이 다른지 안 보인다. 그럴 바엔 쌓는다.
         */}
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
+        <div className="mt-5 grid gap-5 xl:grid-cols-3">
           {previews.map((preview, i) => {
             const step = i + 1;
             return (
-              <div key={step} className="flex flex-col rounded-xl border border-line p-3">
+              // 좁은 화면에서는 테두리·여백을 걷어낸다 — 겹겹이 쌓인 안쪽 여백이
+              // 목업 폭을 그만큼 깎는다
+              <div
+                key={step}
+                className="flex flex-col rounded-xl sm:border sm:border-line sm:p-3"
+              >
                 <p className="mb-2.5 text-sm font-bold">추천 화면 {step}</p>
-                <div className="mb-3 flex-1">{preview}</div>
+                {/*
+                  좁은 화면에서는 목업만 카드 여백 밖으로 내보낸다 — 바깥 카드(p-4)와
+                  본문 여백(px-5)이 겹쳐 목업 폭을 40px 넘게 깎고 있었다.
+                */}
+                <div className="-mx-4 mb-3 flex-1 sm:mx-0">{preview}</div>
                 <div
                   role="radiogroup"
                   aria-label={"추천 화면 " + step + " 순위"}
