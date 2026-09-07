@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
 import ItemClarityBlock from "./ItemClarityBlock";
+import ScreenChecksBlock, {
+  EMPTY_SCREEN_CHECKS,
+  screenChecksDone,
+  type ScreenChecks,
+} from "./ScreenChecksBlock";
+import type { Genre } from "@/lib/experiment";
 import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
 import { TOTAL_STEPS } from "@/lib/experiment";
 import { postJson } from "@/lib/client-api";
@@ -17,11 +23,20 @@ import { MIN_DWELL_SECONDS } from "@/lib/pacing";
  */
 export default function StimulusForm({
   stepIndex,
+  genre,
+  pilot,
   skipWait = false,
+  intro,
 }: {
   stepIndex: number;
+  /** 선호 장르 — 장르 적합도 문항 문구에 들어간다 */
+  genre: Genre;
+  /** 파일럿 전용 조작점검을 물을지 */
+  pilot: boolean;
   /** /dev 미리보기에서는 최소 체류 시간을 기다리지 않는다 */
   skipWait?: boolean;
+  /** 문항 위에 함께 스크롤되는 안내 (척도 설명·진행 표시) */
+  intro?: React.ReactNode;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, number>>({});
@@ -32,6 +47,8 @@ export default function StimulusForm({
   const [unclear, setUnclear] = useState<number[]>([]);
   const [none, setNone] = useState(false);
   const [reason, setReason] = useState("");
+  // 화면 단위 조작점검 (PU·RA 뒤에 붙는다)
+  const [checks, setChecks] = useState<ScreenChecks>(EMPTY_SCREEN_CHECKS);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const shownAt = useRef<number | null>(null);
@@ -58,7 +75,11 @@ export default function StimulusForm({
   const itemsDone = answered === ALL_ITEMS.length && Boolean(attention);
   // 이해도 문항도 답해야 한다 — 번호를 골랐다면 이유까지
   const clarityDone = none || (unclear.length > 0 && reason.trim().length > 0);
-  const complete = itemsDone && clarityDone;
+  const checksDone = screenChecksDone(checks, {
+    pilot,
+    firstScreen: stepIndex === 1,
+  });
+  const complete = itemsDone && clarityDone && checksDone;
   const unanswered = ALL_ITEMS.length - answered + (attention ? 0 : 1);
 
   // 목업을 실제로 볼 시간을 준다 — 문항에는 그 전에도 답할 수 있고, 막히는 건 제출뿐이다
@@ -99,6 +120,11 @@ export default function StimulusForm({
         attentionCheck: attention ?? null,
         unclearItems: none ? [] : unclear,
         unclearReason: unclear.length > 0 ? reason.trim() : null,
+        mcRationale: checks.mcRationale,
+        wordingNatural: checks.wordingNatural,
+        wordingReason: checks.wordingReason.trim() || null,
+        scopeUnderstood: checks.scopeUnderstood,
+        genreFit: checks.genreFit,
         dwellMs: shownAt.current === null ? null : Date.now() - shownAt.current,
       });
       if (!r.ok) throw new Error(r.error);
@@ -116,8 +142,10 @@ export default function StimulusForm({
       반쯤 걸린 채 보인다. 넓은 화면에서는 위쪽만 스크롤하고 버튼은 칸 바닥에 붙는다.
     */
     <>
-      <div className="min-h-0 flex-1 px-5 py-5 wide:overflow-y-auto wide:px-8">
-        <div className="mx-auto w-full max-w-lg space-y-4">
+      <div className="min-h-0 flex-1 px-5 py-5 wide:overflow-y-auto wide:px-8 wide:py-8">
+        <div className="mx-auto w-full max-w-lg space-y-2.5">
+          {intro}
+
           {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
           <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
 
@@ -128,6 +156,14 @@ export default function StimulusForm({
             onToggleItem={toggleItem}
             onToggleNone={toggleNone}
             onReason={setReason}
+          />
+
+          <ScreenChecksBlock
+            value={checks}
+            onChange={(patch) => setChecks((prev) => ({ ...prev, ...patch }))}
+            genre={genre}
+            pilot={pilot}
+            firstScreen={stepIndex === 1}
           />
 
           {error && (
@@ -148,7 +184,7 @@ export default function StimulusForm({
             type="button"
             onClick={submit}
             disabled={!complete || !waited || pending}
-            className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
+            className="w-full rounded-xl bg-accent px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-off-bg disabled:text-off-fg"
           >
             {pending
               ? "저장 중…"
@@ -158,11 +194,13 @@ export default function StimulusForm({
                   ? unclear.length > 0
                     ? "어려웠던 이유를 적어 주세요"
                     : "이해도 문항에 답해 주세요"
-                  : !waited
-                    ? "잠시 후 넘어갈 수 있습니다"
-                    : stepIndex < 3
-                      ? "평가 완료"
-                      : "다음 단계로"}
+                  : !checksDone
+                    ? "아래 확인 문항에 답해 주세요"
+                    : !waited
+                      ? "잠시 후 넘어갈 수 있습니다"
+                      : stepIndex < 3
+                        ? "평가 완료"
+                        : "다음 단계로"}
           </button>
           <CountdownHint remaining={secondsLeft} done={waited} />
         </div>

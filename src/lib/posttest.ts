@@ -96,7 +96,7 @@ export function validateRanking(
 export const OPEN_QUESTIONS = [
   {
     id: "open_feeling",
-    label: "각 추천 화면을 보고 난 후, 어떤 생각이나 느낌이 드셨나요? 자유롭게 적어 주세요.",
+    label: "추천화면들을 보고 어떤 생각이나 느낌이 드셨나요? 자유롭게 적어 주세요.",
     placeholder: "예: 두 번째 화면은 나를 잘 안다는 느낌이 들었다",
   },
   {
@@ -109,6 +109,21 @@ export const OPEN_QUESTIONS = [
     label:
       "각 추천 화면에서 제공된 내용 외에, 더 있었으면 했던 것이 있다면 자유롭게 적어 주세요.",
     placeholder: "예: 러닝타임, 평점, 왜 이 작품인지에 대한 더 자세한 설명 등",
+  },
+  {
+    id: "open_gap",
+    label:
+      "오늘 보신 화면들이 평소 OTT 서비스를 이용하실 때와 비교해 다르게 느껴진 점이 있다면 적어주세요.",
+    placeholder: "예: 실제로 쓰는 앱보다 추천 이유를 더 자세히 말해 주었다",
+  },
+  /*
+    의심 점검 — 반드시 마지막.
+    실험의 목적을 앞에서 물으면 그 뒤 문항들이 "정답" 을 찾아 답하게 된다.
+  */
+  {
+    id: "open_purpose",
+    label: "이 설문이 무엇을 비교하거나 확인하려는 실험이라고 생각하셨나요? 자유롭게 적어주세요.",
+    placeholder: "짐작한 대로 적어 주세요. 맞고 틀림은 없습니다.",
   },
 ] as const;
 

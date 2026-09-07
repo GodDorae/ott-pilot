@@ -14,6 +14,8 @@ import {
   validateRanking,
 } from "@/lib/posttest";
 import { postJson } from "@/lib/client-api";
+import ScaleRow from "./ScaleRow";
+import { COUNTERFACTUAL, PRICE_CHECK } from "@/lib/checks";
 import { CLabel } from "@/components/Notice";
 
 /** 사후 파트가 공유하는 제출 처리 */
@@ -125,9 +127,25 @@ function Textarea({
 
 // 4-1 조작점검 ---------------------------------------------------------------
 
-export function UsageCheckForm() {
+export function UsageCheckForm({
+  condition,
+  pilot,
+}: {
+  condition: "SVOD" | "TVOD";
+  /** 파일럿에서만 금액 점검을 묻는다 */
+  pilot: boolean;
+}) {
   const { submit, pending, error } = useSubmit("check");
   const [answer, setAnswer] = useState<string | null>(null);
+  // 금액 점검은 개별 대여 조건에서만 뜻이 있다 — 구독 조건은 금액을 본 적이 없다
+  const askPrice = pilot && condition === "TVOD";
+  const [realistic, setRealistic] = useState<number | null>(null);
+  const [burden, setBurden] = useState<number | null>(null);
+  const [priceReason, setPriceReason] = useState("");
+  const [counterfactual, setCounterfactual] = useState("");
+
+  const priceDone = !askPrice || (realistic !== null && burden !== null);
+  const complete = Boolean(answer) && priceDone && counterfactual.trim().length > 0;
 
   return (
     <div>
@@ -165,13 +183,63 @@ export function UsageCheckForm() {
         </div>
       </div>
 
+      {/* 금액 점검 — 개별 대여 조건, 파일럿 전용. 두 가지를 묻는 것이라 척도를 나눈다 */}
+      {askPrice && (
+        <div className="card-shadow mt-4 space-y-6 rounded-xl border border-line bg-card p-4 sm:p-5">
+          <ScaleRow
+            name="price-realistic"
+            label={PRICE_CHECK.realistic}
+            value={realistic}
+            onChange={setRealistic}
+          />
+          <div className="border-t border-line pt-6">
+            <ScaleRow
+              name="price-burden"
+              label={PRICE_CHECK.burden}
+              value={burden}
+              onChange={setBurden}
+            />
+          </div>
+          <div className="border-t border-line pt-6">
+            <Textarea
+              id="price_reason"
+              label={PRICE_CHECK.reasonLabel}
+              placeholder={PRICE_CHECK.reasonPlaceholder}
+              value={priceReason}
+              onChange={setPriceReason}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 반대 조건을 가정하게 한다 — 이용 방식이 '이유를 확인하려는 욕구' 에 어떻게 걸리는지 */}
+      <div className="card-shadow mt-4 rounded-xl border border-line bg-card p-4 sm:p-5">
+        <Textarea
+          id="counterfactual_info"
+          label={COUNTERFACTUAL.question(condition)}
+          placeholder={COUNTERFACTUAL.placeholder}
+          value={counterfactual}
+          onChange={setCounterfactual}
+          hint={OPEN_REQUIRED_HINT}
+        />
+      </div>
+
       <ErrorLine error={error} />
       <Submit
-        onClick={() => answer && submit({ answer })}
-        disabled={!answer}
+        onClick={() =>
+          complete &&
+          submit({
+            answer,
+            priceRealistic: realistic,
+            priceBurden: burden,
+            priceReason: priceReason.trim() || null,
+            counterfactualInfo: counterfactual.trim(),
+          })
+        }
+        disabled={!complete}
         pending={pending}
         label="다음"
-        blockedLabel="하나를 골라 주세요"
+        blockedLabel={!answer ? "하나를 골라 주세요" : "남은 문항에 답해 주세요"}
       />
     </div>
   );

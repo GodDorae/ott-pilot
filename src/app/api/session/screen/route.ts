@@ -9,6 +9,13 @@ import {
   OPEN_MAX_LENGTH_CLARITY,
 } from "@/lib/items";
 import { getRail } from "@/lib/stimuli";
+import {
+  WORDING_NATURAL,
+  isMcRationaleAnswer,
+  isMcRationaleCorrect,
+  isScopeAnswer,
+} from "@/lib/checks";
+import { SURVEY_PHASE } from "@/lib/phase";
 import { saveScreenResponse } from "@/lib/db";
 import { currentSession } from "@/lib/session";
 import { canSubmitAt } from "@/lib/flow";
@@ -37,6 +44,11 @@ export async function POST(req: Request) {
     attentionCheck?: number | null;
     unclearItems?: number[];
     unclearReason?: string | null;
+    mcRationale?: string;
+    wordingNatural?: number | null;
+    wordingReason?: string | null;
+    scopeUnderstood?: string | null;
+    genreFit?: number | null;
     dwellMs?: number | null;
   };
 
@@ -100,6 +112,56 @@ export async function POST(req: Request) {
   }
 
   const rationaleType = participant.presentation_order[stepIndex - 1] as RationaleType;
+
+  /*
+    화면 단위 조작점검. 근거유형 점검은 늘 받고, 나머지는 파일럿에서만 받는다.
+    본실험에서는 물어보지도 않으므로 요구하지 않는다 — 요구하면 아무도 넘어갈 수 없다.
+  */
+  if (!isMcRationaleAnswer(body.mcRationale)) {
+    return NextResponse.json({ error: "추천 근거 확인 문항에 답해 주세요." }, { status: 400 });
+  }
+  const mcRationaleAnswer = body.mcRationale;
+
+  const scale = (v: unknown) =>
+    Number.isInteger(v) && (v as number) >= LIKERT_MIN && (v as number) <= LIKERT_MAX
+      ? (v as number)
+      : null;
+
+  const pilot = SURVEY_PHASE === "pilot";
+  let wordingNatural: number | null = null;
+  let wordingReason: string | null = null;
+  let scopeUnderstood: string | null = null;
+  let genreFit: number | null = null;
+
+  if (pilot) {
+    wordingNatural = scale(body.wordingNatural);
+    if (wordingNatural === null) {
+      return NextResponse.json({ error: "문구 확인 문항에 답해 주세요." }, { status: 400 });
+    }
+    const trimmed = (body.wordingReason ?? "").trim().slice(0, OPEN_MAX_LENGTH_CLARITY);
+    if (wordingNatural <= WORDING_NATURAL.reasonThreshold) {
+      if (trimmed.length === 0) {
+        return NextResponse.json(
+          { error: "자연스럽지 않았던 이유를 적어 주세요." },
+          { status: 400 },
+        );
+      }
+      wordingReason = trimmed;
+    }
+
+    // 하단 문구 범위 이해는 첫 화면에서만 묻는다
+    if (stepIndex === 1) {
+      if (!isScopeAnswer(body.scopeUnderstood)) {
+        return NextResponse.json({ error: "문구 범위 확인 문항에 답해 주세요." }, { status: 400 });
+      }
+      scopeUnderstood = body.scopeUnderstood;
+    }
+
+    genreFit = scale(body.genreFit);
+    if (genreFit === null) {
+      return NextResponse.json({ error: "장르 적합도 문항에 답해 주세요." }, { status: 400 });
+    }
+  }
   const setId = participant.set_mapping[rationaleType] as SetId;
   const genre = participant.preferred_genre;
 
@@ -114,6 +176,12 @@ export async function POST(req: Request) {
     attentionCheck: attention as number,
     unclearItems,
     unclearReason: unclearItems.length > 0 ? unclearReason : null,
+    mcRationaleAnswer,
+    mcRationaleCorrect: isMcRationaleCorrect(mcRationaleAnswer, rationaleType),
+    wordingNatural,
+    wordingReason,
+    scopeUnderstood,
+    genreFit,
     dwellMs: typeof body.dwellMs === "number" ? Math.round(body.dwellMs) : null,
   });
 

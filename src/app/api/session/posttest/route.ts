@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { savePostTest } from "@/lib/db";
 import { currentSession } from "@/lib/session";
 import { canSubmitAt } from "@/lib/flow";
+import { LIKERT_MAX, LIKERT_MIN } from "@/lib/items";
+import { SURVEY_PHASE } from "@/lib/phase";
 import {
   OPEN_MAX_LENGTH,
   OPEN_QUESTIONS,
@@ -32,6 +34,10 @@ export async function POST(req: Request) {
     ranks?: Record<string, number>;
     reason?: string;
     open?: Record<string, string>;
+    priceRealistic?: number | null;
+    priceBurden?: number | null;
+    priceReason?: string | null;
+    counterfactualInfo?: string;
   };
 
   if (!["check", "ranking", "open"].includes(body.part ?? "")) {
@@ -48,10 +54,35 @@ export async function POST(req: Request) {
       if (!answer || !USAGE_MANIPULATION_CHECK.options.some((o) => o.value === answer)) {
         return NextResponse.json({ error: "선택지가 올바르지 않습니다." }, { status: 400 });
       }
+      /*
+        금액 점검은 개별 대여 조건에서만 받는다 — 구독 조건 참여자는 금액을 본 적이 없다.
+        '볼 법한 금액인가' 와 '부담인가' 는 서로 다른 것이라 척도를 둘로 나눠 받는다.
+      */
+      const scale = (v: unknown) =>
+        Number.isInteger(v) && (v as number) >= LIKERT_MIN && (v as number) <= LIKERT_MAX
+          ? (v as number)
+          : null;
+      const askPrice = SURVEY_PHASE === "pilot" && participant.usage_condition === "TVOD";
+      const priceRealistic = askPrice ? scale(body.priceRealistic) : null;
+      const priceBurden = askPrice ? scale(body.priceBurden) : null;
+      if (askPrice && (priceRealistic === null || priceBurden === null)) {
+        return NextResponse.json({ error: "금액 확인 문항에 답해 주세요." }, { status: 400 });
+      }
+
+      // 반대 조건 가정 — 전부 필수 ('없음' 이라고 적게 안내한다)
+      const counterfactual = (body.counterfactualInfo ?? "").trim().slice(0, OPEN_MAX_LENGTH);
+      if (counterfactual.length === 0) {
+        return NextResponse.json({ error: "필수 응답을 입력해 주세요." }, { status: 400 });
+      }
+
       // 'unsure' 는 오답으로 본다 (조작을 인지하지 못한 것)
       await savePostTest(participant.id, {
         mc_usage_answer: answer,
         mc_usage_correct: answer === participant.usage_condition,
+        price_realistic: priceRealistic,
+        price_burden: priceBurden,
+        price_reason: askPrice ? ((body.priceReason ?? "").trim().slice(0, OPEN_MAX_LENGTH) || null) : null,
+        counterfactual_info: counterfactual,
         posttest_at: new Date().toISOString(),
       });
       return NextResponse.json({ ok: true, next: "/post/ranking" });

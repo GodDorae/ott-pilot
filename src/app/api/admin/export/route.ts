@@ -38,8 +38,13 @@ const HEADERS = [
   "viewing_timeslot",
   "screened_out",
   "screened_out_reason",
+  "brief_understood",
   "mc_usage_answer",
   "mc_usage_correct",
+  "price_realistic",
+  "price_burden",
+  "price_reason",
+  "counterfactual_info",
   "rank_content",
   "rank_collab",
   "rank_context",
@@ -47,6 +52,8 @@ const HEADERS = [
   "open_feeling",
   "open_notable",
   "open_missing",
+  "open_gap",
+  "open_purpose",
   "followup_agreed",
   "consent_agreed_at",
   "posttest_at",
@@ -59,6 +66,7 @@ const HEADERS = [
   "brief_dwell_sec",
   "completed_at",
   "attention_passed_count",
+  "mc_rationale_correct_count",
   "step_index",
   "rationale_type",
   "set_id",
@@ -73,6 +81,12 @@ const HEADERS = [
   "ra_mean",
   "attention_check",
   "attention_passed",
+  "mc_rationale_answer",
+  "mc_rationale_correct",
+  "wording_natural",
+  "wording_reason",
+  "scope_understood",
+  "genre_fit",
   "unclear_count",
   "unclear_items",
   "unclear_reason",
@@ -146,6 +160,10 @@ export async function GET(req: Request) {
   for (const r of responses)
     if (r.attention_passed)
       attentionPassed.set(r.participant_id, (attentionPassed.get(r.participant_id) ?? 0) + 1);
+  const rationaleCorrect = new Map<string, number>();
+  for (const r of responses)
+    if (r.mc_rationale_correct)
+      rationaleCorrect.set(r.participant_id, (rationaleCorrect.get(r.participant_id) ?? 0) + 1);
 
   const rows = responses
     .map((r) => {
@@ -178,8 +196,13 @@ export async function GET(req: Request) {
         p.viewing_timeslot,
         p.screened_out_at !== null,
         p.screened_out_reason,
+        p.brief_understood,
         p.mc_usage_answer,
         p.mc_usage_correct,
+        p.price_realistic,
+        p.price_burden,
+        p.price_reason,
+        p.counterfactual_info,
         p.rank_content,
         p.rank_collab,
         p.rank_context,
@@ -187,6 +210,8 @@ export async function GET(req: Request) {
         p.open_feeling,
         p.open_notable,
         p.open_missing,
+        p.open_gap,
+        p.open_purpose,
         p.followup_email !== null || p.followup_phone !== null,
         p.consent_agreed_at,
         p.posttest_at,
@@ -199,6 +224,7 @@ export async function GET(req: Request) {
         briefDwellSec(p),
         p.completed_at,
         attentionPassed.get(p.id) ?? 0,
+        rationaleCorrect.get(p.id) ?? 0,
         r.step_index,
         r.rationale_type,
         r.set_id,
@@ -213,6 +239,12 @@ export async function GET(req: Request) {
         mean([r.ra1, r.ra2, r.ra3]),
         r.attention_check,
         r.attention_passed,
+        r.mc_rationale_answer,
+        r.mc_rationale_correct,
+        r.wording_natural,
+        r.wording_reason,
+        r.scope_understood,
+        r.genre_fit,
         r.unclear_items === null ? "" : r.unclear_items.length,
         (r.unclear_items ?? []).join("|"),
         r.unclear_reason,

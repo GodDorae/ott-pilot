@@ -85,6 +85,33 @@ const USAGE = {
   answers: { ott_platform: "netflix", ott_tenure: "over_1y", rec_selection_freq: "often", primary_device: "smartphone", viewing_timeslot: "evening" },
 };
 const L = { pu1: 4, pu2: 5, pu3: 3, ra1: 4, ra2: 4, ra3: 5 };
+
+/*
+  조작점검 기본값 — 대원칙상 PU·RA 뒤에 붙는 문항들이라 화면 응답마다 함께 보낸다.
+  파일럿에서만 묻는 문항은 PHASE 를 보고 넣는다. 문구 범위 이해는 첫 화면만.
+*/
+const CHK = (step, over) => ({
+  mcRationale: "content",
+  ...(PHASE === "pilot"
+    ? { wordingNatural: 5, genreFit: 4, ...(Number(step) === 1 ? { scopeUnderstood: "yes" } : {}) }
+    : {}),
+  ...over,
+});
+
+// 이용조건 조작점검 화면의 필수 부속 문항 (금액 척도는 SVOD 조건에서 무시된다)
+const CHKP = { counterfactualInfo: "없음", priceRealistic: 4, priceBurden: 3, priceReason: "" };
+
+// 안내 이해도 — 파일럿에서는 필수
+const BRIEF = PHASE === "pilot" ? { briefUnderstood: 5 } : {};
+
+// 주관식 5문항 (마지막이 의심 점검)
+const OPENA = {
+  open_feeling: "없음",
+  open_notable: "없음",
+  open_missing: "없음",
+  open_gap: "없음",
+  open_purpose: "없음",
+};
 const MOB = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605 Mobile/15E148";
 const PC = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120";
 /** RSC 페이로드(<script self.__next_f>)를 떼고 렌더된 HTML 만 남긴다 — 문자열이 두 번 세지는 걸 막는다 */
@@ -186,11 +213,11 @@ async function complete(opts = {}) {
   await s("/api/session/presurvey", USAGE);
   const g = opts.genre || "action";
   await s("/api/session/genre", { genre: g, displayName: opts.name, familiarity: familiarityOf(g, opts.seen) });
-  await s("/api/session/brief", {});
-  for (let t = 1; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 9000 });
-  await s("/api/session/posttest", { part: "check", answer: opts.mc || "SVOD" });
+  await s("/api/session/brief", BRIEF);
+  for (let t = 1; t <= 3; t++) await s("/api/session/screen", { ...CHK(t), stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 9000 });
+  await s("/api/session/posttest", { ...CHKP, part: "check", answer: opts.mc || "SVOD" });
   await s("/api/session/posttest", { part: "ranking", ranks: { 1: 1, 2: 2, 3: 3 }, reason: "이유" });
-  await s("/api/session/posttest", { part: "open", open: { open_feeling: "없음", open_notable: "없음", open_missing: "없음" } });
+  await s("/api/session/posttest", { part: "open", open: OPENA });
   await s("/done");
   return s;
 }
@@ -208,7 +235,7 @@ async function complete(opts = {}) {
       ck(p + " → /", r.status === 307 && r.loc === "/", r.status + " " + r.loc);
     }
     ck("/ 는 200", (await a("/")).status === 200);
-    for (const [p, body] of [["genre", { genre: "action" }], ["presurvey", DEMO], ["screen", { stepIndex: 1, answers: L }], ["posttest", { part: "check", answer: "SVOD" }], ["brief", {}], ["followup", { followup_email: "a@b.c" }], ["complete", {}]]) {
+    for (const [p, body] of [["genre", { genre: "action" }], ["presurvey", DEMO], ["screen", { ...CHK(1), stepIndex: 1, answers: L }], ["posttest", { ...CHKP, part: "check", answer: "SVOD" }], ["brief", {}], ["followup", { followup_email: "a@b.c" }], ["complete", {}]]) {
       ck("API " + p + " → 401", (await a("/api/session/" + p, body)).status === 401);
     }
   }
@@ -255,9 +282,9 @@ async function complete(opts = {}) {
     await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: familiarityOf("action") });
     await exp("/brief", "200");
     await exp("/stimulus/1", "/brief");
-    ck("안내 건너뛰고 응답 제출 차단", (await s("/api/session/screen", { stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 })).status === 409);
+    ck("안내 건너뛰고 응답 제출 차단", (await s("/api/session/screen", { ...CHK(1), stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 })).status === 409);
 
-    await s("/api/session/brief", {});
+    await s("/api/session/brief", BRIEF);
     await exp("/stimulus/1", "200");
     await exp("/stimulus/2", "/stimulus/1");
     await exp("/post/check", "/stimulus/1");
@@ -273,15 +300,15 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "thriller", displayName: "건빵", familiarity: familiarityOf("thriller") });
-    await s("/api/session/brief", {});
+    await s("/api/session/brief", BRIEF);
     for (let t = 1; t <= 3; t++) {
-      const r = await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 8000 });
+      const r = await s("/api/session/screen", { ...CHK(t), stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 8000 });
       const want = t < 3 ? "/stimulus/" + (t + 1) : "/post/check";
       ck("trial" + t + " → " + want, r.json?.next === want, JSON.stringify(r.json));
     }
     ck("완료 후 자극물 되돌아가기 차단", (await s("/stimulus/2")).loc === "/post/check");
     const before = (await rest("screen_responses?select=id")).length;
-    await s("/api/session/screen", { stepIndex: 3, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 100 });
+    await s("/api/session/screen", { ...CHK(3), stepIndex: 3, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 100 });
     ck("재제출 upsert", (await rest("screen_responses?select=id")).length === before);
   }
 
@@ -316,34 +343,60 @@ async function complete(opts = {}) {
     await bad("기타인데 입력 없음", { section: "usage", answers: { ...USAGE.answers, ott_platform: "other" } });
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "drama", familiarity: familiarityOf("drama") });
-    await s("/api/session/brief", {});
+    if (PHASE === "pilot") {
+      ck("안내 이해도 미응답 거부", (await s("/api/session/brief", {})).status === 400);
+      ck("안내 이해도 범위 밖 거부", (await s("/api/session/brief", { briefUnderstood: 9 })).status === 400);
+    }
+    await s("/api/session/brief", BRIEF);
 
     const badS = async (n, b) => ck(n, (await s("/api/session/screen", b)).status === 400);
-    await badS("리커트 6점 거부", { stepIndex: 1, answers: { ...L, pu1: 6 } });
-    await badS("리커트 0 거부", { stepIndex: 1, answers: { ...L, ai1: 0 } });
-    await badS("문항 누락", { stepIndex: 1, answers: { pu1: 3 } });
-    await badS("성실성 문항 누락", { stepIndex: 1, answers: L });
-    await badS("성실성 범위 밖", { stepIndex: 1, answers: L, attentionCheck: 6 });
+    await badS("리커트 6점 거부", { ...CHK(1), stepIndex: 1, answers: { ...L, pu1: 6 } });
+    await badS("리커트 0 거부", { ...CHK(1), stepIndex: 1, answers: { ...L, ra1: 0 } });
+    await badS("문항 누락", { ...CHK(1), stepIndex: 1, answers: { pu1: 3 } });
+    await badS("성실성 문항 누락", { ...CHK(1), stepIndex: 1, answers: L });
+    await badS("성실성 범위 밖", { ...CHK(1), stepIndex: 1, answers: L, attentionCheck: 6 });
     /*
       문항 이해도 — 빈 배열(없음)과 미응답을 갈라야 하므로, 아예 안 보내면 거부해야 한다.
       번호를 골랐으면 이유까지 받는다 — 어려웠다고만 하고 넘어가면 쓸 수 없는 자료가 된다.
     */
-    await badS("이해도 미응답 거부", { stepIndex: 1, answers: L, attentionCheck: 4, dwellMs: 5000 });
-    await badS("이해도 없는 번호 거부", { stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [7], dwellMs: 5000 });
-    await badS("이해도 이유 없음 거부", { stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [2], unclearReason: "   ", dwellMs: 5000 });
-    ck("리커트 5점 허용", (await s("/api/session/screen", { stepIndex: 1, answers: { pu1: 5, pu2: 5, pu3: 5, ra1: 1, ra2: 1, ra3: 1 }, attentionCheck: 4, unclearItems: [], dwellMs: 5000 })).status === 200);
-    for (let t = 2; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
+    await badS("이해도 미응답 거부", { ...CHK(1), stepIndex: 1, answers: L, attentionCheck: 4, dwellMs: 5000 });
+    await badS("이해도 없는 번호 거부", { ...CHK(1), stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [7], dwellMs: 5000 });
+    await badS("이해도 이유 없음 거부", { ...CHK(1), stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [2], unclearReason: "   ", dwellMs: 5000 });
+    /*
+      화면 단위 조작점검 — 근거유형은 늘 필수, 나머지는 파일럿에서만 필수.
+      문구 자연스러움이 3점 이하면 이유까지 받아야 한다 (낮은 점수만 있고 이유가 없으면
+      무엇을 고쳐야 할지 알 수 없다). 문구 범위 이해는 첫 화면에서만 묻는다.
+    */
+    const base = { stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 };
+    const chkFull = CHK(1);
+    await badS("근거유형 점검 누락 거부", base);
+    await badS("근거유형 점검 없는 값 거부", { ...chkFull, ...base, mcRationale: "zzz" });
+    if (PHASE === "pilot") {
+      await badS("문구 점검 누락 거부", { ...chkFull, ...base, wordingNatural: null });
+      await badS("문구 점검 범위 밖 거부", { ...chkFull, ...base, wordingNatural: 0 });
+      await badS("문구 낮은 점수 이유 없음 거부", { ...chkFull, ...base, wordingNatural: 2, wordingReason: "   " });
+      await badS("문구 범위 점검 누락 거부(첫 화면)", { ...chkFull, ...base, scopeUnderstood: null });
+      await badS("문구 범위 점검 없는 값 거부", { ...chkFull, ...base, scopeUnderstood: "maybe" });
+      await badS("장르 적합도 누락 거부", { ...chkFull, ...base, genreFit: null });
+    }
+    ck("문구 낮은 점수 + 이유 허용", (await s("/api/session/screen", { ...chkFull, ...base, wordingNatural: 2, wordingReason: "  요일 언급이 어색했다  " })).status === 200);
+    ck("리커트 5점 허용", (await s("/api/session/screen", { ...CHK(2), stepIndex: 2, answers: { pu1: 5, pu2: 5, pu3: 5, ra1: 1, ra2: 1, ra3: 1 }, attentionCheck: 4, unclearItems: [], dwellMs: 5000 })).status === 200);
+    await s("/api/session/screen", { ...CHK(3), stepIndex: 3, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
 
     const badP = async (n, b) => ck(n, (await s("/api/session/posttest", b)).status === 400);
     await badP("없는 part", { part: "zzz" });
-    await badP("조작점검 잘못된 값", { part: "check", answer: "XX" });
-    await s("/api/session/posttest", { part: "check", answer: "TVOD" });
+    await badP("조작점검 잘못된 값", { ...CHKP, part: "check", answer: "XX" });
+    await badP("반대 조건 문항 누락 거부", { part: "check", answer: "TVOD" });
+    await badP("반대 조건 문항 빈칸 거부", { ...CHKP, part: "check", answer: "TVOD", counterfactualInfo: "   " });
+    await s("/api/session/posttest", { ...CHKP, part: "check", answer: "TVOD" });
     await badP("순위 중복", { part: "ranking", ranks: { 1: 1, 2: 1, 3: 3 }, reason: "r" });
     await badP("순위 누락", { part: "ranking", ranks: { 1: 1, 2: 2 }, reason: "r" });
     await badP("선택 이유 누락", { part: "ranking", ranks: { 1: 1, 2: 2, 3: 3 } });
     ck("순위+이유 저장", (await s("/api/session/posttest", { part: "ranking", ranks: { 1: 3, 2: 1, 3: 2 }, reason: "두번째" })).json?.next === "/post/open");
-    await badP("주관식 빈칸 거부", { part: "open", open: { open_feeling: "없음", open_notable: "   ", open_missing: "없음" } });
-    ck("주관식 없음 허용", (await s("/api/session/posttest", { part: "open", open: { open_feeling: "없음", open_notable: "없음", open_missing: "없음" } })).json?.next === "/done");
+    await badP("주관식 빈칸 거부", { part: "open", open: { ...OPENA, open_notable: "   " } });
+    await badP("의심 점검 누락 거부", { part: "open", open: { ...OPENA, open_purpose: "" } });
+    await badP("이용맥락 괴리 누락 거부", { part: "open", open: { ...OPENA, open_gap: "  " } });
+    ck("주관식 없음 허용", (await s("/api/session/posttest", { part: "open", open: OPENA })).json?.next === "/done");
     ck("/done 200", (await s("/done")).status === 200);
 
     const p = (await rest("participants?select=presentation_order,rank_content,rank_collab,rank_context&mc_usage_answer=eq.TVOD" + MINE))[0];
@@ -373,7 +426,7 @@ async function complete(opts = {}) {
 
     const answers = familiarityOf("action", { watched: ["action-A-1", "action-C-4"], heard: ["action-B-2"] });
     ck("시청 확인 저장", (await s("/api/session/genre", { genre: "action", displayName: "건빵", familiarity: answers })).json?.next === "/brief");
-    await s("/api/session/brief", {});
+    await s("/api/session/brief", BRIEF);
     const p = (await rest("participants?select=seen_title_ids,title_familiarity&is_dev=eq.false" + MINE))[0];
     ck("watched 만 seen_title_ids 로", (p.seen_title_ids ?? []).length === 2, JSON.stringify(p.seen_title_ids));
     ck("3단계 원자료 12편", Object.keys(p.title_familiarity ?? {}).length === 12, String(Object.keys(p.title_familiarity ?? {}).length));
@@ -396,7 +449,7 @@ async function complete(opts = {}) {
       }
       ck("포스터 webp 200 응답", ok === imgs.length + chrome.length, ok + "/" + (imgs.length + chrome.length));
     }
-    for (let t = 1; t <= 3; t++) await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
+    for (let t = 1; t <= 3; t++) await s("/api/session/screen", { ...CHK(t), stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
     const rows = await myScreens("step_index,set_id,title_ids&order=step_index");
     ck("각 화면 title_ids 4개", rows.every((r) => r.title_ids.length === 4));
     ck("세 화면 세트 서로 다름", new Set(rows.map((r) => r.set_id)).size === 3);
@@ -423,7 +476,7 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "action", familiarity: familiarityOf("action") });
-    await s("/api/session/brief", {});
+    await s("/api/session/brief", BRIEF);
     const st = htmlOnly((await s("/stimulus/1")).text).replace(/<!--.*?-->/g, "");
     ck("자극물 화면에 성실성 문항", /성실성을 확인하기 위한 문항/.test(st));
     ck("자극물 화면에 이해도 문항", /의미가 명확하게 이해되셨나요/.test(st));
@@ -437,14 +490,34 @@ async function complete(opts = {}) {
       (st.match(/>[0-9]+\.<\/span>/g) ?? []).length === 6,
       String((st.match(/>[0-9]+\.<\/span>/g) ?? []).length),
     );
-    ck("문항 한 컨테이너", (st.match(/<fieldset/g) ?? []).length === 1, String((st.match(/<fieldset/g) ?? []).length));
     ck("소제목 없음", !/얼마나 유용하다고 느꼈나요/.test(st) && !/받아들이고 싶은 정도는/.test(st) && !/확인 문항/.test(st));
-    // 5점 척도 안내는 묶음 맨 위에 한 번만 — 문항마다 반복되면 목록이 읽히지 않는다
+
+    /*
+      문항마다 카드 하나. 한 카드에 눈금이 둘 이상 들어가면 어느 줄이 어느 문항의
+      것인지 눈으로 되짚어야 하고, 좁은 화면에서 위 문항의 보기를 잘못 누르게 된다.
+      카드 모양은 일곱 문항이 모두 같다 — 성실성 확인 문항만 달라 보이면 변별력을 잃는다.
+    */
+    const CARD = "card-shadow rounded-xl border border-line bg-card";
+    const cards = st.split(CARD).slice(1);
+    const scaleCards = cards.filter((c) => c.includes("grid-cols-5"));
+    ck("눈금이 둘 이상인 카드 없음", scaleCards.every((c) => c.split("grid-cols-5").length === 2));
+    // 측정 7 (유용성 3 + 성실성 + 수용의도 3) + 파일럿 조작점검 2 (문구 자연스러움 · 장르 적합도)
+    ck("척도 문항 = 카드 수", scaleCards.length === (PHASE === "pilot" ? 9 : 7), String(scaleCards.length));
+
+    /* 다섯 단계 전문은 안내 상자에 한 번 — 2·4 가 무엇인지 확인할 곳이 한 군데는 있어야 한다 */
     ck("척도 안내 1회", (st.match(/5점 척도/g) ?? []).length === 1, String((st.match(/5점 척도/g) ?? []).length));
     for (const [i, label] of ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"].entries())
+      ck("척도 안내 " + (i + 1) + "번 " + label, st.includes(">" + (i + 1) + "번</span> " + label));
+
+    /*
+      양 끝과 가운데 라벨은 문항마다 붙는다. 안내 상자까지 스크롤해 올라가지 않고도
+      1·3·5 가 무엇인지 보여야 한다 — 그러면 2·4 는 그 사이로 읽힌다.
+    */
+    for (const label of ["전혀 그렇지 않다", "보통이다", "매우 그렇다"])
       ck(
-        "척도 " + (i + 1) + "번 " + label,
-        (st.match(new RegExp(">" + label + "<", "g")) ?? []).length === 1,
+        "문항마다 " + label,
+        (st.match(new RegExp(">" + label + "<", "g")) ?? []).length === scaleCards.length,
+        (st.match(new RegExp(">" + label + "<", "g")) ?? []).length + " / " + scaleCards.length,
       );
     {
       // PU 3 → 성실성 → RA 3. 문구는 src/lib/items.ts 와 같아야 한다
@@ -453,7 +526,7 @@ async function complete(opts = {}) {
       ck("유용성 3 → 성실성 → 수용의도 3 순서", pos.every((v, i) => v >= 0 && (i === 0 || v > pos[i - 1])), JSON.stringify(pos));
     }
     for (const [i, a] of [[1, 4], [2, 2], [3, 4]])
-      await s("/api/session/screen", { stepIndex: i, answers: L, attentionCheck: a, unclearItems: [], dwellMs: 5000 });
+      await s("/api/session/screen", { ...CHK(i), stepIndex: i, answers: L, attentionCheck: a, unclearItems: [], dwellMs: 5000 });
     const rows = await myScreens("step_index,attention_check,attention_passed&order=step_index");
     ck("3화면 모두 기록", rows.length === 3);
     ck("정답 4 → 통과", rows[0].attention_passed === true && rows[2].attention_passed === true);
@@ -470,14 +543,73 @@ async function complete(opts = {}) {
     await s3("/api/session/presurvey", DEMO);
     await s3("/api/session/presurvey", USAGE);
     await s3("/api/session/genre", { genre: "romance", familiarity: familiarityOf("romance") });
-    await s3("/api/session/brief", {});
-    await s3("/api/session/screen", { stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
-    await s3("/api/session/screen", { stepIndex: 2, answers: L, attentionCheck: 4, unclearItems: [5, 2, 2], unclearReason: "  애매했다  ", dwellMs: 5000 });
+    await s3("/api/session/brief", BRIEF);
+    await s3("/api/session/screen", { ...CHK(1), stepIndex: 1, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
+    await s3("/api/session/screen", { ...CHK(2), stepIndex: 2, answers: L, attentionCheck: 4, unclearItems: [5, 2, 2], unclearReason: "  애매했다  ", dwellMs: 5000 });
     const cl = await myScreens("step_index,unclear_items,unclear_reason&order=step_index");
     ck("이해도 없음 = 빈 배열", Array.isArray(cl[0]?.unclear_items) && cl[0].unclear_items.length === 0, JSON.stringify(cl[0]?.unclear_items));
     ck("이해도 이유 없음 = null", cl[0]?.unclear_reason === null, JSON.stringify(cl[0]?.unclear_reason));
     ck("이해도 번호 중복 제거·정렬", JSON.stringify(cl[1]?.unclear_items) === "[2,5]", JSON.stringify(cl[1]?.unclear_items));
     ck("이해도 이유 앞뒤 공백 제거", cl[1]?.unclear_reason === "애매했다", JSON.stringify(cl[1]?.unclear_reason));
+
+    /*
+      조작점검이 그대로 남는지. 세 화면 모두 "content" 로 답했으니 근거유형이 content 인
+      화면 하나만 맞은 것으로 기록돼야 한다 — 정오 판정이 화면의 실제 근거유형을 보고
+      매겨지는지 확인하는 자리다.
+    */
+    await wipe();
+    const s4 = sess();
+    await s4("/api/session/start", {});
+    await s4("/api/session/presurvey", DEMO);
+    await s4("/api/session/presurvey", USAGE);
+    await s4("/api/session/genre", { genre: "comedy", familiarity: familiarityOf("comedy") });
+    await s4("/api/session/brief", BRIEF);
+    for (let t = 1; t <= 3; t++)
+      await s4("/api/session/screen", { ...CHK(t), stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
+    const mc = await myScreens(
+      "step_index,rationale_type,mc_rationale_answer,mc_rationale_correct,wording_natural,wording_reason,scope_understood,genre_fit&order=step_index",
+    );
+    ck("근거유형 점검 응답 저장", mc.every((r) => r.mc_rationale_answer === "content"));
+    ck(
+      "근거유형 정오 = 실제 유형과 대조",
+      mc.every((r) => r.mc_rationale_correct === (r.rationale_type === "content")) &&
+        mc.filter((r) => r.mc_rationale_correct).length === 1,
+      JSON.stringify(mc.map((r) => [r.rationale_type, r.mc_rationale_correct])),
+    );
+    if (PHASE === "pilot") {
+      ck("문구 자연스러움 저장", mc.every((r) => r.wording_natural === 5));
+      ck("문구 이유 = null (높은 점수)", mc.every((r) => r.wording_reason === null));
+      ck("장르 적합도 저장", mc.every((r) => r.genre_fit === 4));
+      ck(
+        "문구 범위 점검은 첫 화면만",
+        mc[0]?.scope_understood === "yes" && mc[1]?.scope_understood === null && mc[2]?.scope_understood === null,
+        JSON.stringify(mc.map((r) => r.scope_understood)),
+      );
+      const bu = (await rest("participants?select=brief_understood" + MINE))[0];
+      ck("안내 이해도 저장", bu?.brief_understood === 5, JSON.stringify(bu));
+    }
+
+    /* 이용조건 조작점검 부속 문항 — 금액은 TVOD 조건에서만 남아야 한다 */
+    await s4("/api/session/posttest", { ...CHKP, part: "check", answer: "SVOD" });
+    await s4("/api/session/posttest", { part: "ranking", ranks: { 1: 1, 2: 2, 3: 3 }, reason: "이유" });
+    await s4("/api/session/posttest", { part: "open", open: { ...OPENA, open_gap: " 평소보다 짧았다 ", open_purpose: "추천 이유 비교" } });
+    const pc = (
+      await rest(
+        "participants?select=usage_condition,price_realistic,price_burden,price_reason,counterfactual_info,open_gap,open_purpose" +
+          MINE,
+      )
+    )[0];
+    ck("반대 조건 응답 저장", pc?.counterfactual_info === "없음", JSON.stringify(pc?.counterfactual_info));
+    ck("의심 점검 저장", pc?.open_purpose === "추천 이유 비교", JSON.stringify(pc?.open_purpose));
+    ck("이용맥락 괴리 공백 제거", pc?.open_gap === "평소보다 짧았다", JSON.stringify(pc?.open_gap));
+    if (pc?.usage_condition === "TVOD" && PHASE === "pilot")
+      ck("금액 점검 저장 (TVOD)", pc.price_realistic === 4 && pc.price_burden === 3, JSON.stringify(pc));
+    else
+      ck(
+        "금액 점검 미수집 (SVOD·본실험)",
+        pc?.price_realistic === null && pc?.price_burden === null && pc?.price_reason === null,
+        JSON.stringify(pc),
+      );
   }
 
   // ── 7
@@ -567,7 +699,7 @@ async function complete(opts = {}) {
       await s("/api/session/presurvey", DEMO);
       await s("/api/session/presurvey", USAGE);
       await s("/api/session/genre", { genre: "action", displayName: "  가나다라마바  ", familiarity: familiarityOf("action") });
-      await s("/api/session/brief", {});
+      await s("/api/session/brief", BRIEF);
       const html = (await s("/stimulus/1")).text;
       // 스마트폰은 얇은 베젤 + iOS 상태바, PC 는 브라우저 창
       // 접속 기기와 무관하게 언제나 스마트폰 목업이다 (PC 용 실험물 자료가 없다)
@@ -591,7 +723,7 @@ async function complete(opts = {}) {
       for (let t = 1; t <= 3; t++) {
         const h = lines(htmlOnly((await s("/stimulus/" + t)).text));
         heads.push(h.find((x) => HEADLINES.some((re) => re.test(x))) ?? "");
-        await s("/api/session/screen", { stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
+        await s("/api/session/screen", { ...CHK(t), stepIndex: t, answers: L, attentionCheck: 4, unclearItems: [], dwellMs: 5000 });
       }
       ck(name + " 호칭 4자 절단", heads[0].includes("가나다라님") && !heads[0].includes("가나다라마"), heads[0]);
       ck(name + " 호칭이 3조건 전부에", heads.every((h) => h.includes("가나다라님")), heads.join(" | "));
@@ -620,7 +752,7 @@ async function complete(opts = {}) {
       ck(name + " 상황 묘사 자리 없음", snap?.context_snapshot?.scene === undefined, JSON.stringify(snap?.context_snapshot?.scene));
       ck(name + " is_mobile 컬럼 저장", snap?.is_mobile === wantPhone, String(snap?.is_mobile));
 
-      await s("/api/session/posttest", { part: "check", answer: "SVOD" });
+      await s("/api/session/posttest", { ...CHKP, part: "check", answer: "SVOD" });
       const rk = await s("/post/ranking");
       ck(name + " 순위 미리보기 3개", ["1", "2", "3"].every((n) => rk.text.includes("추천 화면 " + n)));
       ck(name + " 근거유형 워딩 미노출", !/콘텐츠 기반|협업 기반|맥락 인식 기반/.test(rk.text));
@@ -634,7 +766,7 @@ async function complete(opts = {}) {
     await s("/api/session/presurvey", DEMO);
     await s("/api/session/presurvey", USAGE);
     await s("/api/session/genre", { genre: "comedy", displayName: "   ", familiarity: familiarityOf("comedy") });
-    await s("/api/session/brief", {});
+    await s("/api/session/brief", BRIEF);
     const LL = lines(htmlOnly((await s("/stimulus/1")).text));
     ck("호칭 미입력 → 회원님", LL.some((x) => x.includes("회원님")), LL.filter((x) => x.includes("님")).join(" | "));
   }
@@ -692,11 +824,10 @@ async function complete(opts = {}) {
     const csv = buf.toString("utf8").replace(/^\ufeff/, "");
     const [h, ...rows] = csv.trim().split(/\r?\n/);
     const H = h.split(",");
-    for (const c of ["phase", "participant_code", "has_display_name", "is_mobile", "device", "watched_count", "heard_count", "unknown_count", "seen_title_ids", "title_familiarity", "screened_out", "screened_out_reason", "mc_usage_correct", "rank_content", "open_reason", "open_feeling", "open_notable", "open_missing", "followup_agreed", "pu_mean", "attention_check", "attention_passed", "unclear_count", "unclear_items", "unclear_reason", "dwell_ms"])
+    for (const c of ["phase", "participant_code", "has_display_name", "is_mobile", "device", "watched_count", "heard_count", "unknown_count", "seen_title_ids", "title_familiarity", "screened_out", "screened_out_reason", "mc_usage_correct", "rank_content", "open_reason", "open_feeling", "open_notable", "open_missing", "followup_agreed", "pu_mean", "attention_check", "attention_passed", "unclear_count", "unclear_items", "unclear_reason", "dwell_ms", "brief_understood", "price_realistic", "price_burden", "price_reason", "counterfactual_info", "open_gap", "open_purpose", "mc_rationale_correct_count", "mc_rationale_answer", "mc_rationale_correct", "wording_natural", "wording_reason", "scope_understood", "genre_fit"])
       ck("컬럼: " + c, H.includes(c));
     ck("display_name 미노출", !H.includes("display_name"));
     ck("연락처 미노출", !H.includes("followup_email") && !H.includes("followup_phone"));
-    ck("재인 컬럼 없음", !H.includes("mc_rationale_answer") && !H.includes("mc_rationale_correct"));
     /*
       CSV 는 그 phase 의 모든 참여자를 내보낸다 — 실제 응답자가 한 명이라도 있으면
       전체 행 수로는 검사가 안 된다. 이 스크립트가 만든 참여자의 코드로만 센다.

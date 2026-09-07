@@ -60,3 +60,20 @@ export function NoticeList({ items }: { items: string[] }) {
     </ul>
   );
 }
+
+/**
+ * 문항 묶음의 **범위**를 알리는 짙은 상자.
+ *
+ * 안내 상자(NoticeCard)와 색을 달리한다. 노란 상자는 "실험 조건" 을 담고,
+ * 이 짙은 상자는 "지금부터 답할 문항이 무엇을 기준으로 하는지" 를 담는다.
+ * 둘을 같은 색으로 두면 이용조건 안내가 문항 안내에 섞여 눈에 덜 들어온다.
+ *
+ * 선행 조사(ott-survey-react)에서 문항 묶음 앞에 두던 상자와 같은 색·같은 자리다.
+ */
+export function ScopeBanner({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-lg bg-accent-deep px-4 py-3">
+      <p className="text-[13px] leading-relaxed text-accent-soft break-keep">{children}</p>
+    </div>
+  );
+}

@@ -5,6 +5,7 @@ import { OpenEndedForm, RankingForm, UsageCheckForm } from "@/components/PostTes
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
 import { STAGE_LABELS, stepByPath } from "@/lib/steps";
+import { SURVEY_PHASE } from "@/lib/phase";
 import { getRail } from "@/lib/stimuli";
 import { buildContextSnapshot, railHeadline, rationaleBanner } from "@/lib/copy";
 import { TOTAL_STEPS, type RationaleType, type SetId, type UsageCondition } from "@/lib/experiment";
@@ -84,7 +85,12 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
       <p className="mt-2 text-sm leading-relaxed text-muted break-keep">{meta.lead}</p>
 
       <div className="mt-6">
-        {part === "check" && <UsageCheckForm />}
+        {part === "check" && (
+          <UsageCheckForm
+            condition={participant.usage_condition as UsageCondition}
+            pilot={SURVEY_PHASE === "pilot"}
+          />
+        )}
         {part === "ranking" && <RankingForm previews={previews} />}
         {part === "open" && <OpenEndedForm />}
       </div>

@@ -86,9 +86,16 @@ export type ParticipantRow = {
   rank_collab: number | null;
   rank_context: number | null;
   open_reason: string | null;
+  brief_understood: number | null;
+  price_realistic: number | null;
+  price_burden: number | null;
+  price_reason: string | null;
+  counterfactual_info: string | null;
   open_feeling: string | null;
   open_notable: string | null;
   open_missing: string | null;
+  open_gap: string | null;
+  open_purpose: string | null;
   posttest_at: string | null;
 
   // 선별 제외 / 후속 인터뷰
@@ -111,6 +118,13 @@ export type ScreenResponseInput = {
   /** 이해하기 어려웠던 문항 번호. 빈 배열 = '없음' 을 고른 것 */
   unclearItems: number[];
   unclearReason: string | null;
+  /** 화면 단위 조작점검 */
+  mcRationaleAnswer: string;
+  mcRationaleCorrect: boolean;
+  wordingNatural: number | null;
+  wordingReason: string | null;
+  scopeUnderstood: string | null;
+  genreFit: number | null;
   dwellMs: number | null;
 };
 
@@ -133,6 +147,12 @@ export type ScreenResponseRow = {
   /** 이해하기 어려웠던 문항 번호. 빈 배열 = 없음, null = 미응답 */
   unclear_items: number[] | null;
   unclear_reason: string | null;
+  mc_rationale_answer: string | null;
+  mc_rationale_correct: boolean | null;
+  wording_natural: number | null;
+  wording_reason: string | null;
+  scope_understood: string | null;
+  genre_fit: number | null;
   dwell_ms: number | null;
   created_at: string;
 };
@@ -473,8 +493,11 @@ export function setTitleFamiliarity(
 }
 
 /** 3단계 안내를 읽고 넘어갔다고 표시 */
-export function markBriefSeen(id: string) {
-  return patchParticipant(id, { brief_seen_at: new Date().toISOString() });
+export function markBriefSeen(id: string, briefUnderstood: number | null = null) {
+  return patchParticipant(id, {
+    brief_seen_at: new Date().toISOString(),
+    brief_understood: briefUnderstood,
+  });
 }
 
 /** 사전 문항 한 섹션 분량 저장 — 컬럼명은 presurvey.ts 의 정의에서만 나온다 */
@@ -514,6 +537,12 @@ export async function saveScreenResponse(input: ScreenResponseInput) {
     attention_check: input.attentionCheck,
     unclear_items: input.unclearItems,
     unclear_reason: input.unclearReason,
+    mc_rationale_answer: input.mcRationaleAnswer,
+    mc_rationale_correct: input.mcRationaleCorrect,
+    wording_natural: input.wordingNatural,
+    wording_reason: input.wordingReason,
+    scope_understood: input.scopeUnderstood,
+    genre_fit: input.genreFit,
     attention_passed:
       input.attentionCheck === null ? null : input.attentionCheck === ATTENTION_CORRECT,
     dwell_ms: input.dwellMs,

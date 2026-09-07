@@ -28,6 +28,15 @@ import {
   MEASURED_ITEM_NUMBERS,
   USEFULNESS_ITEMS,
 } from "./items";
+import {
+  BRIEF_UNDERSTOOD,
+  COUNTERFACTUAL,
+  GENRE_FIT,
+  MC_RATIONALE,
+  PRICE_CHECK,
+  SCOPE_UNDERSTOOD,
+  WORDING_NATURAL,
+} from "./checks";
 import { PRE_SECTIONS } from "./presurvey";
 import { OPEN_QUESTIONS, RANK_COLUMNS, RANK_REASON, RANK_TASK, USAGE_MANIPULATION_CHECK } from "./posttest";
 import { FAMILIARITY_LEVELS, FAMILIARITY_QUESTION } from "./stimuli";
@@ -308,9 +317,122 @@ function designRows(): CodebookRow[] {
   ];
 }
 
+
+/**
+ * 조작점검 — 대원칙상 PU·RA 뒤에 붙는 문항들.
+ *
+ * 파일럿 전용 문항은 그 사실을 values 에 적는다. 본실험 CSV 에서 그 열이 통째로
+ * 비어 있는 것을 보고 "수집이 안 됐다" 고 오해하지 않게.
+ */
+function checkRows(): CodebookRow[] {
+  const screen = "3단계 · 화면별 조작점검";
+  const pilotOnly = " · 파일럿에서만 수집";
+  return [
+    {
+      column: "mc_rationale_answer",
+      code: "",
+      section: screen,
+      question: MC_RATIONALE.question,
+      type: "명목 (단일선택)",
+      values: pipe(MC_RATIONALE.options.map((o) => [o.value, o.label] as [string, string])),
+    },
+    {
+      column: "mc_rationale_correct",
+      code: "",
+      section: screen,
+      question: "근거유형 조작점검 응답이 그 화면의 실제 근거유형과 같은지 (파생)",
+      type: "논리",
+      values: "true=일치 | false=불일치·모름",
+    },
+    {
+      column: "mc_rationale_correct_count",
+      code: "",
+      section: "기록",
+      question: "화면 3개 중 근거유형 조작점검을 맞힌 수 (참여자 단위, 파생)",
+      type: "정수",
+      values: "0~3",
+    },
+    {
+      column: "wording_natural",
+      code: "",
+      section: screen,
+      question: WORDING_NATURAL.question,
+      type: "5점 리커트",
+      values: LIKERT_SCALE + pilotOnly,
+    },
+    {
+      column: "wording_reason",
+      code: "",
+      section: screen,
+      question: WORDING_NATURAL.reasonLabel,
+      type: "주관식",
+      values: `wording_natural 이 ${WORDING_NATURAL.reasonThreshold}점 이하일 때만 값이 있다`,
+    },
+    {
+      column: "scope_understood",
+      code: "",
+      section: screen,
+      question: SCOPE_UNDERSTOOD.question,
+      type: "명목 (단일선택)",
+      values:
+        pipe(SCOPE_UNDERSTOOD.options.map((o) => [o.value, o.label] as [string, string])) +
+        " · 첫 화면(step_index=1)에서만" +
+        pilotOnly,
+    },
+    {
+      column: "genre_fit",
+      code: "",
+      section: screen,
+      question: GENRE_FIT.template,
+      type: "5점 리커트",
+      values: LIKERT_SCALE + pilotOnly,
+    },
+    {
+      column: "brief_understood",
+      code: "",
+      section: "3단계 · 시작 전 안내",
+      question: BRIEF_UNDERSTOOD.question,
+      type: "5점 리커트",
+      values: LIKERT_SCALE + pilotOnly,
+    },
+    {
+      column: "price_realistic",
+      code: "",
+      section: "3단계 · 조작점검",
+      question: PRICE_CHECK.realistic,
+      type: "5점 리커트",
+      values: LIKERT_SCALE + " · TVOD 조건만" + pilotOnly,
+    },
+    {
+      column: "price_burden",
+      code: "",
+      section: "3단계 · 조작점검",
+      question: PRICE_CHECK.burden,
+      type: "5점 리커트",
+      values: LIKERT_SCALE + " · TVOD 조건만" + pilotOnly,
+    },
+    {
+      column: "price_reason",
+      code: "",
+      section: "3단계 · 조작점검",
+      question: PRICE_CHECK.reasonLabel,
+      type: "주관식 (선택)",
+      values: "TVOD 조건만" + pilotOnly,
+    },
+    {
+      column: "counterfactual_info",
+      code: "",
+      section: "3단계 · 조작점검",
+      question: `${COUNTERFACTUAL.question("SVOD")} (SVOD 조건) / ${COUNTERFACTUAL.question("TVOD")} (TVOD 조건)`,
+      type: "주관식",
+      values: "배정 조건에 따라 문구가 뒤집힌다",
+    },
+  ];
+}
+
 /** 컬럼명 → 코드북 행 */
 export function codebookByColumn(): Map<string, CodebookRow> {
-  const rows = [...preSurveyRows(), ...designRows(), ...postTestRows(), ...trialItemRows()];
+  const rows = [...preSurveyRows(), ...designRows(), ...postTestRows(), ...trialItemRows(), ...checkRows()];
   return new Map(rows.map((r) => [r.column, r]));
 }
 

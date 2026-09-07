@@ -1,6 +1,8 @@
 "use client";
 
-import { ITEM_CLARITY, MEASURED_ITEM_NUMBERS, OPEN_MAX_LENGTH_CLARITY } from "@/lib/items";
+import QuestionCard from "./QuestionCard";
+import ReasonField from "./ReasonField";
+import { ITEM_CLARITY, MEASURED_ITEM_NUMBERS } from "@/lib/items";
 
 /**
  * 문항 이해도 확인 — 측정 문항 바로 아래.
@@ -27,30 +29,23 @@ export default function ItemClarityBlock({
   onToggleNone: () => void;
   onReason: (v: string) => void;
 }) {
-  return (
-    <div
-      role="group"
-      aria-labelledby="clarity-q"
-      className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5"
-    >
-      <p id="clarity-q" className="text-sm leading-relaxed font-bold break-keep">
-        {ITEM_CLARITY.question}
-        <span className="ml-1 text-required" aria-hidden>
-          *
-        </span>
-      </p>
-      <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">{ITEM_CLARITY.help}</p>
+  const box =
+    "flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-semibold break-keep transition ";
+  const on = "border-accent bg-accent-soft text-accent-strong";
+  const off = "border-black/15 bg-surface hover:border-accent/60 hover:bg-accent-soft/60";
 
-      <div className="mt-4 flex flex-wrap gap-2">
+  return (
+    <QuestionCard
+      id="clarity-q"
+      question={ITEM_CLARITY.question}
+      help={ITEM_CLARITY.help}
+      required
+    >
+      <div role="group" aria-labelledby="clarity-q" className="flex flex-wrap gap-2">
         {MEASURED_ITEM_NUMBERS.map((no) => (
           <label
             key={no}
-            className={
-              "flex min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition " +
-              (selected.includes(no)
-                ? "border-accent bg-accent/10"
-                : "border-line hover:border-muted/50")
-            }
+            className={box + "min-w-14 " + (selected.includes(no) ? on : off)}
           >
             <input
               type="checkbox"
@@ -63,40 +58,21 @@ export default function ItemClarityBlock({
         ))}
 
         {/* '없음' 은 번호들과 같은 줄에 두되, 서로 배타적이다 */}
-        <label
-          className={
-            "flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-medium break-keep transition " +
-            (none ? "border-accent bg-accent/10" : "border-line hover:border-muted/50")
-          }
-        >
+        <label className={box + (none ? on : off)}>
           <input type="checkbox" checked={none} onChange={onToggleNone} />
           <span>{ITEM_CLARITY.noneLabel}</span>
         </label>
       </div>
 
-      {/* 이유는 어려웠다고 고른 사람에게만 묻는다 */}
       {selected.length > 0 && (
-        <div className="mt-4">
-          <label
-            htmlFor="unclear-reason"
-            className="block text-sm leading-relaxed font-medium break-keep"
-          >
-            {ITEM_CLARITY.reasonLabel}
-            <span className="ml-1 text-required" aria-hidden>
-              *
-            </span>
-          </label>
-          <textarea
-            id="unclear-reason"
-            value={reason}
-            onChange={(e) => onReason(e.target.value)}
-            maxLength={OPEN_MAX_LENGTH_CLARITY}
-            rows={3}
-            placeholder={ITEM_CLARITY.reasonPlaceholder}
-            className="mt-2 w-full resize-y rounded-lg border border-line bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-accent"
-          />
-        </div>
+        <ReasonField
+          id="unclear-reason"
+          label={ITEM_CLARITY.reasonLabel}
+          placeholder={ITEM_CLARITY.reasonPlaceholder}
+          value={reason}
+          onChange={onReason}
+        />
       )}
-    </div>
+    </QuestionCard>
   );
 }
