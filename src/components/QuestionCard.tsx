@@ -15,8 +15,15 @@ import type { ReactNode } from "react";
  * 성실성 확인 문항도 눈에 띄어 변별력을 잃는다.
  */
 export default function QuestionCard({
-  /** 카드 위 작은 라벨. 문항 번호가 없는 문항(성실성 확인)에서는 비운다 */
+  /** 카드 위 작은 라벨 */
   label,
+  /**
+   * 화면에 보이는 문항 번호. 있으면 문항 글 앞에 붙고 둘째 줄부터 들여쓰기가 걸린다.
+   *
+   * 번호를 카드가 직접 그린다. 호출하는 쪽에서 flex 로 감싸 붙였더니 문항 전체가
+   * 블록이 되어 필수 표시(*)가 문장 끝이 아니라 다음 줄로 떨어졌다.
+   */
+  no,
   /** 문항 본문 */
   question,
   /** 문항 아래 보조 설명 */
@@ -29,6 +36,7 @@ export default function QuestionCard({
   className = "",
 }: {
   label?: ReactNode;
+  no?: number;
   question: ReactNode;
   help?: ReactNode;
   required?: boolean;
@@ -45,10 +53,28 @@ export default function QuestionCard({
       {label != null && (
         <p className="mb-1 text-[11px] font-semibold text-faint tabular-nums wide:text-xs">{label}</p>
       )}
-      <p id={id} className="q-text text-sm leading-relaxed font-medium break-keep">
+      {/*
+        번호·문항·별표를 한 줄의 인라인 흐름에 둔다. 별표가 문장 끝에 붙어 있어야
+        무엇이 필수인지 읽히고, 줄바꿈으로 떨어지면 그냥 떠 있는 기호가 된다.
+
+        번호가 있을 때만 매달린 들여쓰기(hanging indent)를 건다 — 문항이 두 줄로
+        넘어가도 둘째 줄이 번호 아래가 아니라 글 아래에 맞는다.
+      */}
+      <p
+        id={id}
+        className={
+          "q-text text-sm leading-relaxed font-medium break-keep" +
+          (no ? " ps-[1.45em] -indent-[1.45em]" : "")
+        }
+      >
+        {no ? (
+          <>
+            <span className="font-bold text-accent tabular-nums">{no}.</span>{" "}
+          </>
+        ) : null}
         {question}
         {required && (
-          <span className="ml-1 text-required" aria-hidden>
+          <span className="ml-0.5 text-required" aria-hidden>
             *
           </span>
         )}

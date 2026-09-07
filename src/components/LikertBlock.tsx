@@ -27,18 +27,7 @@ export default function LikertBlock({
   return (
     <>
       {items.map((item) => (
-        <QuestionCard
-          key={item.key}
-          required
-          question={
-            <span className="flex gap-1.5">
-              {item.no && (
-                <span className="shrink-0 font-bold text-accent tabular-nums">{item.no}.</span>
-              )}
-              <span>{item.text}</span>
-            </span>
-          }
-        >
+        <QuestionCard key={item.key} required no={item.no} question={item.text}>
           <LikertScale
             name={item.key}
             label={item.text}
