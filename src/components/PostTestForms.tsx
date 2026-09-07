@@ -210,13 +210,17 @@ export function RankingForm({ previews }: { previews: ReactNode[] }) {
         <p className="text-sm leading-relaxed font-medium break-keep">{RANK_TASK.question}</p>
         <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">{RANK_TASK.help}</p>
 
-        <div className="mt-5 space-y-5">
+        {/*
+          넓은 화면에서는 세 화면을 나란히 놓는다 — 비교 과제라 한눈에 들어와야 한다.
+          좁은 화면에서는 위아래로 쌓되 폭을 꽉 채워 자극물이 작아지지 않게 한다.
+        */}
+        <div className="mt-5 grid gap-5 md:grid-cols-3">
           {previews.map((preview, i) => {
             const step = i + 1;
             return (
-              <div key={step} className="rounded-xl border border-line p-3">
+              <div key={step} className="flex flex-col rounded-xl border border-line p-3">
                 <p className="mb-2.5 text-sm font-bold">추천 화면 {step}</p>
-                <div className="mb-3">{preview}</div>
+                <div className="mb-3 flex-1">{preview}</div>
                 <div
                   role="radiogroup"
                   aria-label={"추천 화면 " + step + " 순위"}

@@ -70,7 +70,15 @@ export default async function PostPage({ params }: PageProps<"/post/[part]">) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-5 py-10">
+    /*
+      순위 화면만 칸을 넓게 쓴다. 세 화면을 나란히 놓고 비교하는 과제라
+      좁은 칸에 세로로 쌓으면 자극물이 손톱만 해져 무엇이 다른지 알 수 없다.
+    */
+    <main
+      className={
+        "mx-auto w-full flex-1 px-5 py-10 " + (part === "ranking" ? "max-w-5xl" : "max-w-xl")
+      }
+    >
       <p className="text-xs text-muted">{STAGE_LABELS[stage]}</p>
       <h1 className="mt-1.5 text-lg font-bold break-keep">{meta.title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted break-keep">{meta.lead}</p>

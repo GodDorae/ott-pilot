@@ -9,8 +9,8 @@ import { SCREEN_ASPECT } from "./OttScreen";
  * 그대로 남아 공변량으로 쓸 수 있다.
  *
  * 안쪽 화면(OttScreen)이 상태바까지 스스로 그리므로, 여기서는 얇은 베젤만 두른다.
- * `compact` 는 순위 화면에서 세 화면을 나란히 줄여 보여줄 때 쓴다 —
- * 화면 내부가 전부 컨테이너 비례 단위라 폭만 줄이면 그대로 축소된다.
+ * `compact` 는 순위 화면에서 쓴다 — 남은 세로가 아니라 칸 폭에 맞춰 크기를 정한다.
+ * (순위 화면은 스크롤되므로 높이에 갇혀 있지 않다.)
  *
  * ── 크기가 정해지는 방식 ────────────────────────────────────────
  * 좁은 화면은 폭 기준, 넓은 화면은 남은 세로 공간에서 역산한 폭과 기준 폭 중 작은 쪽.
@@ -52,7 +52,7 @@ export default function DeviceFrame({
     <div
       className={
         "rounded-[1.9rem] bg-neutral-900 p-[3px] shadow-xl ring-1 ring-white/10 " +
-        (compact ? "mx-auto w-full max-w-[9.5rem]" : "device-fit")
+        (compact ? "mx-auto w-full max-w-[19rem]" : "device-fit")
       }
       style={compact ? undefined : deviceFitVars()}
     >
