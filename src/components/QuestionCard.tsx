@@ -15,7 +15,10 @@ import type { ReactNode } from "react";
  * 성실성 확인 문항도 눈에 띄어 변별력을 잃는다.
  */
 export default function QuestionCard({
-  /** 카드 위 작은 라벨 */
+  /**
+   * 카드 위 문항 코드 (A-1, 3-4-2, 4-2-1 …). 설문 문서의 번호 체계를 쓰는 화면에서 쓴다.
+   * 자극물 화면은 대신 `no` 로 1부터 이어지는 번호를 문항 글 앞에 붙인다.
+   */
   label,
   /**
    * 화면에 보이는 문항 번호. 있으면 문항 글 앞에 붙고 둘째 줄부터 들여쓰기가 걸린다.
@@ -51,7 +54,7 @@ export default function QuestionCard({
       }
     >
       {label != null && (
-        <p className="mb-1 text-[11px] font-semibold text-faint tabular-nums wide:text-xs">{label}</p>
+        <p className="mb-1.5 text-[10px] font-bold tracking-widest text-accent uppercase">{label}</p>
       )}
       {/*
         번호·문항·별표를 한 줄의 인라인 흐름에 둔다. 별표가 문장 끝에 붙어 있어야

@@ -482,15 +482,16 @@ async function complete(opts = {}) {
     ck("자극물 화면에 이해도 문항", /의미가 명확하게 이해되셨나요/.test(st));
     ck("내용 기반 문구 '자주 시청하신'", !/최근 시청하신/.test(st));
     /*
-      이해도에서 "몇 번이 어려웠다" 고 가리킬 대상이라 번호가 보여야 한다.
-      성실성 확인 문항에도 번호를 준다 (4번) — 하나만 번호가 없으면 오히려 그 카드가
-      눈에 띈다. 일곱 개가 빠짐없이 이어져야 그 중 하나로 보인다.
+      문항 번호는 화면 위에서부터 하나로 이어진다 — 측정 7 + 이해도 1 + 조작점검.
+      파일럿 첫 화면은 12개 (문구 범위 점검이 첫 화면에만 있다), 2·3화면은 11개,
+      본실험은 9개. 번호가 붙은 카드와 안 붙은 카드가 섞이면 안 붙은 쪽이 눈에 띈다.
     */
-    for (const n of [1, 2, 3, 4, 5, 6, 7])
+    const expectedNos = PHASE === "pilot" ? 12 : 9;
+    for (let n = 1; n <= expectedNos; n++)
       ck("문항 번호 " + n + " 표시", st.includes(">" + n + ".</span>"), String(n));
     ck(
-      "번호가 일곱 개 · 빠진 번호 없음",
-      (st.match(/>[0-9]+\.<\/span>/g) ?? []).length === 7,
+      "번호가 " + expectedNos + "개 · 빠진 번호 없음",
+      (st.match(/>[0-9]+\.<\/span>/g) ?? []).length === expectedNos,
       String((st.match(/>[0-9]+\.<\/span>/g) ?? []).length),
     );
     // 측정 문항은 전부 필수 — 별표가 문항마다 붙어야 한다
@@ -874,7 +875,7 @@ async function complete(opts = {}) {
       화면에 내지 않으므로 PU1·RA3 이 아니라 1·7 이 적혀야 한다 — 이해도 확인에서
       참여자가 가리키는 것도 그 번호다. 구성개념은 section 열에 있다.
     */
-    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4", "mc_usage_answer"], ["4-2-2", "open_notable"], ["1", "pu1"], ["4", "attention_check"], ["7", "ra3"]])
+    for (const [code, col] of [["A-1", "age_group"], ["B-3", "rec_selection_freq"], ["3-4-1", "mc_usage_answer"], ["4-2-2", "open_notable"], ["1", "pu1"], ["4", "attention_check"], ["7", "ra3"], ["8", "unclear_items"], ["9", "mc_rationale_answer"], ["3-0", "brief_understood"], ["3-4-5", "counterfactual_info"]])
       ck("코드북 " + code + " → " + col, cb.some((l) => l.startsWith(col + "," + code + ",")), cb.find((l) => l.startsWith(col + ",")) ?? "없음");
     ck("코드북에 권한 필요", (await fetch(B + "/api/admin/export?format=codebook")).status === 401);
 

@@ -15,6 +15,7 @@ import { ITEM_CLARITY, ITEM_NUMBERS } from "@/lib/items";
  * 빈칸을 채우려고 아무 말이나 적게 된다.
  */
 export default function ItemClarityBlock({
+  no,
   selected,
   none,
   reason,
@@ -22,6 +23,8 @@ export default function ItemClarityBlock({
   onToggleNone,
   onReason,
 }: {
+  /** 화면에 보이는 문항 번호 */
+  no: number;
   selected: number[];
   none: boolean;
   reason: string;
@@ -37,6 +40,7 @@ export default function ItemClarityBlock({
   return (
     <QuestionCard
       id="clarity-q"
+      no={no}
       question={ITEM_CLARITY.question}
       help={ITEM_CLARITY.help}
       required

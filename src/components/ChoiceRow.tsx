@@ -10,12 +10,18 @@ import QuestionCard from "./QuestionCard";
  * 어느 동그라미가 어느 보기의 것인지 흐려진다.
  */
 export default function ChoiceRow({
+  no,
+  code,
   name,
   label,
   options,
   value,
   onChange,
 }: {
+  /** 화면에 보이는 문항 번호. 자기 번호 체계가 있는 화면에서는 비운다 */
+  no?: number;
+  /** 문항 코드 (3-4-2 …) — 설문 문서 번호 체계를 쓰는 화면에서 no 대신 쓴다 */
+  code?: string;
   name: string;
   label: string;
   options: readonly { readonly value: string; readonly label: string }[];
@@ -23,7 +29,7 @@ export default function ChoiceRow({
   onChange: (v: string) => void;
 }) {
   return (
-    <QuestionCard question={label} required>
+    <QuestionCard no={no} label={code} question={label} required>
       <div role="radiogroup" aria-label={label} className="space-y-1.5">
         {options.map((o) => {
           const on = value === o.value;

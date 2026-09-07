@@ -10,6 +10,8 @@ import LikertScale from "./LikertScale";
  * 다른 모양이면 참여자가 "여기부터는 다른 걸 묻는다"를 알아차리는 단서가 된다.
  */
 export default function ScaleRow({
+  no,
+  code,
   name,
   label,
   value,
@@ -17,6 +19,10 @@ export default function ScaleRow({
   required = true,
   children,
 }: {
+  /** 화면에 보이는 문항 번호. 자기 번호 체계가 있는 화면에서는 비운다 */
+  no?: number;
+  /** 문항 코드 (3-4-2 …) — 설문 문서 번호 체계를 쓰는 화면에서 no 대신 쓴다 */
+  code?: string;
   name: string;
   label: string;
   value: number | null;
@@ -26,7 +32,7 @@ export default function ScaleRow({
   children?: React.ReactNode;
 }) {
   return (
-    <QuestionCard question={label} required={required}>
+    <QuestionCard no={no} label={code} question={label} required={required}>
       <LikertScale name={name} label={label} value={value} onChange={onChange} />
       {children}
     </QuestionCard>

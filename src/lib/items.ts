@@ -97,7 +97,7 @@ export const OPEN_MAX_LENGTH_CLARITY = 500;
 export const ITEM_CLARITY = {
   question:
     "방금 응답하신 문항들의 의미가 명확하게 이해되셨나요? 이해하기 어려웠던 문항이 있다면 적어주세요.",
-  help: "어려웠던 문항 번호를 모두 골라 주세요. 없으면 '없음'을 골라 주세요.",
+  help: `위 ${ITEM_NUMBERS[0]}~${ITEM_NUMBERS[ITEM_NUMBERS.length - 1]}번 중 어려웠던 문항을 모두 골라 주세요. 없으면 '없음'을 골라 주세요.`,
   noneLabel: "없음",
   reasonLabel: "어떤 점이 어려웠는지 적어 주세요.",
   reasonPlaceholder: "예: 3번의 '괜찮은 제안'이 무엇을 말하는지 애매했다",

@@ -82,6 +82,14 @@ export default function StimulusForm({
   const complete = itemsDone && clarityDone && checksDone;
   const unanswered = ALL_ITEMS.length - answered + (attention ? 0 : 1);
 
+  /*
+    문항 번호는 화면 위에서부터 하나로 이어 붙인다 (측정 → 이해도 → 조작점검).
+    묶음마다 1 부터 다시 시작하면 이해도 확인에서 "3번" 이 어느 묶음의 3번인지 알 수 없고,
+    번호가 붙은 카드와 안 붙은 카드가 섞이면 안 붙은 쪽이 눈에 띈다.
+  */
+  const clarityNo = TRIAL_ITEMS.length + 1;
+  const checksStartNo = clarityNo + 1;
+
   // 목업을 실제로 볼 시간을 준다 — 문항에는 그 전에도 답할 수 있고, 막히는 건 제출뿐이다
   const { remaining: secondsLeft, done: waited } = useCountdown(
     skipWait ? 0 : MIN_DWELL_SECONDS.stimulus,
@@ -150,6 +158,7 @@ export default function StimulusForm({
           <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
 
           <ItemClarityBlock
+            no={clarityNo}
             selected={unclear}
             none={none}
             reason={reason}
@@ -159,6 +168,7 @@ export default function StimulusForm({
           />
 
           <ScreenChecksBlock
+            startNo={checksStartNo}
             value={checks}
             onChange={(patch) => setChecks((prev) => ({ ...prev, ...patch }))}
             genre={genre}

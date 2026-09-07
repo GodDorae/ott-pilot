@@ -7,6 +7,11 @@
  * 못 쓴다) 이름만 봐서는 무엇을 재는지 알 수 없으므로, 이름을 맞추는 대신
  * **둘을 이어 주는 표**를 만든다.
  *
+ * code 열은 **참여자 화면에 보이는 번호**다. 두 가지 표기가 섞여 있다 —
+ * 설문 문서의 번호 체계를 쓰는 화면은 A-1 · 3-4-2 · 4-2-1 처럼 계층 코드이고,
+ * 자극물 화면은 1~12 로 위에서부터 이어지는 번호다 (이해도 확인에서 참여자가
+ * "3번" 이라고 가리켜야 해서 계층 코드를 쓸 수 없다).
+ *
  * 표는 문항 정의(presurvey.ts / items.ts / posttest.ts / stimuli.ts)에서 그대로
  * 뽑아낸다 — 손으로 적어 두면 문항을 고쳤을 때 표만 옛날 것으로 남는다.
  * 논문 부록의 코드북으로 그대로 쓸 수 있다.
@@ -141,7 +146,7 @@ function trialItemRows(): CodebookRow[] {
     },
     {
       column: "unclear_items",
-      code: "",
+      code: "8",
       section: scale,
       question: ITEM_CLARITY.question,
       type: "다중선택 (문항 번호)",
@@ -149,7 +154,7 @@ function trialItemRows(): CodebookRow[] {
     },
     {
       column: "unclear_reason",
-      code: "",
+      code: "8",
       section: scale,
       question: ITEM_CLARITY.reasonLabel,
       type: "주관식",
@@ -187,7 +192,7 @@ function postTestRows(): CodebookRow[] {
   const rows: CodebookRow[] = [
     {
       column: "mc_usage_answer",
-      code: "3-4",
+      code: "3-4-1",
       section: "3단계 · 조작점검",
       question: USAGE_MANIPULATION_CHECK.question,
       type: "명목 (단일선택)",
@@ -197,7 +202,7 @@ function postTestRows(): CodebookRow[] {
     },
     {
       column: "mc_usage_correct",
-      code: "3-4",
+      code: "3-4-1",
       section: "3단계 · 조작점검",
       question: "조작점검 응답이 배정된 이용조건과 일치하는지 (파생)",
       type: "논리",
@@ -335,7 +340,7 @@ function checkRows(): CodebookRow[] {
   return [
     {
       column: "mc_rationale_answer",
-      code: "",
+      code: "9",
       section: screen,
       question: MC_RATIONALE.question,
       type: "명목 (단일선택)",
@@ -359,7 +364,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "wording_natural",
-      code: "",
+      code: "10",
       section: screen,
       question: WORDING_NATURAL.question,
       type: "5점 리커트",
@@ -367,7 +372,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "wording_reason",
-      code: "",
+      code: "10",
       section: screen,
       question: WORDING_NATURAL.reasonLabel,
       type: "주관식",
@@ -375,7 +380,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "scope_understood",
-      code: "",
+      code: "11",
       section: screen,
       question: SCOPE_UNDERSTOOD.question,
       type: "명목 (단일선택)",
@@ -386,15 +391,16 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "genre_fit",
-      code: "",
+      // 문구 범위 점검이 첫 화면에만 있어, 2·3화면에서는 번호가 한 칸 당겨진다
+      code: "11~12",
       section: screen,
       question: GENRE_FIT.template,
       type: "5점 리커트",
-      values: LIKERT_SCALE + pilotOnly,
+      values: LIKERT_SCALE + " · 첫 화면 12번 · 2·3화면 11번" + pilotOnly,
     },
     {
       column: "brief_understood",
-      code: "",
+      code: "3-0",
       section: "3단계 · 시작 전 안내",
       question: BRIEF_UNDERSTOOD.question,
       type: "5점 리커트",
@@ -402,7 +408,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "price_realistic",
-      code: "",
+      code: "3-4-2",
       section: "3단계 · 조작점검",
       question: PRICE_CHECK.realistic,
       type: "5점 리커트",
@@ -410,7 +416,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "price_burden",
-      code: "",
+      code: "3-4-3",
       section: "3단계 · 조작점검",
       question: PRICE_CHECK.burden,
       type: "5점 리커트",
@@ -418,7 +424,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "price_reason",
-      code: "",
+      code: "3-4-4",
       section: "3단계 · 조작점검",
       question: PRICE_CHECK.reasonLabel,
       type: "주관식 (선택)",
@@ -426,7 +432,7 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "counterfactual_info",
-      code: "",
+      code: "3-4-5",
       section: "3단계 · 조작점검",
       question: `${COUNTERFACTUAL.question("SVOD")} (SVOD 조건) / ${COUNTERFACTUAL.question("TVOD")} (TVOD 조건)`,
       type: "주관식",

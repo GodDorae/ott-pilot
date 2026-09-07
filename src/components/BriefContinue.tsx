@@ -58,8 +58,9 @@ export default function BriefContinue({
     <>
       {/* 안내를 읽고 이해했는지 — 조작이 전달됐는지 보려는 것이라 안내 바로 아래에 둔다 */}
       {pilot && (
-        <div className="card-shadow mb-4 rounded-xl border border-line bg-card p-4 sm:p-5">
+        <div className="mb-4">
           <ScaleRow
+            code="3-0"
             name="brief-understood"
             label={BRIEF_UNDERSTOOD.question}
             value={understood}

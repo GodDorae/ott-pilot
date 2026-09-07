@@ -94,9 +94,15 @@ function Textarea({
   value,
   onChange,
   hint,
+  code,
+  required = true,
 }: {
   id: string;
   label: string;
+  /** 선택 입력이면 false — 별표를 붙이지 않는다 */
+  required?: boolean;
+  /** 문항 코드 (4-2-1 …) */
+  code?: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
@@ -104,9 +110,14 @@ function Textarea({
 }) {
   return (
     <div>
+      {code && <CLabel className="text-accent">{code}</CLabel>}
       <label htmlFor={id} className="block text-sm leading-relaxed font-medium break-keep">
         {label}
-        <span className="ml-1 text-required" aria-hidden>*</span>
+        {required && (
+          <span className="ml-0.5 text-required" aria-hidden>
+            *
+          </span>
+        )}
       </label>
       {hint && <p className="mt-1 text-xs text-muted break-keep">{hint}</p>}
       <textarea
@@ -150,9 +161,12 @@ export function UsageCheckForm({
   return (
     <div>
       <div className="card-shadow rounded-xl border border-line bg-card p-4 sm:p-5">
-        <CLabel className="text-accent">3-4</CLabel>
-        <p className="text-sm leading-relaxed font-medium break-keep">
+        <CLabel className="text-accent">3-4-1</CLabel>
+        <p className="q-text text-sm leading-relaxed font-medium break-keep">
           {USAGE_MANIPULATION_CHECK.question}
+          <span className="ml-0.5 text-required" aria-hidden>
+            *
+          </span>
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-muted break-keep">
           {USAGE_MANIPULATION_CHECK.help}
@@ -185,23 +199,25 @@ export function UsageCheckForm({
 
       {/* 금액 점검 — 개별 대여 조건, 파일럿 전용. 두 가지를 묻는 것이라 척도를 나눈다 */}
       {askPrice && (
-        <div className="card-shadow mt-4 space-y-6 rounded-xl border border-line bg-card p-4 sm:p-5">
+        <div className="mt-4 space-y-2.5">
           <ScaleRow
+            code="3-4-2"
             name="price-realistic"
             label={PRICE_CHECK.realistic}
             value={realistic}
             onChange={setRealistic}
           />
-          <div className="border-t border-line pt-6">
-            <ScaleRow
-              name="price-burden"
-              label={PRICE_CHECK.burden}
-              value={burden}
-              onChange={setBurden}
-            />
-          </div>
-          <div className="border-t border-line pt-6">
+          <ScaleRow
+            code="3-4-3"
+            name="price-burden"
+            label={PRICE_CHECK.burden}
+            value={burden}
+            onChange={setBurden}
+          />
+          <div className="card-shadow rounded-xl border border-line bg-card px-4 py-4 sm:px-5">
             <Textarea
+              code="3-4-4"
+              required={false}
               id="price_reason"
               label={PRICE_CHECK.reasonLabel}
               placeholder={PRICE_CHECK.reasonPlaceholder}
@@ -213,8 +229,9 @@ export function UsageCheckForm({
       )}
 
       {/* 반대 조건을 가정하게 한다 — 이용 방식이 '이유를 확인하려는 욕구' 에 어떻게 걸리는지 */}
-      <div className="card-shadow mt-4 rounded-xl border border-line bg-card p-4 sm:p-5">
+      <div className="card-shadow mt-2.5 rounded-xl border border-line bg-card px-4 py-4 sm:px-5">
         <Textarea
+          code="3-4-5"
           id="counterfactual_info"
           label={COUNTERFACTUAL.question(condition)}
           placeholder={COUNTERFACTUAL.placeholder}

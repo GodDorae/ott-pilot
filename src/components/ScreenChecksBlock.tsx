@@ -58,21 +58,35 @@ export function screenChecksDone(
  * 드러나 답이 달라진다.
  */
 export default function ScreenChecksBlock({
+  startNo,
   value,
   onChange,
   genre,
   pilot,
   firstScreen,
 }: {
+  /** 이 묶음의 첫 문항 번호 — 위쪽 문항들에서 이어진다 */
+  startNo: number;
   value: ScreenChecks;
   onChange: (patch: Partial<ScreenChecks>) => void;
   genre: Genre;
   pilot: boolean;
   firstScreen: boolean;
 }) {
+  /*
+    번호는 실제로 그려지는 것만 세어 이어 붙인다. 파일럿 전용 문항이나 첫 화면 전용
+    문항이 빠지는 화면에서 번호가 중간에 뛰면, 참여자에게는 문항이 사라진 것으로 보인다.
+  */
+  let n = startNo;
+  const mcNo = n++;
+  const wordingNo = pilot ? n++ : 0;
+  const scopeNo = pilot && firstScreen ? n++ : 0;
+  const genreNo = pilot ? n++ : 0;
+
   return (
     <>
       <ChoiceRow
+        no={mcNo}
         name="mc-rationale"
         label={MC_RATIONALE.question}
         options={MC_RATIONALE.options}
@@ -83,6 +97,7 @@ export default function ScreenChecksBlock({
       {pilot && (
         <>
           <ScaleRow
+            no={wordingNo}
             name="wording-natural"
             label={WORDING_NATURAL.question}
             value={value.wordingNatural}
@@ -101,6 +116,7 @@ export default function ScreenChecksBlock({
 
           {firstScreen && (
             <ChoiceRow
+              no={scopeNo}
               name="scope-understood"
               label={SCOPE_UNDERSTOOD.question}
               options={SCOPE_UNDERSTOOD.options}
@@ -110,6 +126,7 @@ export default function ScreenChecksBlock({
           )}
 
           <ScaleRow
+            no={genreNo}
             name="genre-fit"
             label={GENRE_FIT.question(genre)}
             value={value.genreFit}
