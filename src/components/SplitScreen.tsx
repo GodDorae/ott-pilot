@@ -52,12 +52,16 @@ export default function SplitScreen({
   return (
     <div className="flex w-full flex-1 flex-col overflow-x-hidden wide:h-dvh wide:flex-row wide:justify-center wide:gap-10 wide:overflow-hidden">
       {/* 왼쪽 — 자극물 목업 */}
-      <div className="flex w-full shrink-0 flex-col items-center border-b border-line bg-bg px-4 py-6 mock-pane pretty-scroll pane-scroll wide:h-dvh wide:overflow-y-auto wide:border-b-0 wide:px-8 wide:py-8">
+      <div className="flex w-full shrink-0 flex-col items-center border-b border-line bg-bg px-4 py-6 mock-pane pretty-scroll pane-scroll wide:h-dvh wide:overflow-y-auto wide:border-b-0 wide:px-8 wide:py-5">
         {/*
           my-auto 로 가운데 정렬한다. justify-center 를 쓰면 내용이 칸보다 높을 때
           위쪽이 스크롤로도 닿지 않는 곳에 잘려 나간다 (flex 스크롤 컨테이너의 알려진 문제).
         */}
-        <div className="flex w-full max-w-md flex-col wide:my-auto">{left}</div>
+        {/*
+          max-w-md 는 세로로 쌓일 때만이다. 2분할에서는 목업 폭을 .mock-pane 이 정하므로
+          여기서 다시 448px 로 잡으면 상한(30rem)이 걸리기 전에 이쪽이 먼저 잘라 버린다.
+        */}
+        <div className="flex w-full max-w-md flex-col wide:max-w-none wide:my-auto">{left}</div>
       </div>
 
       {/* 오른쪽 — 측정 문항 (PC 에서는 여기만 스크롤) */}

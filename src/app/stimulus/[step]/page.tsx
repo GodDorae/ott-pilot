@@ -63,7 +63,13 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
               이용조건은 이 연구의 조절변수라, 못 읽고 넘어가면 조건이 걸리지 않는다.
               폭은 목업과 똑같이 맞춘다 (.device-fit) — 목업보다 넓으면 따로 노는 덩어리로 보인다.
             */}
-            <div className="device-fit space-y-2.5">
+            <div className="device-fit space-y-2">
+              {/*
+                머리글을 안내 카드 라벨로 합쳐 목업 위 높이를 36px 줄여 봤다가 되돌렸다.
+                CLabel 은 10px 소문자 라벨이라 눈에 덜 들어온다 — 이 머리글을 목업 위로
+                올린 이유가 "아래에 있으면 포스터에 시선을 뺏겨 안 읽는다" 였으므로,
+                12px 남기려고 그걸 되돌릴 수는 없다.
+              */}
               <h2 className="text-base font-bold break-keep">추천 화면 {stepIndex}</h2>
               <NoticeCard>
                 {usageNotice(participant.usage_condition as UsageCondition).detail.map((line) => (
