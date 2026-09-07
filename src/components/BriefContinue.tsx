@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { postJson } from "@/lib/client-api";
 import { CountdownHint, useCountdown } from "./Countdown";
 import { MIN_DWELL_SECONDS } from "@/lib/pacing";
@@ -24,6 +24,15 @@ export default function BriefContinue({
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /*
+    다음 화면을 미리 받아 둔다 — 안내를 읽는 최소 5초 동안 받아 둘 수 있다.
+    참여자가 문항에 답하는 동안 받아 두면, 버튼을 눌렀을 때 기다릴 것이 저장뿐이다.
+  */
+  useEffect(() => {
+    router.prefetch("/stimulus/1");
+  }, [router]);
+
 
   async function go() {
     if (!waited || pending) return;

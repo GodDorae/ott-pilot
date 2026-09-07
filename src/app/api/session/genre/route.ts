@@ -8,10 +8,7 @@ import {
 } from "@/lib/stimuli";
 import {
   assignAssignment,
-  saveContextSnapshot,
-  setDisplayName,
-  setPreferredGenre,
-  setTitleFamiliarity,
+  savePersonalization,
 } from "@/lib/db";
 import { buildContextSnapshot, normalizeDisplayName } from "@/lib/copy";
 import { currentParticipant } from "@/lib/session";
@@ -65,19 +62,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "작품마다 하나씩 골라 주세요." }, { status: 400 });
   }
 
-  await setPreferredGenre(participant.id, body.genre as Genre);
-  await setTitleFamiliarity(participant.id, familiarity, watchedTitleIds(familiarity));
-  // 호칭은 선택 입력 — 비워두면 화면에서 '회원님'으로 나간다
-  await setDisplayName(participant.id, normalizeDisplayName(body.displayName));
-
-  if (!participant.context_snapshot) {
-    await saveContextSnapshot(
-      participant.id,
-      // 실제 접속 기기·시각 기준 (자기보고 B-4·B-5 는 분석용으로만 남긴다).
-      // 기기는 세션 시작 때 정해둔 값을 쓴다 — 중간에 바뀌지 않도록.
-      buildContextSnapshot(new Date(), participant.is_mobile ?? false),
-    );
-  }
+  // 같은 행에 쓰는 값이라 한 번에 저장한다 — 왕복 하나가 곧 참여자가 기다리는 시간이다
+  await savePersonalization(participant.id, {
+    preferred_genre: body.genre as Genre,
+    title_familiarity: familiarity,
+    seen_title_ids: watchedTitleIds(familiarity),
+    // 호칭은 선택 입력 — 비워두면 화면에서 '회원님'으로 나간다
+    display_name: normalizeDisplayName(body.displayName),
+    // 맥락 문구는 한 번 정하면 3화면 내내 같아야 한다 (실제 접속 시각 기준).
+    // 자기보고 B-4·B-5 는 분석용으로만 남긴다.
+    ...(participant.context_snapshot
+      ? {}
+      : { context_snapshot: buildContextSnapshot(new Date(), participant.is_mobile ?? false) }),
+  });
 
   // 미리보기 세션은 /dev 에서 지정한 조건을 그대로 유지한다
   if (!participant.is_dev) {

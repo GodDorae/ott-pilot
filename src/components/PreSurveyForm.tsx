@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OTHER_MAX_LENGTH, type PreSection } from "@/lib/presurvey";
 import { postJson } from "@/lib/client-api";
 import { CLabel } from "@/components/Notice";
@@ -35,6 +35,15 @@ export default function PreSurveyForm({
   });
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  /*
+    다음 화면을 미리 받아 둔다 — 사전 문항은 답이 빨라 이동이 잦다.
+    참여자가 문항에 답하는 동안 받아 두면, 버튼을 눌렀을 때 기다릴 것이 저장뿐이다.
+  */
+  useEffect(() => {
+    router.prefetch(section.next);
+  }, [router, section.next]);
+
 
   const missing = section.questions.filter((q) => {
     if (!q.required) return false;

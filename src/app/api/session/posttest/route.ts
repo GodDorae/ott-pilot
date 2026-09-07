@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { countTrials, savePostTest } from "@/lib/db";
-import { currentParticipant } from "@/lib/session";
+import { savePostTest } from "@/lib/db";
+import { currentSession } from "@/lib/session";
 import { canSubmitAt } from "@/lib/flow";
 import {
   OPEN_MAX_LENGTH,
@@ -18,10 +18,12 @@ import {
  *   open     4-2 주관식
  */
 export async function POST(req: Request) {
-  const participant = await currentParticipant();
-  if (!participant) {
+  // 참여자와 진행한 화면 수를 한 번에 읽는다 — 따로 부르면 왕복이 두 번이다
+  const session = await currentSession();
+  if (!session) {
     return NextResponse.json({ error: "설문 세션이 만료되었습니다. 처음부터 다시 시작해 주세요." }, { status: 401 });
   }
+  const { participant, trialsDone } = session;
 
   const body = (await req.json()) as {
     part?: string;
@@ -36,7 +38,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "part 값이 올바르지 않습니다." }, { status: 400 });
   }
 
-  const trialsDone = await countTrials(participant.id);
   if (!canSubmitAt(participant, "/post/" + body.part, trialsDone)) {
     return NextResponse.json({ error: "아직 답할 수 없는 단계입니다." }, { status: 409 });
   }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { countTrials, savePreSurvey, screenOut } from "@/lib/db";
-import { currentParticipant } from "@/lib/session";
+import { savePreSurvey, screenOut } from "@/lib/db";
+import { currentSession } from "@/lib/session";
 import { canSubmitAt } from "@/lib/flow";
 import {
   OTHER_MAX_LENGTH,
@@ -15,10 +15,12 @@ import {
  * — 클라이언트가 임의 컬럼을 밀어넣을 수 없다.
  */
 export async function POST(req: Request) {
-  const participant = await currentParticipant();
-  if (!participant) {
+  // 참여자와 진행한 화면 수를 한 번에 읽는다 — 따로 부르면 왕복이 두 번이다
+  const session = await currentSession();
+  if (!session) {
     return NextResponse.json({ error: "설문 세션이 만료되었습니다. 처음부터 다시 시작해 주세요." }, { status: 401 });
   }
+  const { participant, trialsDone } = session;
 
   const body = (await req.json()) as {
     section?: string;
@@ -32,7 +34,6 @@ export async function POST(req: Request) {
   }
 
   // 4-4 인구통계를 자극물 노출 전에 미리 채워 넣는 것을 막는다
-  const trialsDone = await countTrials(participant.id);
   if (!canSubmitAt(participant, "/survey/" + section.key, trialsDone)) {
     return NextResponse.json({ error: "아직 답할 수 없는 단계입니다." }, { status: 409 });
   }

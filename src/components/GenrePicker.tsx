@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GENRES, GENRE_LABELS, type Genre } from "@/lib/experiment";
 import { DISPLAY_NAME_MAX } from "@/lib/copy";
 import {
@@ -42,6 +42,15 @@ export default function GenrePicker({
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /*
+    다음 화면을 미리 받아 둔다 — 여기서 12편에 답하는 동안 시간이 넉넉하다.
+    참여자가 문항에 답하는 동안 받아 두면, 버튼을 눌렀을 때 기다릴 것이 저장뿐이다.
+  */
+  useEffect(() => {
+    router.prefetch("/brief");
+  }, [router]);
+
 
   const titles = genre ? titlesByGenre[genre] : [];
   const remaining = titles.filter((t) => !familiarity[t.id]).length;

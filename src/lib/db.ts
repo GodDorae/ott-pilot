@@ -425,6 +425,25 @@ export function setPreferredGenre(id: string, genre: Genre) {
   return patchParticipant(id, { preferred_genre: genre });
 }
 
+/**
+ * 2-2 단계에서 정해지는 값을 한 번에 쓴다.
+ *
+ * 예전에는 장르·시청경험·호칭·맥락을 따로 저장해 네 번 왕복했다.
+ * 같은 행에 쓰는 값들이라 한 번이면 된다 — 왕복 하나가 곧 참여자가 기다리는 시간이다.
+ */
+export function savePersonalization(
+  id: string,
+  patch: {
+    preferred_genre: Genre;
+    title_familiarity: Record<string, FamiliarityLevel>;
+    seen_title_ids: string[];
+    display_name: string | null;
+    context_snapshot?: ContextSnapshot;
+  },
+) {
+  return patchParticipant(id, patch);
+}
+
 /** 화면 표시용 호칭 저장 (2-2 개인화 단계) */
 export function setDisplayName(id: string, displayName: string | null) {
   return patchParticipant(id, { display_name: displayName });

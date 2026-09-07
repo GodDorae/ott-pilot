@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
 import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
+import { TOTAL_STEPS } from "@/lib/experiment";
 import { postJson } from "@/lib/client-api";
 import { CountdownHint, useCountdown } from "./Countdown";
 import { MIN_DWELL_SECONDS } from "@/lib/pacing";
@@ -32,6 +33,15 @@ export default function StimulusForm({
   useEffect(() => {
     shownAt.current = Date.now();
   }, []);
+
+  /*
+    다음 화면을 미리 받아 둔다. 최소 체류 10초 + 문항 7개를 답하는 동안 받아 두면,
+    버튼을 눌렀을 때 기다릴 것이 저장뿐이다.
+  */
+  const nextPath = stepIndex < TOTAL_STEPS ? "/stimulus/" + (stepIndex + 1) : "/post/check";
+  useEffect(() => {
+    router.prefetch(nextPath);
+  }, [router, nextPath]);
 
   const answered = ALL_ITEMS.filter((i) => values[i.key]).length;
   const attention = values[ATTENTION_CHECK.key];

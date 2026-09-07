@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useEffect } from "react";
 import {
   FOLLOWUP,
   FOLLOWUP_MAX_LENGTH,
@@ -17,10 +17,23 @@ import { postJson } from "@/lib/client-api";
 import { CLabel } from "@/components/Notice";
 
 /** 사후 파트가 공유하는 제출 처리 */
+/** 사후 문항 각 파트의 다음 화면 — 미리 받아 두는 데 쓴다 */
+const NEXT_AFTER: Record<string, string> = {
+  check: "/post/ranking",
+  ranking: "/post/open",
+  open: "/done",
+};
+
 function useSubmit(part: string) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 답하는 동안 다음 화면을 받아 둔다 — 버튼을 눌렀을 때 기다릴 것이 저장뿐이게
+  useEffect(() => {
+    const next = NEXT_AFTER[part];
+    if (next) router.prefetch(next);
+  }, [router, part]);
 
   async function submit(payload: Record<string, unknown>) {
     setPending(true);
