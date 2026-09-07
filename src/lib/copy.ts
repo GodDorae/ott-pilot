@@ -227,14 +227,19 @@ export function bannerPlainText(segments: BannerSegment[]): string {
  * 자극물 화면 **위**에 놓는다. 아래에 두었더니 포스터에 시선을 뺏겨
  * 읽지 않고 지나갔다 — 조절변수를 전달받지 못한 채 평가하게 된다.
  */
-export function usageNotice(condition: UsageCondition): { label: string; detail: string } {
+export function usageNotice(condition: UsageCondition): { label: string; detail: string[] } {
+  /*
+    줄을 어디서 나눌지 직접 정한다.
+    브라우저에 맡기면 창 폭에 따라 "5,500원 / 결제 시" 처럼 조건의 핵심이 갈라진다.
+    한 줄에 하나의 사실만 오도록 끊는다 (얼마인가 / 얼마나 볼 수 있는가).
+  */
   return condition === "SVOD"
     ? {
         label: "구독 포함",
-        detail: "추천 콘텐츠는 구독에 포함되어 있어 추가 결제 없이 바로 시청 가능합니다.",
+        detail: ["추천 콘텐츠는 구독에 포함되어 있어", "추가 결제 없이 바로 시청 가능합니다."],
       }
     : {
         label: "개별 대여",
-        detail: "추천 콘텐츠는 5,500원 결제 시 48시간 동안 시청 가능합니다.",
+        detail: ["추천 콘텐츠는 5,500원 결제 시", "48시간 동안 시청 가능합니다."],
       };
 }

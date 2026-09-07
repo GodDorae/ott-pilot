@@ -83,10 +83,13 @@ export default async function StimulusPage({
                 추천 화면 {stepIndex}
               </h2>
               <NoticeCard>
-                {
-                  usageNotice(participant.usage_condition as UsageCondition)
-                    .detail
-                }
+                {usageNotice(participant.usage_condition as UsageCondition).detail.map(
+                  (line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ),
+                )}
               </NoticeCard>
             </div>
 
