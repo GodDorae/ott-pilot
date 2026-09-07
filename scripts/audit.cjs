@@ -521,7 +521,7 @@ async function complete(opts = {}) {
       );
     {
       // PU 3 → 성실성 → RA 3. 문구는 src/lib/items.ts 와 같아야 한다
-      const order = ["내게 맞는 작품을 찾는 데", "찾는 것은 쉬웠다", "좋은 제안을 해주었다", "성실성을 확인하기 위한", "실제로 시청하고 싶다", "따라 볼 의향이 있다", "참고할 의향이 있다"];
+      const order = ["내게 맞는 작품을 찾는 데", "찾는 것은 쉬웠다", "괜찮은 제안을 해주었다", "성실성을 확인하기 위한", "실제로 시청하고 싶다", "따라 볼 의향이 있다", "참고할 의향이 있다"];
       const pos = order.map((x) => st.indexOf(x));
       ck("유용성 3 → 성실성 → 수용의도 3 순서", pos.every((v, i) => v >= 0 && (i === 0 || v > pos[i - 1])), JSON.stringify(pos));
     }

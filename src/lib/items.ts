@@ -35,7 +35,7 @@ export const LIKERT_LABELS = [
 export const USEFULNESS_ITEMS: LikertItem[] = [
   { key: "pu1", text: "이 추천은 내게 맞는 작품을 찾는 데 도움이 되었다" },
   { key: "pu2", text: "이 추천을 이용해 내가 좋아할 만한 작품을 찾는 것은 쉬웠다" },
-  { key: "pu3", text: "이 추천은 나에게 좋은 제안을 해주었다" },
+  { key: "pu3", text: "이 추천은 나에게 괜찮은 제안을 해주었다" },
 ];
 
 /** 종속변수 — 추천 수용의도 (RA) */
@@ -98,5 +98,5 @@ export const ITEM_CLARITY = {
   help: "어려웠던 문항 번호를 모두 골라 주세요. 없으면 '없음'을 골라 주세요.",
   noneLabel: "없음",
   reasonLabel: "어떤 점이 어려웠는지 적어 주세요.",
-  reasonPlaceholder: "예: 2번의 '좋은 제안'이 무엇을 말하는지 애매했다",
+  reasonPlaceholder: "예: 3번의 '괜찮은 제안'이 무엇을 말하는지 애매했다",
 } as const;
