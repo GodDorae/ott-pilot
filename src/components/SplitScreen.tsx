@@ -52,7 +52,7 @@ export default function SplitScreen({
   return (
     <div className="flex w-full flex-1 flex-col overflow-x-hidden wide:h-dvh wide:flex-row wide:justify-center wide:gap-10 wide:overflow-hidden">
       {/* 왼쪽 — 자극물 목업 */}
-      <div className="flex w-full shrink-0 flex-col items-center border-b border-line bg-bg px-4 py-6 mock-pane pretty-scroll pane-scroll wide:h-dvh wide:overflow-y-auto wide:border-b-0 wide:px-8 wide:py-5">
+      <div className="flex w-full shrink-0 flex-col items-center border-b border-line bg-bg px-4 py-6 mock-pane pretty-scroll pane-scroll wide:h-dvh wide:overflow-y-auto wide:border-b-0 wide:px-8 wide:py-4">
         {/*
           my-auto 로 가운데 정렬한다. justify-center 를 쓰면 내용이 칸보다 높을 때
           위쪽이 스크롤로도 닿지 않는 곳에 잘려 나간다 (flex 스크롤 컨테이너의 알려진 문제).
