@@ -6,7 +6,18 @@
  * 측정하는 구성개념이 미묘하게 달라지고, 선행연구와의 비교도 어긋난다.
  */
 
-export type LikertItem = { key: string; text: string };
+export type LikertItem = {
+  key: string;
+  text: string;
+  /**
+   * 화면에 보이는 문항 번호 (1~6).
+   *
+   * 이해도 확인 문항에서 "몇 번이 어려웠다" 고 가리킬 대상이라 번호가 보여야 한다.
+   * 성실성 확인 문항에는 번호를 주지 않는다 — 번호가 붙으면 측정 문항 중 하나로
+   * 보이지 않고 "번호 없는 저건 뭐지" 하고 눈에 띈다.
+   */
+  no?: number;
+};
 
 export const LIKERT_MIN = 1;
 export const LIKERT_MAX = 5;
@@ -62,4 +73,30 @@ export const TRIAL_ITEMS: LikertItem[] = [
   ...USEFULNESS_ITEMS,
   { key: ATTENTION_CHECK.key, text: ATTENTION_CHECK.text },
   ...INTENTION_ITEMS,
-];
+].map((item, i) =>
+  item.key === ATTENTION_CHECK.key
+    ? item
+    // 성실성 문항을 세지 않고 1부터 이어 붙인다 (유용성 1~3, 수용의도 4~6)
+    : { ...item, no: i < 3 ? i + 1 : i },
+);
+
+/** 이해도 확인에서 고를 수 있는 문항 번호 */
+export const MEASURED_ITEM_NUMBERS = TRIAL_ITEMS.filter((i) => i.no).map((i) => i.no as number);
+
+/**
+ * 문항 이해도 확인 — 화면마다 측정 문항 아래에서 받는다.
+ *
+ * 문구가 참여자에게 어떻게 읽혔는지는 척도의 타당도에 직접 걸린다.
+ * 같은 문항이라도 어떤 추천 근거를 보고 답했는지에 따라 달라질 수 있어 화면마다 묻는다.
+ */
+/** 이해도 이유 자유입력 길이 상한 */
+export const OPEN_MAX_LENGTH_CLARITY = 500;
+
+export const ITEM_CLARITY = {
+  question:
+    "방금 응답하신 문항들의 의미가 명확하게 이해되셨나요? 이해하기 어려웠던 문항이 있다면 적어주세요.",
+  help: "어려웠던 문항 번호를 모두 골라 주세요. 없으면 '없음'을 골라 주세요.",
+  noneLabel: "없음",
+  reasonLabel: "어떤 점이 어려웠는지 적어 주세요.",
+  reasonPlaceholder: "예: 2번의 '좋은 제안'이 무엇을 말하는지 애매했다",
+} as const;

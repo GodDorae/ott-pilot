@@ -47,7 +47,16 @@ export default function LikertBlock({
       <ul className="mt-1 divide-y divide-line">
         {items.map((item) => (
           <li key={item.key} className="py-4">
-            <p className="mb-2.5 text-sm leading-relaxed break-keep">{item.text}</p>
+            {/*
+              번호는 이해도 확인 문항에서 가리킬 대상이라 보여야 한다.
+              성실성 확인 문항에는 번호가 없다 — 붙이면 그것만 눈에 띈다.
+            */}
+            <p className="mb-2.5 flex gap-1.5 text-sm leading-relaxed break-keep">
+              {item.no && (
+                <span className="shrink-0 font-bold text-accent tabular-nums">{item.no}.</span>
+              )}
+              <span>{item.text}</span>
+            </p>
             <div role="radiogroup" aria-label={item.text} className="grid grid-cols-5 gap-1.5">
               {SCALE.map((n) => (
                 <label

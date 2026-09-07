@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
+import ItemClarityBlock from "./ItemClarityBlock";
 import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
 import { TOTAL_STEPS } from "@/lib/experiment";
 import { postJson } from "@/lib/client-api";
@@ -24,6 +25,13 @@ export default function StimulusForm({
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, number>>({});
+  /*
+    문항 이해도 — 어려웠던 문항 번호와 이유.
+    '없음'(빈 배열)과 미응답(null)은 다른 값이라 따로 들고 있는다.
+  */
+  const [unclear, setUnclear] = useState<number[]>([]);
+  const [none, setNone] = useState(false);
+  const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const shownAt = useRef<number | null>(null);
@@ -38,14 +46,19 @@ export default function StimulusForm({
     다음 화면을 미리 받아 둔다. 최소 체류 10초 + 문항 7개를 답하는 동안 받아 두면,
     버튼을 눌렀을 때 기다릴 것이 저장뿐이다.
   */
-  const nextPath = stepIndex < TOTAL_STEPS ? "/stimulus/" + (stepIndex + 1) : "/post/check";
+  const nextPath =
+    stepIndex < TOTAL_STEPS ? "/stimulus/" + (stepIndex + 1) : "/post/check";
   useEffect(() => {
     router.prefetch(nextPath);
   }, [router, nextPath]);
 
   const answered = ALL_ITEMS.filter((i) => values[i.key]).length;
   const attention = values[ATTENTION_CHECK.key];
-  const complete = answered === ALL_ITEMS.length && Boolean(attention);
+  // 측정 문항과 이해도 문항을 갈라서 본다 — 버튼 문구가 "무엇이 남았는지" 를 알려야 한다
+  const itemsDone = answered === ALL_ITEMS.length && Boolean(attention);
+  // 이해도 문항도 답해야 한다 — 번호를 골랐다면 이유까지
+  const clarityDone = none || (unclear.length > 0 && reason.trim().length > 0);
+  const complete = itemsDone && clarityDone;
   const unanswered = ALL_ITEMS.length - answered + (attention ? 0 : 1);
 
   // 목업을 실제로 볼 시간을 준다 — 문항에는 그 전에도 답할 수 있고, 막히는 건 제출뿐이다
@@ -57,6 +70,24 @@ export default function StimulusForm({
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  // 번호와 '없음' 은 서로 배타적이다 — 둘을 함께 고르면 무엇을 뜻하는지 알 수 없다
+  function toggleItem(no: number) {
+    setNone(false);
+    setUnclear((prev) =>
+      prev.includes(no) ? prev.filter((n) => n !== no) : [...prev, no].sort(),
+    );
+  }
+
+  function toggleNone() {
+    setNone((prev) => {
+      if (!prev) {
+        setUnclear([]);
+        setReason("");
+      }
+      return !prev;
+    });
+  }
+
   async function submit() {
     if (!complete || !waited || pending) return;
     setPending(true);
@@ -66,6 +97,8 @@ export default function StimulusForm({
         stepIndex,
         answers: values,
         attentionCheck: attention ?? null,
+        unclearItems: none ? [] : unclear,
+        unclearReason: unclear.length > 0 ? reason.trim() : null,
         dwellMs: shownAt.current === null ? null : Date.now() - shownAt.current,
       });
       if (!r.ok) throw new Error(r.error);
@@ -87,6 +120,15 @@ export default function StimulusForm({
         <div className="mx-auto w-full max-w-lg space-y-4">
           {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
           <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
+
+          <ItemClarityBlock
+            selected={unclear}
+            none={none}
+            reason={reason}
+            onToggleItem={toggleItem}
+            onToggleNone={toggleNone}
+            onReason={setReason}
+          />
 
           {error && (
             <p
@@ -110,13 +152,17 @@ export default function StimulusForm({
           >
             {pending
               ? "저장 중…"
-              : !complete
+              : !itemsDone
                 ? "남은 문항 " + unanswered + "개"
-                : !waited
-                  ? "잠시 후 넘어갈 수 있습니다"
-                  : stepIndex < 3
-                    ? "평가 완료"
-                    : "다음 단계로"}
+                : !clarityDone
+                  ? unclear.length > 0
+                    ? "어려웠던 이유를 적어 주세요"
+                    : "이해도 문항에 답해 주세요"
+                  : !waited
+                    ? "잠시 후 넘어갈 수 있습니다"
+                    : stepIndex < 3
+                      ? "평가 완료"
+                      : "다음 단계로"}
           </button>
           <CountdownHint remaining={secondsLeft} done={waited} />
         </div>

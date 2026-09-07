@@ -108,6 +108,9 @@ export type ScreenResponseInput = {
   answers: Record<string, number>;
   /** 성실성 확인 문항 응답 (정답 4) */
   attentionCheck: number | null;
+  /** 이해하기 어려웠던 문항 번호. 빈 배열 = '없음' 을 고른 것 */
+  unclearItems: number[];
+  unclearReason: string | null;
   dwellMs: number | null;
 };
 
@@ -127,6 +130,9 @@ export type ScreenResponseRow = {
   ra3: number | null;
   attention_check: number | null;
   attention_passed: boolean | null;
+  /** 이해하기 어려웠던 문항 번호. 빈 배열 = 없음, null = 미응답 */
+  unclear_items: number[] | null;
+  unclear_reason: string | null;
   dwell_ms: number | null;
   created_at: string;
 };
@@ -506,6 +512,8 @@ export async function saveScreenResponse(input: ScreenResponseInput) {
     ra2: input.answers.ra2 ?? null,
     ra3: input.answers.ra3 ?? null,
     attention_check: input.attentionCheck,
+    unclear_items: input.unclearItems,
+    unclear_reason: input.unclearReason,
     attention_passed:
       input.attentionCheck === null ? null : input.attentionCheck === ATTENTION_CORRECT,
     dwell_ms: input.dwellMs,

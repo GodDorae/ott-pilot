@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { TOTAL_STEPS, type RationaleType, type SetId } from "@/lib/experiment";
-import { ALL_ITEMS, ATTENTION_CHECK, LIKERT_MAX, LIKERT_MIN } from "@/lib/items";
+import {
+  ALL_ITEMS,
+  ATTENTION_CHECK,
+  LIKERT_MAX,
+  LIKERT_MIN,
+  MEASURED_ITEM_NUMBERS,
+  OPEN_MAX_LENGTH_CLARITY,
+} from "@/lib/items";
 import { getRail } from "@/lib/stimuli";
 import { saveScreenResponse } from "@/lib/db";
 import { currentSession } from "@/lib/session";
@@ -28,6 +35,8 @@ export async function POST(req: Request) {
     stepIndex?: number;
     answers?: Record<string, number>;
     attentionCheck?: number | null;
+    unclearItems?: number[];
+    unclearReason?: string | null;
     dwellMs?: number | null;
   };
 
@@ -70,6 +79,26 @@ export async function POST(req: Request) {
     );
   }
 
+  /*
+    문항 이해도. 빈 배열('없음')과 미응답을 갈라야 하므로 배열이 왔는지부터 본다.
+    번호를 하나라도 골랐으면 이유도 받는다 — 어려웠다고만 하고 넘어가면 쓸 수 없다.
+  */
+  if (!Array.isArray(body.unclearItems)) {
+    return NextResponse.json(
+      { error: "문항 이해도에 답해 주세요." },
+      { status: 400 },
+    );
+  }
+  const allowedNos = new Set<number>(MEASURED_ITEM_NUMBERS);
+  const unclearItems = [...new Set(body.unclearItems)].sort((a, b) => a - b);
+  if (unclearItems.some((n) => !allowedNos.has(n))) {
+    return NextResponse.json({ error: "문항 번호가 올바르지 않습니다." }, { status: 400 });
+  }
+  const unclearReason = (body.unclearReason ?? "").trim().slice(0, OPEN_MAX_LENGTH_CLARITY);
+  if (unclearItems.length > 0 && unclearReason.length === 0) {
+    return NextResponse.json({ error: "어려웠던 이유를 적어 주세요." }, { status: 400 });
+  }
+
   const rationaleType = participant.presentation_order[stepIndex - 1] as RationaleType;
   const setId = participant.set_mapping[rationaleType] as SetId;
   const genre = participant.preferred_genre;
@@ -83,6 +112,8 @@ export async function POST(req: Request) {
     titleIds: getRail(genre, setId).map((t) => t.id),
     answers,
     attentionCheck: attention as number,
+    unclearItems,
+    unclearReason: unclearItems.length > 0 ? unclearReason : null,
     dwellMs: typeof body.dwellMs === "number" ? Math.round(body.dwellMs) : null,
   });
 

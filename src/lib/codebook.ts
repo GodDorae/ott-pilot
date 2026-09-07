@@ -20,7 +20,14 @@ import {
   SET_IDS,
   USAGE_CONDITIONS,
 } from "./experiment";
-import { ATTENTION_CHECK, INTENTION_ITEMS, LIKERT_LABELS, USEFULNESS_ITEMS } from "./items";
+import {
+  ATTENTION_CHECK,
+  INTENTION_ITEMS,
+  ITEM_CLARITY,
+  LIKERT_LABELS,
+  MEASURED_ITEM_NUMBERS,
+  USEFULNESS_ITEMS,
+} from "./items";
 import { PRE_SECTIONS } from "./presurvey";
 import { OPEN_QUESTIONS, RANK_COLUMNS, RANK_REASON, RANK_TASK, USAGE_MANIPULATION_CHECK } from "./posttest";
 import { FAMILIARITY_LEVELS, FAMILIARITY_QUESTION } from "./stimuli";
@@ -110,6 +117,30 @@ function trialItemRows(): CodebookRow[] {
       type: "5점 리커트",
       values: LIKERT_SCALE,
     })),
+    {
+      column: "unclear_count",
+      code: "",
+      section: scale,
+      question: "이해하기 어려웠다고 고른 문항 수 (파생)",
+      type: "정수",
+      values: "0~6 · 0 = 없음 을 골랐거나 고른 문항이 없다",
+    },
+    {
+      column: "unclear_items",
+      code: "",
+      section: scale,
+      question: ITEM_CLARITY.question,
+      type: "다중선택 (문항 번호)",
+      values: MEASURED_ITEM_NUMBERS.join(" | ") + " (| 로 구분) · 빈 값 = 없음",
+    },
+    {
+      column: "unclear_reason",
+      code: "",
+      section: scale,
+      question: ITEM_CLARITY.reasonLabel,
+      type: "주관식",
+      values: "문항을 하나라도 골랐을 때만 값이 있다",
+    },
     {
       column: "pu_mean",
       code: "",

@@ -73,6 +73,9 @@ const HEADERS = [
   "ra_mean",
   "attention_check",
   "attention_passed",
+  "unclear_count",
+  "unclear_items",
+  "unclear_reason",
   "dwell_ms",
 ] as const;
 
@@ -210,6 +213,9 @@ export async function GET(req: Request) {
         mean([r.ra1, r.ra2, r.ra3]),
         r.attention_check,
         r.attention_passed,
+        r.unclear_items === null ? "" : r.unclear_items.length,
+        (r.unclear_items ?? []).join("|"),
+        r.unclear_reason,
         r.dwell_ms,
       ].map(cell);
     })
