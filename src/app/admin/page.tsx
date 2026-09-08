@@ -83,26 +83,48 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
     ? Math.round((checked.filter((p) => p.mc_usage_correct).length / checked.length) * 100)
     : null;
 
+  /*
+    화면 응답에는 이용조건이 없다 (participants 에만 있다). 이용조건별로 갈라 보려면
+    참여자 id → 이용조건 표를 만들어 두고 화면 응답을 그것으로 걸러야 한다.
+  */
+  const usageOf = new Map(participants.map((p) => [p.id, p.usage_condition]));
+
+  /** 이용조건별로 갈라 보는 세 묶음 — 계 · SVOD · TVOD */
+  const GROUPS = [
+    { key: "all" as const, label: "계" },
+    ...USAGE_CONDITIONS.map((u) => ({ key: u, label: u })),
+  ];
+
   // 근거유형별 평균 (표본이 작을 때는 어디까지나 눈대중용)
-  const byRationale = RATIONALE_TYPES.map((rt) => {
-    const rows = responses.filter((r) => r.rationale_type === rt);
-    const avg = (keys: ("pu1" | "pu2" | "pu3" | "ra1" | "ra2" | "ra3")[]) => {
-      const nums = rows.flatMap((r) => keys.map((k) => r[k]).filter((v): v is number => v !== null));
-      return nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : "-";
-    };
-    return {
-      rationale: rt,
-      n: rows.length,
-      pu: avg(["pu1", "pu2", "pu3"]),
-      ra: avg(["ra1", "ra2", "ra3"]),
-      dwell: (() => {
-        const ms = rows.map((r) => r.dwell_ms).filter((v): v is number => v !== null);
-        return ms.length
-          ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length / 1000) + "초"
-          : "-";
-      })(),
-    };
-  });
+  const byRationale = RATIONALE_TYPES.flatMap((rt) =>
+    GROUPS.map((g) => {
+      const rows = responses.filter(
+        (r) =>
+          r.rationale_type === rt &&
+          (g.key === "all" || usageOf.get(r.participant_id) === g.key),
+      );
+      const avg = (keys: ("pu1" | "pu2" | "pu3" | "ra1" | "ra2" | "ra3")[]) => {
+        const nums = rows.flatMap((r) =>
+          keys.map((k) => r[k]).filter((v): v is number => v !== null),
+        );
+        return nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : "-";
+      };
+      return {
+        rationale: rt,
+        group: g.label,
+        isTotal: g.key === "all",
+        n: rows.length,
+        pu: avg(["pu1", "pu2", "pu3"]),
+        ra: avg(["ra1", "ra2", "ra3"]),
+        dwell: (() => {
+          const ms = rows.map((r) => r.dwell_ms).filter((v): v is number => v !== null);
+          return ms.length
+            ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length / 1000) + "초"
+            : "-";
+        })(),
+      };
+    }),
+  );
 
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -304,13 +326,26 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         </table>
       </div>
 
-      {/* 근거유형별 요약 */}
+      {/*
+        근거유형별 요약 — 이용조건별로 갈라서 본다.
+
+        이 연구의 가설이 "근거유형 효과가 이용조건에 따라 달라진다"(조절효과)이므로,
+        전체 평균만 보면 정작 봐야 할 것이 안 보인다. 근거유형마다 계 · SVOD · TVOD
+        세 줄을 붙여, 두 조건에서 순서가 뒤집히는지 눈으로 확인할 수 있게 한다.
+
+        n 이 작은 동안 숫자를 해석하지 말 것 — 여기 있는 것은 수집이 굴러가는지
+        보기 위한 눈대중이고, 검정은 CSV 로 따로 한다.
+      */}
       <h2 className="mt-10 text-sm font-bold">근거유형별 요약</h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted break-keep">
+        조절효과를 보려면 두 이용조건을 갈라서 봐야 합니다. n 이 작을 때는 눈대중입니다.
+      </p>
       <div className="pretty-scroll mt-3 overflow-x-auto">
-        <table className="w-full min-w-[30rem] border-collapse text-sm">
+        <table className="w-full min-w-[32rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-muted">
               <th className="py-2 pr-3 font-medium">근거유형</th>
+              <th className="py-2 pr-3 font-medium">구분</th>
               <th className="py-2 pr-3 font-medium">n</th>
               <th className="py-2 pr-3 font-medium">유용성 평균</th>
               <th className="py-2 pr-3 font-medium">수용의도 평균</th>
@@ -319,12 +354,30 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           </thead>
           <tbody>
             {byRationale.map((row) => (
-              <tr key={row.rationale} className="border-b border-line/60">
-                <td className="py-2 pr-3">{RATIONALE_LABELS[row.rationale]}</td>
+              <tr
+                key={row.rationale + row.group}
+                className={row.isTotal ? "border-t border-line" : "border-b border-line/40"}
+              >
+                {/* 근거유형 이름은 묶음의 첫 줄(계)에만 — 세 번 반복하면 표가 읽히지 않는다 */}
+                <td className="py-2 pr-3 font-medium break-keep">
+                  {row.isTotal ? RATIONALE_LABELS[row.rationale] : ""}
+                </td>
+                <td
+                  className={
+                    "py-2 pr-3 text-xs tabular-nums " +
+                    (row.isTotal ? "font-bold" : "text-accent")
+                  }
+                >
+                  {row.group}
+                </td>
                 <td className="py-2 pr-3 tabular-nums">{row.n}</td>
-                <td className="py-2 pr-3 tabular-nums">{row.pu}</td>
-                <td className="py-2 pr-3 tabular-nums">{row.ra}</td>
-                <td className="py-2 pr-3 tabular-nums">{row.dwell}</td>
+                <td className={"py-2 pr-3 tabular-nums " + (row.isTotal ? "font-bold" : "")}>
+                  {row.pu}
+                </td>
+                <td className={"py-2 pr-3 tabular-nums " + (row.isTotal ? "font-bold" : "")}>
+                  {row.ra}
+                </td>
+                <td className="py-2 pr-3 tabular-nums text-muted">{row.dwell}</td>
               </tr>
             ))}
           </tbody>
@@ -332,34 +385,137 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       </div>
 
       {/* 4단계 사후 문항 요약 */}
+      {/*
+        사후 점검 요약 — 이용조건별로 갈라서 본다.
+
+        순위는 세 근거유형을 직접 비교하게 한 문항이라, 조절효과가 있다면 두 조건에서
+        1위가 갈린다. 전체 합계만 보면 그게 지워진다.
+
+        1위 득표수와 평균 순위를 함께 적는다 — 1위만 보면 2·3위가 몰린 유형과
+        고르게 퍼진 유형이 구분되지 않는다.
+      */}
       <h2 className="mt-10 text-sm font-bold">사후 점검 요약</h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted break-keep">
+        칸마다 <span className="tabular-nums">1위 득표수 (평균 순위)</span> 입니다.
+        순위를 제출한 참여자만 셉니다.
+      </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <div className="card-shadow rounded-xl border border-line bg-card p-4">
           <p className="text-xs font-bold">
-            <span className="text-accent">4-2</span> 순위 · 1위 득표
+            <span className="text-accent">4-1</span> 추천 화면 순위
           </p>
-          <ul className="mt-2 space-y-1 text-xs">
+
+          <div className="mt-2 grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-2 text-xs">
+            <span />
+            {GROUPS.map((g) => (
+              <span
+                key={g.key}
+                className={
+                  "text-right text-[10px] font-bold " +
+                  (g.key === "all" ? "text-muted" : "text-accent")
+                }
+              >
+                {g.label}
+              </span>
+            ))}
+
             {RATIONALE_TYPES.map((rt) => {
               const col = ("rank_" + rt) as "rank_content" | "rank_collab" | "rank_context";
-              const firsts = participants.filter((p) => p[col] === 1).length;
-              const mean = (() => {
-                const vals = participants
-                  .map((p) => p[col])
-                  .filter((v): v is number => v !== null);
-                return vals.length
-                  ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)
-                  : "-";
-              })();
               return (
-                <li key={rt} className="flex justify-between gap-3">
-                  <span>{RATIONALE_LABELS[rt]}</span>
-                  <span className="tabular-nums text-muted">
-                    1위 {firsts}명 · 평균 {mean}위
-                  </span>
-                </li>
+                <Fragment key={rt}>
+                  <span className="break-keep">{RATIONALE_LABELS[rt]}</span>
+                  {GROUPS.map((g) => {
+                    const rows = participants.filter(
+                      (p) =>
+                        p[col] !== null &&
+                        (g.key === "all" || p.usage_condition === g.key),
+                    );
+                    const firsts = rows.filter((p) => p[col] === 1).length;
+                    const vals = rows.map((p) => p[col]).filter((v): v is number => v !== null);
+                    const mean = vals.length
+                      ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)
+                      : "-";
+                    return (
+                      <span
+                        key={g.key}
+                        className={
+                          "text-right tabular-nums " +
+                          (g.key === "all" ? "font-bold" : "text-muted")
+                        }
+                      >
+                        {vals.length ? firsts + " (" + mean + ")" : "·"}
+                      </span>
+                    );
+                  })}
+                </Fragment>
               );
             })}
-          </ul>
+          </div>
+        </div>
+
+        {/*
+          이용조건 조작점검 — 배정된 조건을 맞혔는지. 이건 조건별로 봐야 뜻이 있다.
+          한쪽 조건에서만 정답률이 낮으면 그 조건의 안내 문구가 전달되지 않은 것이고,
+          조절변수가 걸리지 않았다는 뜻이라 문구를 다시 설계해야 한다.
+        */}
+        <div className="card-shadow rounded-xl border border-line bg-card p-4">
+          <p className="text-xs font-bold">
+            <span className="text-accent">3-4-1</span> 이용조건 조작점검
+          </p>
+          <div className="mt-2 grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-2 text-xs">
+            <span />
+            {GROUPS.map((g) => (
+              <span
+                key={g.key}
+                className={
+                  "text-right text-[10px] font-bold " +
+                  (g.key === "all" ? "text-muted" : "text-accent")
+                }
+              >
+                {g.label}
+              </span>
+            ))}
+
+            {(
+              [
+                ["응답", (rows: typeof participants) => rows.length + "명"],
+                [
+                  "정답",
+                  (rows: typeof participants) =>
+                    rows.length
+                      ? Math.round(
+                          (rows.filter((p) => p.mc_usage_correct).length / rows.length) * 100,
+                        ) + "%"
+                      : "·",
+                ],
+              ] as const
+            ).map(([label, render]) => (
+              <Fragment key={label}>
+                <span>{label}</span>
+                {GROUPS.map((g) => {
+                  const rows = participants.filter(
+                    (p) =>
+                      p.mc_usage_answer &&
+                      (g.key === "all" || p.usage_condition === g.key),
+                  );
+                  return (
+                    <span
+                      key={g.key}
+                      className={
+                        "text-right tabular-nums " +
+                        (g.key === "all" ? "font-bold" : "text-muted")
+                      }
+                    >
+                      {render(rows)}
+                    </span>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-muted break-keep">
+            정답률이 한쪽 조건에서만 낮으면 그 조건의 안내 문구가 전달되지 않은 것입니다.
+          </p>
         </div>
       </div>
 
@@ -414,7 +570,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 <span className="text-right text-[10px] font-bold text-muted">계</span>
                 {USAGE_CONDITIONS.map((u) => (
                   <span key={u} className="text-right text-[10px] font-bold text-accent">
-                    {u === "SVOD" ? "구독" : "대여"}
+                    {u}
                   </span>
                 ))}
 
