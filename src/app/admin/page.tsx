@@ -9,6 +9,7 @@ import {
   type RationaleType,
 } from "@/lib/experiment";
 import Link from "next/link";
+import { Fragment } from "react";
 import { PRE_SECTIONS } from "@/lib/presurvey";
 import { INSTRUMENT_VERSION, PHASES, PHASE_LABELS, SURVEY_PHASE, type Phase } from "@/lib/phase";
 import AdminLogin from "@/components/AdminLogin";
@@ -71,6 +72,9 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         : SURVEY_PHASE;
 
   const { participants, responses } = await listAll(viewing);
+
+  // 조건이 아직 배정되지 않은 참여자 (사전 문항 진행 중 · 선별 제외) — 어느 군에도 안 든다
+  const unassigned = participants.filter((p) => !p.usage_condition).length;
   const completed = participants.filter((p) => p.completed_at);
 
   // 조작점검 정답률 — 조절변수(이용조건) 인지 여부, 참여자당 1건
@@ -359,45 +363,101 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         </div>
       </div>
 
-      {/* 응답자 구성 — 사전 문항 A·B 분포 */}
+      {/*
+        응답자 구성 — 사전 문항 A·B 분포.
+
+        이용조건별로 갈라서 보여준다. 이용조건은 피험자 간 변수라, 두 군의 구성이
+        서로 다르면 근거유형 효과가 아니라 "두 군이 애초에 다른 사람들이었다" 로도
+        설명될 수 있다. 무작위 배정이 그걸 막아 주는 장치이지만, 실제로 그렇게
+        됐는지는 수집 중에 눈으로 확인해야 한다.
+
+        조건이 배정되기 전(사전 문항 진행 중)이거나 선별 제외된 참여자는 어느 군에도
+        속하지 않으므로 계 = SVOD + TVOD 가 아니다. 미배정 수를 따로 적어 둔다.
+      */}
       <h2 className="mt-10 text-sm font-bold">응답자 구성</h2>
       <p className="mt-1 text-xs leading-relaxed text-muted break-keep">
-        표본이 한쪽으로 심하게 쏠려 있으면 모집 경로를 손봐야 합니다.
+        표본이 한쪽으로 심하게 쏠려 있으면 모집 경로를 손봐야 합니다. 두 이용조건의
+        구성이 크게 다르면 조건 효과와 표본 차이가 섞이므로 함께 봅니다.
+      </p>
+      <p className="mt-2 text-xs text-muted tabular-nums">
+        {USAGE_CONDITIONS.map((u) => (
+          <span key={u} className="mr-3">
+            <span className="font-bold text-fg">{u}</span>{" "}
+            {participants.filter((p) => p.usage_condition === u).length}명
+          </span>
+        ))}
+        {unassigned > 0 && <span className="mr-3">미배정 {unassigned}명</span>}
+        <span>계 {participants.length}명</span>
       </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         {PRE_SUMMARY_QUESTIONS.map(({ id, code, title }) => {
           const q = Object.values(PRE_SECTIONS)
             .flatMap((s) => s.questions)
             .find((q) => q.id === id)!;
+          const value = (p: (typeof participants)[number]) =>
+            p[id as keyof typeof p] as string | null;
+          const count = (choice: string | null, usage?: string) =>
+            participants.filter(
+              (p) =>
+                (choice === null ? !value(p) : value(p) === choice) &&
+                (usage === undefined || p.usage_condition === usage),
+            ).length;
+
           return (
             <div key={id} className="card-shadow rounded-xl border border-line bg-card p-4">
               <p className="text-xs font-bold">
                 <span className="text-accent">{code}</span> {title}
               </p>
-              <ul className="mt-2 space-y-1 text-xs">
+
+              <div className="mt-2 grid grid-cols-[1fr_2.2rem_2.2rem_2.2rem] gap-x-2 text-xs">
+                <span />
+                <span className="text-right text-[10px] font-bold text-muted">계</span>
+                {USAGE_CONDITIONS.map((u) => (
+                  <span key={u} className="text-right text-[10px] font-bold text-accent">
+                    {u === "SVOD" ? "구독" : "대여"}
+                  </span>
+                ))}
+
                 {q.choices.map((c) => {
-                  const n = participants.filter(
-                    (p) => (p[id as keyof typeof p] as string | null) === c.value,
-                  ).length;
+                  const total = count(c.value);
                   return (
-                    <li key={c.value} className="flex justify-between gap-3">
-                      <span className={n ? "" : "text-muted"}>{c.label}</span>
-                      <span className="tabular-nums text-muted">{n}</span>
-                    </li>
+                    <Fragment key={c.value}>
+                      <span className={"break-keep " + (total ? "" : "text-muted")}>{c.label}</span>
+                      <span className="text-right tabular-nums">{total || "·"}</span>
+                      {USAGE_CONDITIONS.map((u) => {
+                        const n = count(c.value, u);
+                        return (
+                          <span
+                            key={u}
+                            className={"text-right tabular-nums " + (n ? "text-muted" : "text-faint")}
+                          >
+                            {n || "·"}
+                          </span>
+                        );
+                      })}
+                    </Fragment>
                   );
                 })}
-                {(() => {
-                  const n = participants.filter(
-                    (p) => !(p[id as keyof typeof p] as string | null),
-                  ).length;
-                  return n ? (
-                    <li className="flex justify-between gap-3 border-t border-line pt-1 text-muted">
-                      <span>미응답 (진행 중)</span>
-                      <span className="tabular-nums">{n}</span>
-                    </li>
-                  ) : null;
-                })()}
-              </ul>
+
+                {count(null) > 0 && (
+                  <>
+                    <span className="mt-1 border-t border-line pt-1 text-muted break-keep">
+                      미응답 (진행 중)
+                    </span>
+                    <span className="mt-1 border-t border-line pt-1 text-right text-muted tabular-nums">
+                      {count(null)}
+                    </span>
+                    {USAGE_CONDITIONS.map((u) => (
+                      <span
+                        key={u}
+                        className="mt-1 border-t border-line pt-1 text-right text-faint tabular-nums"
+                      >
+                        {count(null, u) || "·"}
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
             </div>
           );
         })}

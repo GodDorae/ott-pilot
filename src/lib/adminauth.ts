@@ -16,7 +16,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const ADMIN_COOKIE = "admin_session";
 
 const TOKEN_PAYLOAD = "ott-survey-admin";
-const MAX_AGE = 60 * 60 * 12; // 12시간
+/*
+  30일. 12시간으로 두었더니 하루만 지나도 /dev 미리보기에 다시 비밀번호를 넣어야 했다.
+  이 쿠키는 httpOnly + sameSite=lax + (배포에서) secure 라 스크립트로 읽히지 않고,
+  담긴 값도 비밀번호가 아니라 비밀번호로 만든 HMAC 토큰이다. 비밀번호를 바꾸면
+  토큰이 달라져 기존 쿠키가 전부 무효가 되므로, 길게 두어도 되돌릴 방법이 있다.
+*/
+const MAX_AGE = 60 * 60 * 24 * 30;
 
 export const adminCookieOptions = {
   httpOnly: true,

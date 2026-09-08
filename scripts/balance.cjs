@@ -6,7 +6,7 @@
  * 관리자 화면·CSV 로도 확인할 수 있게 한다.
  *
  *   실행: node scripts/balance.cjs [명수] [기준url]
- *   보기: node scripts/balance.cjs 36 https://ott-sehyeon-graduation.vercel.app
+ *   보기: node scripts/balance.cjs 36 https://jebal-joreop.vercel.app
  *
  * ── 무엇을 보장한다고 했는지 ──────────────────────────────────────────
  * assign_next_cell(phase) 은 **축별(marginal) 균형**을 보장한다 (36셀 전체 균형이

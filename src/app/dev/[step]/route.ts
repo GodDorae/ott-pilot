@@ -14,7 +14,16 @@ export async function GET(req: Request, ctx: RouteContext<"/dev/[step]">) {
   const url = new URL(req.url);
   const key = url.searchParams.get("key");
   if (!(await devAccessAllowed(key))) {
-    return new Response("권한이 없습니다.", { status: 401 });
+    /*
+      401 을 그냥 돌려주면 흰 화면에 글자만 남아 되돌아갈 길이 없다.
+      /dev 의 로그인 화면으로 보내고, 통과 후 원래 보려던 단계로 되돌아오게 한다.
+      key 는 떼고 넘긴다 — next 에 붙어 주소창·기록에 비밀번호가 남는다.
+    */
+    const back = new URL(url.pathname, url.origin);
+    for (const [k, v] of url.searchParams) if (k !== "key") back.searchParams.set(k, v);
+    const login = new URL("/dev", url.origin);
+    login.searchParams.set("next", back.pathname + back.search);
+    return NextResponse.redirect(login, { status: 303 });
   }
 
   const { step } = await ctx.params;

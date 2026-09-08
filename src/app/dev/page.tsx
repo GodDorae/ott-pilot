@@ -11,6 +11,7 @@ import {
 } from "@/lib/experiment";
 import { overridesToQuery, parseOverrides } from "@/lib/devsession";
 import { devAccessAllowed } from "@/lib/devaccess";
+import AdminLogin from "@/components/AdminLogin";
 import Link from "next/link";
 import { STAGE_LABELS, STEPS } from "@/lib/steps";
 import { buildContextSnapshot } from "@/lib/copy";
@@ -32,15 +33,21 @@ export default async function DevIndexPage({ searchParams }: PageProps<"/dev">) 
 
   const key = flat.get("key");
   if (!(await devAccessAllowed(key))) {
-    return (
-      <main className="mx-auto w-full max-w-xl px-5 py-16">
-        <h1 className="text-lg font-bold">접근 권한이 없습니다</h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted break-keep">
-          배포 환경에서는 <a href="/admin" className="text-accent underline">관리자 화면</a>
-          에서 먼저 로그인해야 합니다.
-        </p>
-      </main>
-    );
+    /*
+      막을 때 안내만 띄우고 끝내면, 관리자 화면으로 가서 로그인하고 다시 /dev 로
+      돌아와야 한다. 여기서 바로 받고 원래 보려던 주소로 되돌려 보낸다 —
+      한 번 통과하면 그 기기에서는 쿠키로 계속 열린다 (adminauth 의 MAX_AGE).
+    */
+    const asked = flat.get("next");
+    const params = new URLSearchParams(flat);
+    params.delete("next");
+    params.delete("e");
+    // next 는 로그인 라우트가 내부 경로인지 검사한다 (열린 리디렉트 방지)
+    const back =
+      asked && asked.startsWith("/") && !asked.startsWith("//")
+        ? asked
+        : "/dev" + (params.size ? "?" + params.toString() : "");
+    return <AdminLogin next={back} failed={flat.get("e") === "1"} />;
   }
 
   const o = parseOverrides(flat);
