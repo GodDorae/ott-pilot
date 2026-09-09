@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { completeParticipant } from "@/lib/db";
 import { currentSession } from "@/lib/session";
+import { contextPhrase } from "@/lib/copy";
 import { guard } from "@/lib/flow";
 import { FollowupForm } from "@/components/PostTestForms";
 import {
@@ -95,7 +96,9 @@ export default async function DonePage() {
           <div className="flex justify-between gap-4">
             <dt>맥락 문구</dt>
             <dd className="text-right font-medium text-fg break-keep">
-              {participant.context_snapshot?.phrase ?? "-"}
+              {participant.context_snapshot
+                ? contextPhrase(participant.context_snapshot, participant.display_name)
+                : "-"}
             </dd>
           </div>
         </dl>

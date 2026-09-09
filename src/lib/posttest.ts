@@ -16,8 +16,11 @@ export const USAGE_MANIPULATION_CHECK = {
   question: "이번 조사에서 보신 추천 화면의 작품들은 어떻게 시청할 수 있다고 안내되었나요?",
   help: "기억나는 대로 답해 주세요. 정확히 기억나지 않으면 마지막 항목을 골라도 됩니다.",
   options: [
-    { value: "SVOD", label: "구독에 포함되어 추가 결제 없이 볼 수 있다고 안내되었다" },
-    { value: "TVOD", label: "5,500원을 결제하면 48시간 동안 볼 수 있다고 안내되었다" },
+    { value: "SVOD", label: "구독에 이미 포함되어 있어 추가 결제 없이 시청 가능" },
+    {
+      value: "TVOD",
+      label: "4,000원 결제 후 30일 이내 시청 시작, 시청 시작 후 48시간 동안 시청 가능한 개별 대여",
+    },
     { value: "unsure", label: "잘 기억나지 않는다" },
   ],
 } as const;

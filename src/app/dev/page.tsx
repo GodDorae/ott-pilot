@@ -14,7 +14,7 @@ import { devAccessAllowed } from "@/lib/devaccess";
 import AdminLogin from "@/components/AdminLogin";
 import Link from "next/link";
 import { STAGE_LABELS, STEPS } from "@/lib/steps";
-import { buildContextSnapshot } from "@/lib/copy";
+import { buildContextSnapshot, contextPhrase } from "@/lib/copy";
 
 /**
  * 미리보기 인덱스 — 단계를 골라 바로 들어갈 수 있고, 그 전에 조건을 지정할 수 있다.
@@ -91,7 +91,7 @@ export default async function DevIndexPage({ searchParams }: PageProps<"/dev">) 
             <div className="flex flex-wrap gap-2">
               {USAGE_CONDITIONS.map((u) => (
                 <Link key={u} href={swap({ usage: u })} className={chip(o.usage === u)}>
-                  {u === "SVOD" ? "SVOD 구독 포함" : "TVOD 5,500원 대여"}
+                  {u === "SVOD" ? "SVOD 구독 포함" : "TVOD 4,000원 대여"}
                 </Link>
               ))}
             </div>
@@ -184,7 +184,7 @@ export default async function DevIndexPage({ searchParams }: PageProps<"/dev">) 
 
       <section className="mt-8 rounded-xl border border-dashed border-line p-4">
         <p className="text-xs font-bold">지금 조건에서 맥락 배너 문구</p>
-        <p className="mt-1.5 text-sm leading-relaxed break-keep">{previewCtx.phrase}</p>
+        <p className="mt-1.5 text-sm leading-relaxed break-keep">{contextPhrase(previewCtx, null)}</p>
         <p className="mt-1.5 text-[11px] text-muted break-keep">
           모바일 접속 기준으로 지금 시각에 맞춰 만든 문구입니다.
           실제 참여자는 접속한 기기와 시각에 따라 달라집니다.

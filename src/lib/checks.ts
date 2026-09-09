@@ -31,7 +31,7 @@ export const MC_RATIONALE = {
   options: [
     { value: "content", label: "자주 시청한다고 답한 장르와의 유사성" },
     { value: "collab", label: "나와 비슷한 다른 이용자들의 시청 이력" },
-    { value: "context", label: "지금 이 요일·시간대·기기 상황" },
+    { value: "context", label: "현재의 평일·주말 여부 및 시간대와의 적합성" },
     { value: "unsure", label: "잘 모르겠다" },
   ],
 } as const;
@@ -121,13 +121,13 @@ export const BRIEF_UNDERSTOOD = {
 } as const;
 
 /**
- * 5,500원 금액 점검 — 이용조건 조작점검 화면, TVOD 조건만, 파일럿 전용.
+ * 4,000원 금액 점검 — 이용조건 조작점검 화면, TVOD 조건만, 파일럿 전용.
  *
  * '볼 법한 금액인가' 와 '부담인가' 는 서로 다른 것을 묻는다.
  * 한 문항에 붙이면 어느 쪽에 답한 것인지 알 수 없으므로 척도를 둘로 나눈다.
  */
 export const PRICE_CHECK = {
-  realistic: "개별 대여 가격 5,500원이 실제 OTT 서비스에서 볼 법한 금액으로 느껴지셨나요?",
+  realistic: "개별 대여 가격 4,000원이 실제 OTT 서비스에서 볼 법한 금액으로 느껴지셨나요?",
   burden: "이 금액이 선택에 부담으로 느껴지셨나요?",
   reasonLabel: "위 두 문항에 그렇게 답한 이유가 있다면 적어 주세요. (선택)",
   reasonPlaceholder: "예: 영화 한 편 값으로는 비싸게 느껴졌다",

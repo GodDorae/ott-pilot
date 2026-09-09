@@ -250,7 +250,15 @@ function designRows(): CodebookRow[] {
   const meta = "기록";
   return [
     { column: "phase", code: "", section: design, question: "수집 단계", type: "명목", values: "pilot=파일럿 | main=본실험" },
-    { column: "instrument_version", code: "", section: design, question: "문항 구성 판번호 — 문항이 바뀌면 올라간다", type: "정수", values: "" },
+    {
+      column: "instrument_version",
+      code: "",
+      section: design,
+      question: "문항 구성 판번호 — 문항이 바뀌면 올라간다",
+      type: "정수",
+      values:
+        "1=초판 (개별 대여 5,500원 48시간) | 2=추천 근거 확정 문구 + 개별 대여 4,000원 · 결제 후 30일 내 시청 시작, 시작 후 48시간",
+    },
     { column: "participant_code", code: "", section: meta, question: "참여자 식별 코드 (익명)", type: "문자열", values: "" },
     { column: "assignment_seq", code: "", section: meta, question: "배정 순번", type: "정수", values: "" },
     {
@@ -259,7 +267,7 @@ function designRows(): CodebookRow[] {
       section: design,
       question: "이용조건 — 피험자 간 조절변수",
       type: "명목",
-      values: pipe(USAGE_CONDITIONS.map((u) => [u, u === "SVOD" ? "구독 포함" : "개별 대여 5,500원/48시간"] as [string, string])),
+      values: pipe(USAGE_CONDITIONS.map((u) => [u, u === "SVOD" ? "구독 포함" : "개별 대여 4,000원 · 30일 내 시작 후 48시간"] as [string, string])),
     },
     {
       column: "sequence_index",

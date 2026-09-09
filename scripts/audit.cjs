@@ -480,7 +480,7 @@ async function complete(opts = {}) {
     const st = htmlOnly((await s("/stimulus/1")).text).replace(/<!--.*?-->/g, "");
     ck("자극물 화면에 성실성 문항", /성실성을 확인하기 위한 문항/.test(st));
     ck("자극물 화면에 이해도 문항", /의미가 명확하게 이해되셨나요/.test(st));
-    ck("내용 기반 문구 '자주 시청하신'", !/최근 시청하신/.test(st));
+    ck("내용 기반 문구 갱신됨", !/최근 시청하신|자주 시청하신/.test(st));
     /*
       문항 번호는 화면 위에서부터 하나로 이어진다 — 측정 7 + 이해도 1 + 조작점검.
       파일럿 첫 화면은 12개 (문구 범위 점검이 첫 화면에만 있다), 2·3화면은 11개,
@@ -747,27 +747,32 @@ async function complete(opts = {}) {
       ck(name + " 호칭이 3조건 전부에", heads.every((h) => h.includes("가나다라님")), heads.join(" | "));
       ck(name + " 조건별 헤드라인 3종", new Set(heads).size === 3, heads.join(" | "));
       const snap = (await rest("participants?select=context_snapshot,is_mobile&display_name=eq.가나다라" + MINE))[0];
-      ck(name + " 맥락 source=access_time", snap?.context_snapshot?.source === "access_time");
-      ck(name + " 맥락 기기 문구 고정", snap?.context_snapshot?.device === "스마트폰으로", snap?.context_snapshot?.device);
+      const ctx = snap?.context_snapshot ?? {};
+      ck(name + " 맥락 source=access_time", ctx.source === "access_time");
+      ck(name + " 평일·주말 구분", ["평일", "주말"].includes(ctx.weekdayKind), ctx.weekdayKind);
+      ck(name + " 시간대 네 갈래", ["아침·오전", "오후", "저녁", "늦은 밤"].includes(ctx.daypart), ctx.daypart);
       /*
-        맥락 문구는 요일·시간대·기기만 말한다. 활동을 연상시키는 표현은 쓰지 않는다 —
+        맥락 문구는 평일·주말 여부와 시간대만 말한다. 활동을 콕 집는 표현도 기기도 쓰지 않는다 —
         시스템이 알 수 없는 것을 안다고 말하는 셈이고, 맞지 않으면 조작이 거슬린다.
       */
-      const ctxPhrase = snap?.context_snapshot?.phrase ?? "";
-      const 요일들 = ["월", "화", "수", "목", "금", "토", "일"];
+      const ctxPhrase = [ctx.moment, ctx.fit].join(" / ");
       ck(
         name + " 맥락 문구 꼴",
-        요일들.some((d) => ctxPhrase.startsWith(d + "요일 ")) &&
-          ctxPhrase.endsWith(", 스마트폰으로 보기 좋은 작품") &&
-          ctxPhrase.split(", ").length === 2,
+        typeof ctx.moment === "string" &&
+          ctx.moment.includes(ctx.weekdayKind) &&
+          typeof ctx.fit === "string" &&
+          ctx.fit.endsWith(" 만한"),
         ctxPhrase,
       );
       ck(
         name + " 활동 연상어 없음",
-        !/출근|퇴근|잠들기|불 끄고|틈내어|쉬어가며|마무리|시작하며|느긋|쫓기지/.test(ctxPhrase),
+        !/출근|퇴근|잠들기|불 끄고|틈내어|쉬어가며|마무리|시작하며|쫓기지/.test(ctxPhrase),
         ctxPhrase,
       );
-      ck(name + " 상황 묘사 자리 없음", snap?.context_snapshot?.scene === undefined, JSON.stringify(snap?.context_snapshot?.scene));
+      ck(name + " 기기 언급 없음", !/스마트폰|태블릿|노트북|PC/.test(ctxPhrase), ctxPhrase);
+      // 호칭은 스냅샷에 넣지 않는다 — 아카이브 전 display_name 을 지우는 조치를 우회하게 된다
+      ck(name + " 스냅샷에 호칭 없음", !/님/.test(JSON.stringify(ctx)), JSON.stringify(ctx));
+      ck(name + " 상황 묘사 자리 없음", ctx.scene === undefined, JSON.stringify(ctx.scene));
       ck(name + " is_mobile 컬럼 저장", snap?.is_mobile === wantPhone, String(snap?.is_mobile));
 
       await s("/api/session/posttest", { ...CHKP, part: "check", answer: "SVOD" });

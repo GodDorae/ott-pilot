@@ -159,7 +159,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           수집 중:{" "}
           <strong className="text-fg">{PHASE_LABELS[SURVEY_PHASE]}</strong>
           <span className="ml-1 font-mono text-[11px]">
-            ({SURVEY_PHASE} · {INSTRUMENT_VERSION})
+            ({SURVEY_PHASE} · v{INSTRUMENT_VERSION})
           </span>
         </span>
         <span className="text-line">|</span>
