@@ -45,7 +45,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 }
 
 export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
-  const { phase: phaseParam, e } = await searchParams;
+  const { phase: phaseParam, v: versionParam, e } = await searchParams;
 
   if (adminPasswordMissing()) {
     return (
@@ -71,7 +71,81 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         ? (phaseParam as Phase)
         : SURVEY_PHASE;
 
-  const { participants, responses } = await listAll(viewing);
+  const { participants: allParticipants, responses: allResponses } = await listAll(viewing);
+
+  /*
+    판번호(instrument_version)별로 갈라 본다.
+
+    판 2 에서 이용조건 조작 자체(개별 대여 금액·기간)와 추천 근거 문구가 바뀌었다.
+    두 판의 참여자는 서로 다른 자극을 받은 것이라, 평균을 합치면 조작의 효과와
+    문항지의 차이가 뒤섞인다. 아래 모든 표가 participants·responses 두 배열만 쓰므로
+    여기서 한 번 걸러 두면 화면 전체가 따라온다.
+
+    기본값은 '전체' 다. 단계(phase) 토글은 지금 수집 중인 단계를 기본으로 잡지만,
+    판은 그렇게 두면 새 판을 올린 직후 화면이 통째로 0 이 되어 자료가 사라진 것처럼
+    보인다. 대신 토글 버튼마다 참여자 수를 적고, 섞어 보는 중이면 경고를 띄운다.
+  */
+  const versions = [
+    ...new Set([
+      ...allParticipants
+        .map((p) => p.instrument_version)
+        .filter((v): v is string => Boolean(v)),
+      INSTRUMENT_VERSION,
+    ]),
+  ].sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
+  const unversioned = allParticipants.filter((p) => !p.instrument_version).length;
+
+  /*
+    판 값은 지금 보이는 데이터가 아니라 값의 꼴로 검증한다.
+
+    versions 는 단계(phase)로 걸러진 데이터에서 나오므로, 단계를 바꾸면 그 단계에 없는
+    판이 목록에서 빠진다. 그때 고른 판이 조용히 '전체' 로 되돌아가면 무엇을 보고 있는지
+    알 수 없게 된다 — 0 명이면 0 명이라고 보여야 한다. 그래서 고른 판은 목록에 없더라도
+    그대로 유지하고, 토글에도 그 버튼을 남긴다.
+  */
+  const version =
+    typeof versionParam === "string" &&
+    (versionParam === "none" ||
+      versions.includes(versionParam) ||
+      versionParam === String(Number(versionParam)))
+      ? versionParam
+      : "all";
+
+  const versionKeys = [
+    "all",
+    ...[
+      ...new Set([
+        ...versions,
+        ...(version === "all" || version === "none" ? [] : [version]),
+      ]),
+    ].sort((a, b) => a.localeCompare(b, "en", { numeric: true })),
+    ...(unversioned > 0 || version === "none" ? ["none"] : []),
+  ];
+
+  const versionLabel = (key: string) =>
+    key === "all" ? "전체" : key === "none" ? "미기록" : "v" + key;
+  const countOfVersion = (key: string) =>
+    key === "all"
+      ? allParticipants.length
+      : key === "none"
+        ? unversioned
+        : allParticipants.filter((p) => p.instrument_version === key).length;
+
+  const participants =
+    version === "all"
+      ? allParticipants
+      : version === "none"
+        ? allParticipants.filter((p) => !p.instrument_version)
+        : allParticipants.filter((p) => p.instrument_version === version);
+  const shownIds = new Set(participants.map((p) => p.id));
+  const responses =
+    version === "all"
+      ? allResponses
+      : allResponses.filter((r) => shownIds.has(r.participant_id));
+
+  /** 보고 있는 조건을 유지하면서 하나만 바꾸는 링크 — /dev 처럼 링크만으로 화면이 정해진다 */
+  const adminHref = (patch: { phase?: string; v?: string }) =>
+    "/admin?" + new URLSearchParams({ phase: viewing, v: version, ...patch }).toString();
 
   // 조건이 아직 배정되지 않은 참여자 (사전 문항 진행 중 · 선별 제외) — 어느 군에도 안 든다
   const unassigned = participants.filter((p) => !p.usage_condition).length;
@@ -170,11 +244,11 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           </strong>
         </span>
         <span className="ml-auto flex items-center gap-1">
-          <span className="text-muted">보기</span>
+          <span className="text-muted">단계</span>
           {([...PHASES, "all"] as const).map((v) => (
             <a
               key={v}
-              href={"/admin?phase=" + v}
+              href={adminHref({ phase: v })}
               className={
                 "rounded-md px-2 py-1 font-medium transition " +
                 (viewing === v ? "bg-accent text-white" : "text-muted hover:bg-line/50")
@@ -184,7 +258,43 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
             </a>
           ))}
         </span>
+        {/*
+          판번호 토글 — 버튼마다 참여자 수를 함께 적는다. 어느 판을 보고 있는데
+          0 명인지가 바로 보여야, 필터가 걸린 것을 자료가 없는 것으로 오해하지 않는다.
+        */}
+        <span className="flex items-center gap-1">
+          <span className="text-muted">판</span>
+          {versionKeys.map((key) => (
+            <a
+              key={key}
+              href={adminHref({ v: key })}
+              className={
+                "rounded-md px-2 py-1 font-medium transition " +
+                (version === key ? "bg-accent text-white" : "text-muted hover:bg-line/50")
+              }
+            >
+              {versionLabel(key)}
+              <span className="ml-1 text-[10px] tabular-nums opacity-70">
+                {countOfVersion(key)}
+              </span>
+            </a>
+          ))}
+        </span>
       </div>
+
+      {/*
+        판을 섞어 보고 있을 때의 경고 — 판마다 자극이 다르므로 아래 평균을 합치면
+        조작의 효과와 문항지의 차이를 갈라낼 수 없다.
+      */}
+      {version === "all" && versions.filter((v) => countOfVersion(v) > 0).length > 1 && (
+        <p className="mt-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-[13px] leading-relaxed break-keep">
+          <strong className="font-bold text-accent">여러 판의 응답을 함께 보고 있습니다</strong>{" "}
+          ({versions.map((v) => versionLabel(v) + " " + countOfVersion(v) + "명").join(" · ")}).
+          판마다 이용조건 조작(개별 대여 금액·기간)과 추천 근거 문구가 다르므로, 아래 평균을
+          합쳐서 해석하면 안 됩니다 — 위 <strong className="font-bold">판</strong> 토글로 갈라
+          보세요.
+        </p>
+      )}
 
       <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="시작한 참여자" value={String(participants.length)} />
