@@ -34,7 +34,13 @@ export type ContextSnapshot = {
   daypart: Daypart;
   /** 배너 앞 구간 — "바쁜 평일 아침" */
   moment: string;
-  /** 배너 뒤 구간 — "가볍게 볼 만한" */
+  /**
+   * 배너 뒤 구간의 무드 부사 — "가볍게". 화면에서는 뒤에 " 볼 만한 작품" 이 붙는다.
+   *
+   * ⚠️ 2026-09-10 개정 전 스냅샷에는 "가볍게 볼 만한" 처럼 서술구까지 들어 있다.
+   * 저장된 값으로 문장을 되살릴 때(분석·내보내기) 그 판을 함께 봐야 한다 —
+   * 옛 값에 " 볼 만한 작품" 을 이어 붙이면 "가볍게 볼 만한 볼 만한 작품" 이 된다.
+   */
   fit: string;
   /** 접속 기기가 모바일인지 (participants.is_mobile 과 같은 값을 스냅샷에도 남긴다) */
   isMobile: boolean;
@@ -107,12 +113,19 @@ const CONTEXT_MOMENTS: Record<WeekdayKind, Record<Daypart, string>> = {
   },
 };
 
-/** 배너 뒤 구간 — 시간대에만 걸린다 (평일·주말 공통) */
+/**
+ * 배너 뒤 구간의 무드 — 시간대에만 걸린다 (평일·주말 공통).
+ *
+ * 부사만 담는다. 뒤에 붙는 " 볼 만한 작품" 은 조건과 무관한 결과 표현이라
+ * contextSegments 가 굵기 없이 이어 붙인다 (아래 참고).
+ * 굵게 처리되는 것은 추천 이유를 말하는 구간뿐이어야 하므로, 예전처럼
+ * "차분히 몰입할 만한" 을 통째로 굵게 하면 서술구까지 근거로 읽힌다.
+ */
 const CONTEXT_FITS: Record<Daypart, string> = {
-  "아침·오전": "가볍게 볼 만한",
-  오후: "기분 전환할 만한",
-  저녁: "편히 즐길 만한",
-  "늦은 밤": "차분히 몰입할 만한",
+  "아침·오전": "가볍게",
+  오후: "기분 전환하며",
+  저녁: "편히",
+  "늦은 밤": "차분히",
 };
 
 /**
@@ -190,9 +203,10 @@ export type BannerSegment = { text: string; strong?: boolean };
 function contextSegments(ctx: ContextSnapshot, displayName: string | null): BannerSegment[] {
   return [
     { text: ctx.moment, strong: true },
+    // "에 맞춰" 는 두 근거를 잇는 기능어라 굵게 하지 않는다 (조사·기능어는 Regular)
     { text: `에 맞춰 ${honorific(displayName)}이 ` },
     { text: ctx.fit, strong: true },
-    { text: " 작품" },
+    { text: " 볼 만한 작품" },
   ];
 }
 

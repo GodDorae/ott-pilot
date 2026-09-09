@@ -760,8 +760,8 @@ async function complete(opts = {}) {
         name + " 맥락 문구 꼴",
         typeof ctx.moment === "string" &&
           ctx.moment.includes(ctx.weekdayKind) &&
-          typeof ctx.fit === "string" &&
-          ctx.fit.endsWith(" 만한"),
+          // fit 은 무드 부사만 담는다 — 서술구("… 볼 만한 작품")는 굵기 없이 화면에서 붙는다
+          ["가볍게", "기분 전환하며", "편히", "차분히"].includes(ctx.fit),
         ctxPhrase,
       );
       ck(
