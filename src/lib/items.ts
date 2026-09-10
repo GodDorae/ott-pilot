@@ -76,29 +76,3 @@ export const TRIAL_ITEMS: LikertItem[] = [
   ...INTENTION_ITEMS,
   // 보이는 순서대로 1부터 (유용성 1~3, 성실성 4, 수용의도 5~7)
 ].map((item, i) => ({ ...item, no: i + 1 }));
-
-/**
- * 이해도 확인에서 고를 수 있는 문항 번호 — 화면에 보이는 일곱 개 전부.
- *
- * 성실성 확인 문항(4번)도 넣는다. 참여자가 실제로 답한 문항이라 "그건 못 골라요" 가
- * 될 이유가 없고, 빼 두면 목록에 4번이 없어 그 문항이 특별하다는 단서가 된다.
- */
-export const ITEM_NUMBERS = TRIAL_ITEMS.map((i) => i.no as number);
-
-/**
- * 문항 이해도 확인 — 화면마다 측정 문항 아래에서 받는다.
- *
- * 문구가 참여자에게 어떻게 읽혔는지는 척도의 타당도에 직접 걸린다.
- * 같은 문항이라도 어떤 추천 근거를 보고 답했는지에 따라 달라질 수 있어 화면마다 묻는다.
- */
-/** 이해도 이유 자유입력 길이 상한 */
-export const OPEN_MAX_LENGTH_CLARITY = 500;
-
-export const ITEM_CLARITY = {
-  question:
-    "방금 응답하신 문항들의 의미가 명확하게 이해되셨나요? 이해하기 어려웠던 문항이 있다면 적어주세요.",
-  help: `위 ${ITEM_NUMBERS[0]}~${ITEM_NUMBERS[ITEM_NUMBERS.length - 1]}번 중 어려웠던 문항을 모두 골라 주세요. 없으면 '없음'을 골라 주세요.`,
-  noneLabel: "없음",
-  reasonLabel: "어떤 점이 어려웠는지 적어 주세요.",
-  reasonPlaceholder: "예: 3번의 '괜찮은 제안'이 무엇을 말하는지 애매했다",
-} as const;

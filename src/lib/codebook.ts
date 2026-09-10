@@ -9,8 +9,7 @@
  *
  * code 열은 **참여자 화면에 보이는 번호**다. 두 가지 표기가 섞여 있다 —
  * 설문 문서의 번호 체계를 쓰는 화면은 A-1 · 3-4-2 · 4-2-1 처럼 계층 코드이고,
- * 자극물 화면은 1~12 로 위에서부터 이어지는 번호다 (이해도 확인에서 참여자가
- * "3번" 이라고 가리켜야 해서 계층 코드를 쓸 수 없다).
+ * 자극물 화면은 1~8 로 위에서부터 이어지는 번호다.
  *
  * 표는 문항 정의(presurvey.ts / items.ts / posttest.ts / stimuli.ts)에서 그대로
  * 뽑아낸다 — 손으로 적어 두면 문항을 고쳤을 때 표만 옛날 것으로 남는다.
@@ -28,20 +27,14 @@ import {
 import {
   ATTENTION_CHECK,
   INTENTION_ITEMS,
-  ITEM_CLARITY,
   LIKERT_LABELS,
-  ITEM_NUMBERS,
   TRIAL_ITEMS,
   USEFULNESS_ITEMS,
 } from "./items";
 import {
-  BRIEF_UNDERSTOOD,
   COUNTERFACTUAL,
-  GENRE_FIT,
   MC_RATIONALE,
   PRICE_CHECK,
-  SCOPE_UNDERSTOOD,
-  WORDING_NATURAL,
 } from "./checks";
 import { PRE_SECTIONS } from "./presurvey";
 import { OPEN_QUESTIONS, RANK_COLUMNS, RANK_REASON, RANK_TASK, USAGE_MANIPULATION_CHECK } from "./posttest";
@@ -140,25 +133,25 @@ function trialItemRows(): CodebookRow[] {
       column: "unclear_count",
       code: "",
       section: scale,
-      question: "이해하기 어려웠다고 고른 문항 수 (파생)",
+      question: "수집 종료된 문항 이해도 응답 수 (기존 응답 호환용 컬럼)",
       type: "정수",
-      values: "0~7 · 0 = 없음 을 골랐거나 고른 문항이 없다",
+      values: "신규 응답은 빈 값",
     },
     {
       column: "unclear_items",
-      code: "8",
+      code: "",
       section: scale,
-      question: ITEM_CLARITY.question,
-      type: "다중선택 (문항 번호)",
-      values: ITEM_NUMBERS.join(" | ") + " (| 로 구분) · 빈 값 = 없음",
+      question: "수집 종료된 문항 이해도 선택값 (기존 응답 호환용 컬럼)",
+      type: "다중선택",
+      values: "신규 응답은 빈 값",
     },
     {
       column: "unclear_reason",
-      code: "8",
+      code: "",
       section: scale,
-      question: ITEM_CLARITY.reasonLabel,
+      question: "수집 종료된 문항 이해도 서술값 (기존 응답 호환용 컬럼)",
       type: "주관식",
-      values: "문항을 하나라도 골랐을 때만 값이 있다",
+      values: "신규 응답은 빈 값",
     },
     {
       column: "pu_mean",
@@ -348,7 +341,7 @@ function checkRows(): CodebookRow[] {
   return [
     {
       column: "mc_rationale_answer",
-      code: "9",
+      code: "8",
       section: screen,
       question: MC_RATIONALE.question,
       type: "명목 (단일선택)",
@@ -372,47 +365,43 @@ function checkRows(): CodebookRow[] {
     },
     {
       column: "wording_natural",
-      code: "10",
+      code: "",
       section: screen,
-      question: WORDING_NATURAL.question,
+      question: "수집 종료된 문구 자연스러움 응답 (기존 응답 호환용 컬럼)",
       type: "5점 리커트",
-      values: LIKERT_SCALE + pilotOnly,
+      values: "신규 응답은 빈 값",
     },
     {
       column: "wording_reason",
-      code: "10",
+      code: "",
       section: screen,
-      question: WORDING_NATURAL.reasonLabel,
+      question: "수집 종료된 문구 자연스러움 서술값 (기존 응답 호환용 컬럼)",
       type: "주관식",
-      values: `wording_natural 이 ${WORDING_NATURAL.reasonThreshold}점 이하일 때만 값이 있다`,
+      values: "신규 응답은 빈 값",
     },
     {
       column: "scope_understood",
-      code: "11",
+      code: "",
       section: screen,
-      question: SCOPE_UNDERSTOOD.question,
+      question: "수집 종료된 문구 적용 범위 응답 (기존 응답 호환용 컬럼)",
       type: "명목 (단일선택)",
-      values:
-        pipe(SCOPE_UNDERSTOOD.options.map((o) => [o.value, o.label] as [string, string])) +
-        " · 첫 화면(step_index=1)에서만" +
-        pilotOnly,
+      values: "신규 응답은 빈 값",
     },
     {
       column: "genre_fit",
-      // 문구 범위 점검이 첫 화면에만 있어, 2·3화면에서는 번호가 한 칸 당겨진다
-      code: "11~12",
+      code: "",
       section: screen,
-      question: GENRE_FIT.template,
+      question: "수집 종료된 선호 장르 적합도 응답 (기존 응답 호환용 컬럼)",
       type: "5점 리커트",
-      values: LIKERT_SCALE + " · 첫 화면 12번 · 2·3화면 11번" + pilotOnly,
+      values: "신규 응답은 빈 값",
     },
     {
       column: "brief_understood",
-      code: "3-0",
+      code: "",
       section: "3단계 · 시작 전 안내",
-      question: BRIEF_UNDERSTOOD.question,
+      question: "수집 종료된 이용 조건 이해도 응답 (기존 응답 호환용 컬럼)",
       type: "5점 리커트",
-      values: LIKERT_SCALE + pilotOnly,
+      values: "신규 응답은 빈 값",
     },
     {
       column: "price_realistic",

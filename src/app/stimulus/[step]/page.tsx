@@ -4,7 +4,6 @@ import DeviceFrame from "@/components/DeviceFrame";
 import SplitScreen from "@/components/SplitScreen";
 import { CLabel, ScopeBanner, UsageNotice } from "@/components/Notice";
 import { LikertScaleGuide } from "@/components/LikertScale";
-import { SURVEY_PHASE } from "@/lib/phase";
 import StimulusForm from "@/components/StimulusForm";
 import { currentSession } from "@/lib/session";
 import { guard } from "@/lib/flow";
@@ -101,8 +100,6 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
           <StimulusForm
             key={stepIndex}
             stepIndex={stepIndex}
-            genre={genre}
-            pilot={SURVEY_PHASE === "pilot"}
             skipWait={participant.is_dev}
             intro={
               <>

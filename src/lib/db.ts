@@ -115,16 +115,9 @@ export type ScreenResponseInput = {
   answers: Record<string, number>;
   /** 성실성 확인 문항 응답 (정답 4) */
   attentionCheck: number | null;
-  /** 이해하기 어려웠던 문항 번호. 빈 배열 = '없음' 을 고른 것 */
-  unclearItems: number[];
-  unclearReason: string | null;
   /** 화면 단위 조작점검 */
   mcRationaleAnswer: string;
   mcRationaleCorrect: boolean;
-  wordingNatural: number | null;
-  wordingReason: string | null;
-  scopeUnderstood: string | null;
-  genreFit: number | null;
   dwellMs: number | null;
 };
 
@@ -493,10 +486,9 @@ export function setTitleFamiliarity(
 }
 
 /** 3단계 안내를 읽고 넘어갔다고 표시 */
-export function markBriefSeen(id: string, briefUnderstood: number | null = null) {
+export function markBriefSeen(id: string) {
   return patchParticipant(id, {
     brief_seen_at: new Date().toISOString(),
-    brief_understood: briefUnderstood,
   });
 }
 
@@ -535,14 +527,8 @@ export async function saveScreenResponse(input: ScreenResponseInput) {
     ra2: input.answers.ra2 ?? null,
     ra3: input.answers.ra3 ?? null,
     attention_check: input.attentionCheck,
-    unclear_items: input.unclearItems,
-    unclear_reason: input.unclearReason,
     mc_rationale_answer: input.mcRationaleAnswer,
     mc_rationale_correct: input.mcRationaleCorrect,
-    wording_natural: input.wordingNatural,
-    wording_reason: input.wordingReason,
-    scope_understood: input.scopeUnderstood,
-    genre_fit: input.genreFit,
     attention_passed:
       input.attentionCheck === null ? null : input.attentionCheck === ATTENTION_CORRECT,
     dwell_ms: input.dwellMs,
@@ -561,6 +547,16 @@ export async function saveScreenResponse(input: ScreenResponseInput) {
     (r) => r.participant_id === row.participant_id && r.step_index === row.step_index,
   );
   const full = {
+    ...(idx >= 0
+      ? rows[idx]
+      : {
+          unclear_items: null,
+          unclear_reason: null,
+          wording_natural: null,
+          wording_reason: null,
+          scope_understood: null,
+          genre_fit: null,
+        }),
     ...row,
     id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
     created_at: new Date().toISOString(),

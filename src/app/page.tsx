@@ -3,7 +3,7 @@ import { NoticeCard, NoticeList } from "@/components/Notice";
 import { dbDriver, dbMisconfigured } from "@/lib/db";
 
 /** 설문 기간 — 원 설문 고지와 동일. 표시용이며 접근을 막지는 않는다. */
-export const SURVEY_PERIOD = "2026.09.06 ~ 2026.09.13";
+export const SURVEY_PERIOD = "2026.9.11 ~ 2026.09.26";
 
 /** 소개 + 연구참여 동의 화면 (기조 문서 1-1) */
 export default function Home() {
@@ -32,7 +32,7 @@ export default function Home() {
           <li>· 남녀노소 무관</li>
         </ul>
         <p className="mt-3 border-t border-line pt-3 text-sm text-muted">
-          설문 기간: <span className="tabular-nums">{SURVEY_PERIOD}</span>
+          설문 기간 : <span className="tabular-nums">{SURVEY_PERIOD}</span>
         </p>
       </section>
 

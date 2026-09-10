@@ -3,13 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LikertBlock from "./LikertBlock";
-import ItemClarityBlock from "./ItemClarityBlock";
 import ScreenChecksBlock, {
   EMPTY_SCREEN_CHECKS,
   screenChecksDone,
   type ScreenChecks,
 } from "./ScreenChecksBlock";
-import type { Genre } from "@/lib/experiment";
 import { ALL_ITEMS, ATTENTION_CHECK, TRIAL_ITEMS } from "@/lib/items";
 import { TOTAL_STEPS } from "@/lib/experiment";
 import { postJson } from "@/lib/client-api";
@@ -23,16 +21,10 @@ import { MIN_DWELL_SECONDS } from "@/lib/pacing";
  */
 export default function StimulusForm({
   stepIndex,
-  genre,
-  pilot,
   skipWait = false,
   intro,
 }: {
   stepIndex: number;
-  /** 선호 장르 — 장르 적합도 문항 문구에 들어간다 */
-  genre: Genre;
-  /** 파일럿 전용 조작점검을 물을지 */
-  pilot: boolean;
   /** /dev 미리보기에서는 최소 체류 시간을 기다리지 않는다 */
   skipWait?: boolean;
   /** 문항 위에 함께 스크롤되는 안내 (척도 설명·진행 표시) */
@@ -40,13 +32,6 @@ export default function StimulusForm({
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, number>>({});
-  /*
-    문항 이해도 — 어려웠던 문항 번호와 이유.
-    '없음'(빈 배열)과 미응답(null)은 다른 값이라 따로 들고 있는다.
-  */
-  const [unclear, setUnclear] = useState<number[]>([]);
-  const [none, setNone] = useState(false);
-  const [reason, setReason] = useState("");
   // 화면 단위 조작점검 (PU·RA 뒤에 붙는다)
   const [checks, setChecks] = useState<ScreenChecks>(EMPTY_SCREEN_CHECKS);
   const [error, setError] = useState<string | null>(null);
@@ -71,24 +56,15 @@ export default function StimulusForm({
 
   const answered = ALL_ITEMS.filter((i) => values[i.key]).length;
   const attention = values[ATTENTION_CHECK.key];
-  // 측정 문항과 이해도 문항을 갈라서 본다 — 버튼 문구가 "무엇이 남았는지" 를 알려야 한다
   const itemsDone = answered === ALL_ITEMS.length && Boolean(attention);
-  // 이해도 문항도 답해야 한다 — 번호를 골랐다면 이유까지
-  const clarityDone = none || (unclear.length > 0 && reason.trim().length > 0);
-  const checksDone = screenChecksDone(checks, {
-    pilot,
-    firstScreen: stepIndex === 1,
-  });
-  const complete = itemsDone && clarityDone && checksDone;
+  const checksDone = screenChecksDone(checks);
+  const complete = itemsDone && checksDone;
   const unanswered = ALL_ITEMS.length - answered + (attention ? 0 : 1);
 
   /*
-    문항 번호는 화면 위에서부터 하나로 이어 붙인다 (측정 → 이해도 → 조작점검).
-    묶음마다 1 부터 다시 시작하면 이해도 확인에서 "3번" 이 어느 묶음의 3번인지 알 수 없고,
-    번호가 붙은 카드와 안 붙은 카드가 섞이면 안 붙은 쪽이 눈에 띈다.
+    문항 번호는 화면 위에서부터 하나로 이어 붙인다 (측정 → 조작점검).
   */
-  const clarityNo = TRIAL_ITEMS.length + 1;
-  const checksStartNo = clarityNo + 1;
+  const checksStartNo = TRIAL_ITEMS.length + 1;
 
   // 목업을 실제로 볼 시간을 준다 — 문항에는 그 전에도 답할 수 있고, 막히는 건 제출뿐이다
   const { remaining: secondsLeft, done: waited } = useCountdown(
@@ -97,24 +73,6 @@ export default function StimulusForm({
 
   function set(key: string, value: number) {
     setValues((prev) => ({ ...prev, [key]: value }));
-  }
-
-  // 번호와 '없음' 은 서로 배타적이다 — 둘을 함께 고르면 무엇을 뜻하는지 알 수 없다
-  function toggleItem(no: number) {
-    setNone(false);
-    setUnclear((prev) =>
-      prev.includes(no) ? prev.filter((n) => n !== no) : [...prev, no].sort(),
-    );
-  }
-
-  function toggleNone() {
-    setNone((prev) => {
-      if (!prev) {
-        setUnclear([]);
-        setReason("");
-      }
-      return !prev;
-    });
   }
 
   async function submit() {
@@ -126,13 +84,7 @@ export default function StimulusForm({
         stepIndex,
         answers: values,
         attentionCheck: attention ?? null,
-        unclearItems: none ? [] : unclear,
-        unclearReason: unclear.length > 0 ? reason.trim() : null,
         mcRationale: checks.mcRationale,
-        wordingNatural: checks.wordingNatural,
-        wordingReason: checks.wordingReason.trim() || null,
-        scopeUnderstood: checks.scopeUnderstood,
-        genreFit: checks.genreFit,
         dwellMs: shownAt.current === null ? null : Date.now() - shownAt.current,
       });
       if (!r.ok) throw new Error(r.error);
@@ -157,23 +109,10 @@ export default function StimulusForm({
           {/* 유용성 3 → 성실성 확인 1 → 수용의도 3 을 한 컨테이너에 이어서 */}
           <LikertBlock items={TRIAL_ITEMS} values={values} onChange={set} />
 
-          <ItemClarityBlock
-            no={clarityNo}
-            selected={unclear}
-            none={none}
-            reason={reason}
-            onToggleItem={toggleItem}
-            onToggleNone={toggleNone}
-            onReason={setReason}
-          />
-
           <ScreenChecksBlock
             startNo={checksStartNo}
             value={checks}
             onChange={(patch) => setChecks((prev) => ({ ...prev, ...patch }))}
-            genre={genre}
-            pilot={pilot}
-            firstScreen={stepIndex === 1}
           />
 
           {error && (
@@ -200,17 +139,13 @@ export default function StimulusForm({
               ? "저장 중…"
               : !itemsDone
                 ? "남은 문항 " + unanswered + "개"
-                : !clarityDone
-                  ? unclear.length > 0
-                    ? "어려웠던 이유를 적어 주세요"
-                    : "이해도 문항에 답해 주세요"
-                  : !checksDone
-                    ? "아래 확인 문항에 답해 주세요"
-                    : !waited
-                      ? "잠시 후 넘어갈 수 있습니다"
-                      : stepIndex < 3
-                        ? "평가 완료"
-                        : "다음 단계로"}
+                : !checksDone
+                  ? "아래 확인 문항에 답해 주세요"
+                  : !waited
+                    ? "잠시 후 넘어갈 수 있습니다"
+                    : stepIndex < 3
+                      ? "평가 완료"
+                      : "다음 단계로"}
           </button>
           <CountdownHint remaining={secondsLeft} done={waited} />
         </div>

@@ -6,7 +6,6 @@ import { NoticeCard } from "@/components/Notice";
 import { BRIEF_KICKER, BRIEF_TITLE, briefScene, usageBrief } from "@/lib/brief";
 import type { UsageCondition } from "@/lib/experiment";
 import { STAGE_LABELS } from "@/lib/steps";
-import { SURVEY_PHASE } from "@/lib/phase";
 
 /**
  * 3단계 시작 전 안내.
@@ -50,7 +49,7 @@ export default async function BriefPage() {
       </div>
 
       <div className="mt-8">
-        <BriefContinue skipWait={participant.is_dev} pilot={SURVEY_PHASE === "pilot"} />
+        <BriefContinue skipWait={participant.is_dev} />
       </div>
     </main>
   );

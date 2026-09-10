@@ -44,6 +44,9 @@ export const SURVEY_PHASE: Phase = readPhase();
  * 갈라 보게 되므로 번호가 다루기 쉽다. 이전 표기로 찍힌 행은 마이그레이션에서 맞췄다
  * (supabase/migrations/20260909010000_instrument_version_numbering.sql).
  *
+ *   3  2026-09-11~     개별 대여 2,900원, 추천 레일 배치 조정, 화면별 파일럿 조작점검
+ *                      4문항과 이용 조건 안내 이해 문항 제거, 주관식 2번을 회상형으로 수정
+ *
  *   2  2026-09-09~     추천 근거 배너를 확정 문구로 교체 (맥락 조건이 평일·주말 × 시간대
  *                      여덟 갈래로 갈리고 기기 언급이 빠졌다), 개별 대여 5,500원 →
  *                      4,000원 · 결제 후 30일 이내 시청 시작 조건 명시,
@@ -66,4 +69,4 @@ export const SURVEY_PHASE: Phase = readPhase();
  *                               ai1~ai3 → ra1~ra3 개명
  *                      (실제로 수집된 판 1 응답 35건은 전부 09-07 구성으로 받은 것이다.)
  */
-export const INSTRUMENT_VERSION = "2";
+export const INSTRUMENT_VERSION = "3";
