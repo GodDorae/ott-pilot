@@ -10,7 +10,7 @@
 import { GENRE_LABELS, type Genre, type RationaleType, type UsageCondition } from "./experiment";
 
 /** 화면 표시용 호칭 길이 상한 */
-export const DISPLAY_NAME_MAX = 4;
+export const DISPLAY_NAME_MAX = 3;
 
 /** 입력된 호칭을 화면·저장에 쓸 수 있게 다듬는다 */
 export function normalizeDisplayName(raw: string | null | undefined): string | null {
@@ -216,8 +216,9 @@ function contextSegments(ctx: ContextSnapshot, displayName: string | null): Bann
  * 굵게 처리하는 구간은 조작의 근거를 직접 말하는 부분이다(무엇을 근거로 골랐는가).
  * 세 조건 모두 굵은 구간이 두 군데씩이라 시각적 강조량이 같다.
  *
- * 배너는 한 줄로 잘린다(OttScreen 의 truncate). 문구를 고칠 때는 호칭이 네 글자인
- * 참여자를 기준으로 목업의 글자 자리(1278/1500px, 글자 크기 45px)를 넘지 않는지 본다.
+ * 배너는 한 줄로 잘린다(OttScreen 의 truncate). 문구를 고칠 때는 호칭이
+ * DISPLAY_NAME_MAX(3자)인 참여자를 기준으로 목업의 글자 자리(1278/1500px,
+ * 글자 크기 49px)를 넘지 않는지 본다 — 가장 긴 조건은 오후("기분 전환하며")다.
  */
 export function rationaleBanner(
   rationale: RationaleType,
@@ -272,11 +273,22 @@ export function contextPhrase(ctx: ContextSnapshot, displayName: string | null):
  */
 export function usageNotice(condition: UsageCondition): { label: string; detail: string[] } {
   /*
-    한 줄에 하나의 사실만 오도록 직접 끊는다
-    (얼마인가 / 언제까지 시작하면 되는가 / 시작한 뒤 얼마나 볼 수 있는가).
-    브라우저에 맡기면 창 폭에 따라 "4,000원에 / 개별 대여" 처럼 조건의 핵심이 갈라진다.
-    칸이 좁으면 한 줄이 그 안에서 한 번 더 접히기는 하지만, 접히는 자리가
-    사실과 사실 사이가 아니라 사실 안쪽이라 읽는 순서는 지켜진다.
+    배열 한 칸 = 한 가지 사실 (얼마인가 / 언제까지 시작하면 되는가 / 시작한 뒤 얼마나
+    볼 수 있는가). 화면에서 각각 제 줄에서 시작하므로 읽는 순서가 지켜진다.
+
+    칸이 좁으면 한 사실이 두 줄로 접힌다. 그 접히는 자리를 두 가지로 다듬는다.
+
+    1) 줄 나눔은 text-wrap: balance 에 맡긴다 (Notice.tsx 의 text-balance).
+       기본 줄바꿈은 되는 데까지 채우고 넘기므로 뒤에 토막이 남는다 —
+       "…구독 중인 서비스에 / 포함되어 있어," (238px / 94px) 처럼.
+       balance 는 줄 수를 늘리지 않으면서 길이를 고르게 나눈다
+       ("…회원님이 구독 중인 / 서비스에 포함되어 있어," 179px / 152px).
+
+    2) 조건의 핵심인 숫자 묶음은 줄바꿈 없는 공백(NBSP, \u00A0)으로 붙여 둔다.
+       balance 는 길이만 보고 나누므로 그냥 두면 "48시간 / 동안" 처럼 조건이 갈라진다.
+       금액·기간이 갈라지면 조절변수가 잘못 전달되므로 여기만 손으로 묶는다.
+       (\u00A0 escape 로 적는다 — 눈에 안 보이는 문자를 그대로 넣으면 나중에
+        고칠 때 왜 공백이 안 먹는지 알 수 없다.)
   */
   return condition === "SVOD"
     ? {
@@ -289,9 +301,9 @@ export function usageNotice(condition: UsageCondition): { label: string; detail:
     : {
         label: "개별 대여",
         detail: [
-          "이 작품은 4,000원에 개별 대여가 가능합니다.",
-          "결제 후 30일 이내에 시청을 시작하시면 되고,",
-          "한 번 시청을 시작한 뒤에는 48시간 동안 자유롭게 다시 보실 수 있습니다.",
+          "이 작품은 2,900원에 개별\u00A0대여가 가능합니다.",
+          "결제 후 30일\u00A0이내에 시청을 시작하시면 되고,",
+          "한 번 시청을 시작한 뒤에는 48시간\u00A0동안 자유롭게 다시 보실 수 있습니다.",
         ],
       };
 }

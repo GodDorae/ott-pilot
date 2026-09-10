@@ -52,16 +52,23 @@ export default function SplitScreen({
   return (
     <div className="flex w-full flex-1 flex-col overflow-x-hidden wide:h-dvh wide:flex-row wide:justify-center wide:gap-10 wide:overflow-hidden">
       {/* 왼쪽 — 자극물 목업 */}
-      <div className="flex w-full shrink-0 flex-col items-center border-b border-line bg-bg px-4 py-6 mock-pane pretty-scroll pane-scroll wide:h-dvh wide:overflow-y-auto wide:border-b-0 wide:px-8 wide:py-4">
-        {/*
-          my-auto 로 가운데 정렬한다. justify-center 를 쓰면 내용이 칸보다 높을 때
-          위쪽이 스크롤로도 닿지 않는 곳에 잘려 나간다 (flex 스크롤 컨테이너의 알려진 문제).
-        */}
+      {/*
+        2분할에서는 overflow-hidden 이다 — 스크롤이 생길 수 없다.
+        목업이 남은 세로에 맞춰 줄어들도록 해 두었으므로(.mock-shell) 넘칠 것이 없고,
+        스크롤바가 보이는 것 자체를 없애려는 것이다. 세로로 쌓일 때는 페이지가 스크롤된다.
+      */}
+      <div className="flex w-full shrink-0 flex-col items-center border-b border-line bg-bg px-4 py-6 mock-pane wide:h-dvh wide:overflow-hidden wide:border-b-0 wide:px-8 wide:py-4">
         {/*
           max-w-md 는 세로로 쌓일 때만이다. 2분할에서는 목업 폭을 .mock-pane 이 정하므로
           여기서 다시 448px 로 잡으면 상한(30rem)이 걸리기 전에 이쪽이 먼저 잘라 버린다.
+
+          2분할에서는 flex-1 로 칸 높이를 채운다 — 안쪽에서 목업 칸이 남은 세로를 받아야
+          하므로 이 칸이 먼저 정해진 높이를 가져야 한다. (예전에는 my-auto 로 가운데
+          정렬했는데, 이제 목업 칸이 items-center 로 스스로 가운데 온다.)
         */}
-        <div className="flex w-full max-w-md flex-col wide:max-w-none wide:my-auto">{left}</div>
+        <div className="flex w-full max-w-md flex-col wide:max-w-none wide:min-h-0 wide:flex-1">
+          {left}
+        </div>
       </div>
 
       {/* 오른쪽 — 측정 문항 (PC 에서는 여기만 스크롤) */}

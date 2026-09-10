@@ -19,7 +19,7 @@ export const USAGE_MANIPULATION_CHECK = {
     { value: "SVOD", label: "구독에 이미 포함되어 있어 추가 결제 없이 시청 가능" },
     {
       value: "TVOD",
-      label: "4,000원 결제 후 30일 이내 시청 시작, 시청 시작 후 48시간 동안 시청 가능한 개별 대여",
+      label: "2,900원 결제 후 30일 이내 시청 시작, 시청 시작 후 48시간 동안 시청 가능한 개별 대여",
     },
     { value: "unsure", label: "잘 기억나지 않는다" },
   ],

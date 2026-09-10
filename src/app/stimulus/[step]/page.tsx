@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import OttScreen from "@/components/OttScreen";
 import DeviceFrame from "@/components/DeviceFrame";
 import SplitScreen from "@/components/SplitScreen";
-import { CLabel, NoticeCard, ScopeBanner } from "@/components/Notice";
+import { CLabel, ScopeBanner, UsageNotice } from "@/components/Notice";
 import { LikertScaleGuide } from "@/components/LikertScale";
 import { SURVEY_PHASE } from "@/lib/phase";
 import StimulusForm from "@/components/StimulusForm";
@@ -56,14 +56,19 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
     <main className="flex flex-1 flex-col">
       <SplitScreen
         left={
-          <div className="w-full">
+          /*
+            2분할에서는 세로 flex 로 둔다 — 머리글·안내는 제 높이만 쓰고(shrink-0),
+            남은 세로가 전부 목업 칸(.mock-shell)으로 간다. 목업은 그 안에서 줄어들어
+            칸을 넘지 않으므로 왼쪽 칸에 스크롤이 생기지 않는다 (globals.css 참고).
+          */
+          <div className="w-full wide:flex wide:h-full wide:min-h-0 wide:flex-col">
             {/*
               화면 번호와 이용조건은 목업 **위**에 놓는다.
               아래에 두었을 때는 포스터에 시선을 뺏겨 읽지 않고 지나갔다.
               이용조건은 이 연구의 조절변수라, 못 읽고 넘어가면 조건이 걸리지 않는다.
               폭은 목업과 똑같이 맞춘다 (.device-fit) — 목업보다 넓으면 따로 노는 덩어리로 보인다.
             */}
-            <div className="device-fit space-y-2">
+            <div className="device-fit space-y-2 wide:shrink-0">
               {/*
                 머리글을 안내 카드 라벨로 합쳐 목업 위 높이를 36px 줄여 봤다가 되돌렸다.
                 CLabel 은 10px 소문자 라벨이라 눈에 덜 들어온다 — 이 머리글을 목업 위로
@@ -71,16 +76,13 @@ export default async function StimulusPage({ params }: PageProps<"/stimulus/[ste
                 12px 남기려고 그걸 되돌릴 수는 없다.
               */}
               <h2 className="text-base font-bold break-keep">추천 화면 {stepIndex}</h2>
-              <NoticeCard>
-                {usageNotice(participant.usage_condition as UsageCondition).detail.map((line) => (
-                  <span key={line} className="block">
-                    {line}
-                  </span>
-                ))}
-              </NoticeCard>
+              <UsageNotice
+                label={usageNotice(participant.usage_condition as UsageCondition).label}
+                lines={usageNotice(participant.usage_condition as UsageCondition).detail}
+              />
             </div>
 
-            <div className="mt-3 flex w-full justify-center">
+            <div className="mock-shell mt-3 flex w-full items-center justify-center wide:min-h-0 wide:flex-1">
               <DeviceFrame>
                 <OttScreen
                   rationale={rationale}

@@ -72,7 +72,29 @@ const M = {
   /** 헤더 뒤 붉은 그라디언트가 내려오는 높이 */
   fadeH: 300,
 
-  title1Y: 707,
+  /*
+    ── 레일 구역 사이 세로 여백을 전부 128 로 통일 ─────────────────────
+    화면에서 32px 이다 (목업 1500px 이 375px 로 그려지므로 축척 1/4).
+
+    다섯 자리 모두 같은 값을 쓴다. 위에서부터
+      A 상단 포스터 줄 아래끝(648)  → 레일 제목(title1Y)
+      B 레일 제목 아래끝            → 배너(bannerY)
+      C 배너 아래끝                 → 실험 포스터 줄(rail1Y)
+      D 실험 포스터 줄 아래끝       → "오직 이곳에서만"(title2Y)
+      E "오직 이곳에서만" 아래끝    → 아래 포스터 줄(rail2Y)
+
+    제목 줄 높이는 h2 의 줄상자로 정해진다 — 65 × line-height 1.6 = 104.
+    (제목 줄은 flex items-center 라 스파클 58 은 그 안에서 세로 중앙에 온다.)
+
+    B 는 원래 35 였다. 나머지를 32px 로 올리면서 여기만 8.75px 로 남으면 제목·배너가
+    한 덩어리로 붙고 아래만 벌어져 어긋나 보이므로 함께 맞췄다. 배너를 제목에 붙여
+    두려면 bannerY 를 915(= title1 아래끝 880 + 35)로 되돌리면 된다 —
+    그 아래(rail1Y·title2Y·rail2Y)는 그대로 두면 C·D·E 가 유지된다.
+
+    화면 높이(screenH 3042)와 탭 바(tabTop 2839)는 건드리지 않았다. 아래 레일은
+    원래도 탭 바 밑으로 잘려 있어 보이는 길이만 895 → 615px 로 줄어든다.
+  */
+  title1Y: 776,
   titleSize: 65,
   /** 스파클은 세로로 긴 별 — 목업 잉크 44×52, 왼쪽 여백 56에서 시작 */
   sparkleX: 53,
@@ -81,13 +103,29 @@ const M = {
   sparkleGap: 30,
   infoBox: 44,
 
-  bannerY: 846,
+  bannerY: 1008,
   bannerH: 120,
-  bannerRadius: 14,
+  /* 4px — 목업 1500px 이 375px 로 그려지므로(축척 1/4) 목업 단위로는 16 이다 */
+  bannerRadius: 16,
   bannerIcon: 58,
-  bannerTextSize: 45,
+  /*
+    화면에서 12.25px (목업 1500px 이 375px 로 그려지므로 축척 1/4).
 
-  rail1Y: 1018,
+    글자 자리는 1278px 다 (배너 폭 1404 - paddingInline 24×2 - 아이콘 58 - gap 20).
+    한 줄로 잘리므로(truncate) 가장 긴 조건이 상한을 정한다 — 오후의
+    "분주한 평일 오후에 맞춰 …님이 기분 전환하며 볼 만한 작품" 이다.
+    Noto Sans KR 실측(한글 자폭 920/1000em, 공백 224, letterSpacing -0.01em)으로
+    호칭 3자(DISPLAY_NAME_MAX) 기준 그 조건의 상한은 49.93px = 화면 12.48px 다.
+
+    49 로 둔 것은 상한에 딱 붙이지 않으려는 것이다. 화면 12.5px(목업 50)은 그 조건에서
+    1.7px 넘쳐 끝이 "…" 로 잘리고, 49.9 는 여유가 0 이라 반올림 차이만으로도 잘린다.
+    49 는 약 2% 여유가 남는다. 문구를 고칠 때는 이 상한을 다시 재야 한다.
+
+    확정 목업의 배너는 51.3px 인데, 거기 실린 아침 조건은 짧아서 그 크기가 들어간다.
+  */
+  bannerTextSize: 49,
+
+  rail1Y: 1256,
   posterRadius: 10,
 
   badgeInset: 18,
@@ -96,8 +134,9 @@ const M = {
   badgeSize: 40,
   badgeRadius: 8,
 
-  title2Y: 1685,
-  rail2Y: 1826,
+  /* D·E — 위 title1Y 주석의 통일 규칙 참고 */
+  title2Y: 1992,
+  rail2Y: 2224,
   rail2W: 612,
   rail2H: 1194,
   rail2PeekW: 164,
@@ -111,6 +150,19 @@ const M = {
   tabLabelSize: 38,
   tabAvatar: 76,
 } as const;
+
+/**
+ * 배너 아이콘의 stroke 두께 — 세 근거유형 아이콘을 1px 로 통일한다.
+ *
+ * 목업 1500px 이 화면에서 375px 로 그려지므로(축척 1/4) 1px = 목업 4px 이다.
+ * 아이콘마다 viewBox 가 달라(달력 14, 시계·사람 24) 같은 stroke-width 를 적으면
+ * 두께가 달라진다 — 목업 4px 이 되도록 viewBox 단위로 환산해서 쓴다.
+ *
+ * 결과: 달력 0.966 (viewBox 14) · 시계·사람 1.655 (viewBox 24) → 셋 다 화면에서 1px.
+ * 예전에는 시계·사람이 1.9 였고 화면에서 1.13px 라 달력(1.04px)보다 굵었다.
+ */
+const ICON_STROKE_MOCK = 4;
+const iconStroke = (viewBox: number) => (ICON_STROKE_MOCK * viewBox) / M.bannerIcon;
 
 /** 조건 무관 장식용 포스터 — 상단 줄과 "오직 이곳에서만" 줄 */
 const HERO_IMAGES = ["hero-1", "hero-2", "hero-3"];
@@ -198,7 +250,7 @@ function HistoryIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.9}
+      strokeWidth={iconStroke(24)}
       aria-hidden
     >
       <path
@@ -219,7 +271,7 @@ function PeopleIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.9}
+      strokeWidth={iconStroke(24)}
       aria-hidden
     >
       <circle cx="9.2" cy="8" r="3.5" />
@@ -255,6 +307,7 @@ function ScheduleIcon() {
       viewBox="0 0 14 14"
       fill="none"
       stroke="currentColor"
+      strokeWidth={iconStroke(14)}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -575,8 +628,18 @@ export default function OttScreen({
           height: u(M.bannerH),
           borderRadius: u(M.bannerRadius),
           gap: u(20),
-          // 좌상단 어두운 적갈색 → 우하단 밝은 적색 (목업 실측)
-          background: "linear-gradient(177deg, #381717 0%, #8a1817 100%)",
+          /*
+            연구자 지정 그라디언트 (확정 목업). 붉은색 → 짙은 남색.
+
+            세 겹을 적어 준 그대로 둔다. 다만 실제로 보이는 것은 맨 앞 한 겹뿐이다 —
+            CSS 는 먼저 적은 층을 위에 깔고, 세 층이 모두 불투명해서 뒤의 두 층이 가려진다.
+            (Figma 가 층별 블렌드 모드를 CSS 로 내보내지 못해 생기는 꼴이다.)
+            뒤 두 층을 살리려면 background-blend-mode 를 함께 지정해야 한다.
+          */
+          background:
+            "linear-gradient(91deg, #B91E30 0%, #021C4F 101.74%), " +
+            "linear-gradient(91deg, #C50337 0%, #021C4F 101.74%), " +
+            "linear-gradient(91deg, #0100EC 0%, #FB37F4 100%)",
           paddingInline: u(24),
         }}
       >

@@ -91,7 +91,7 @@ export default async function DevIndexPage({ searchParams }: PageProps<"/dev">) 
             <div className="flex flex-wrap gap-2">
               {USAGE_CONDITIONS.map((u) => (
                 <Link key={u} href={swap({ usage: u })} className={chip(o.usage === u)}>
-                  {u === "SVOD" ? "SVOD 구독 포함" : "TVOD 4,000원 대여"}
+                  {u === "SVOD" ? "SVOD 구독 포함" : "TVOD 2,900원 대여"}
                 </Link>
               ))}
             </div>

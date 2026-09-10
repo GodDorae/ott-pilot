@@ -267,7 +267,7 @@ function designRows(): CodebookRow[] {
       section: design,
       question: "이용조건 — 피험자 간 조절변수",
       type: "명목",
-      values: pipe(USAGE_CONDITIONS.map((u) => [u, u === "SVOD" ? "구독 포함" : "개별 대여 4,000원 · 30일 내 시작 후 48시간"] as [string, string])),
+      values: pipe(USAGE_CONDITIONS.map((u) => [u, u === "SVOD" ? "구독 포함" : "개별 대여 2,900원 · 30일 내 시작 후 48시간"] as [string, string])),
     },
     {
       column: "sequence_index",
