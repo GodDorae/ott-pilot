@@ -11,9 +11,23 @@ import {
 import Link from "next/link";
 import { Fragment } from "react";
 import { PRE_SECTIONS } from "@/lib/presurvey";
-import { INSTRUMENT_VERSION, PHASES, PHASE_LABELS, SURVEY_PHASE, type Phase } from "@/lib/phase";
+import {
+  INSTRUMENT_VERSION,
+  MAIN_FROM_VERSION,
+  PHASES,
+  PHASE_LABELS,
+  SURVEY_PHASE,
+  stageOfVersion,
+  type Phase,
+} from "@/lib/phase";
 import AdminLogin from "@/components/AdminLogin";
 import { adminPasswordMissing, isAdmin } from "@/lib/adminauth";
+
+/** 판번호 뒤에 붙이는 단계 꼬리표 — "v2 · 파일럿" 처럼 읽히게 */
+function stageShort(version: string) {
+  const s = stageOfVersion(version);
+  return s === null ? "?" : PHASE_LABELS[s];
+}
 
 /** 관리자 화면에 분포를 띄울 사전 문항 (전부 띄우면 산만해져서 골랐다) */
 const PRE_SUMMARY_QUESTIONS = [
@@ -63,15 +77,67 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
     return <AdminLogin failed={e === "1"} />;
   }
 
-  // 보고 있는 단계 — 기본은 지금 수집 중인 단계
-  const viewing: Phase | "all" =
-    phaseParam === "all"
-      ? "all"
-      : PHASES.includes(phaseParam as Phase)
-        ? (phaseParam as Phase)
-        : SURVEY_PHASE;
+  /*
+    보고 있는 단계 — 판번호에서 끌어낸다 (판 1·2 = 파일럿, 판 3+ = 본실험).
 
-  const { participants: allParticipants, responses: allResponses } = await listAll(viewing);
+    예전에는 participants.phase 로 걸렀고, 판번호 토글이 따로 한 줄 더 있었다.
+    두 값이 같은 것을 가리키는데 필터가 둘이라 "단계=본실험 + 판=v1" 처럼 있을 수 없는
+    조합을 고를 수 있었고, 그러면 화면이 통째로 0 이 되어 자료가 사라진 것처럼 보였다.
+    지금은 단계를 고르면 그 단계에 속한 판만 아래 줄에 나온다 — 어긋난 조합이 아예 없다.
+
+    자료는 항상 전체를 받아 와서 화면에서 나눈다. phase 컬럼으로 미리 거르면 판번호와
+    어긋난 행(판을 올렸는데 SURVEY_PHASE 를 안 바꾼 경우)이 조용히 빠져 버린다 —
+    그건 오히려 눈에 보여야 하는 문제다.
+  */
+  const { participants: everyone, responses: everyResponse } = await listAll("all");
+
+  const stageParam =
+    phaseParam === "all" || PHASES.includes(phaseParam as Phase)
+      ? (phaseParam as Phase | "all")
+      : stageOfVersion(INSTRUMENT_VERSION) ?? SURVEY_PHASE;
+  const viewing: Phase | "all" = stageParam;
+
+  const inStage = (p: { instrument_version: string | null }) =>
+    viewing === "all" || stageOfVersion(p.instrument_version) === viewing;
+
+  const allParticipants = everyone.filter(inStage);
+  const stageIds = new Set(allParticipants.map((p) => p.id));
+  const allResponses = everyResponse.filter((r) => stageIds.has(r.participant_id));
+
+  /** 단계별 참여자 수 — 토글에 함께 적는다 */
+  const countOfStage = (key: Phase | "all") =>
+    key === "all"
+      ? everyone.length
+      : everyone.filter((p) => stageOfVersion(p.instrument_version) === key).length;
+
+  /*
+    phase 컬럼과 판번호가 어긋난 참여자.
+
+    판을 올렸는데 SURVEY_PHASE 를 그대로 두면 여기에 잡힌다. 화면 숫자만 놓고 보면
+    아무 문제가 없어 보이지만, 조건 배정 카운터(assign_next_cell)는 phase 컬럼으로
+    세는 범위를 정하므로 본실험이 파일럿 누적치 위에서 배정된다 — 카운터밸런싱이
+    조용히 깨지는 종류의 사고라 반드시 눈에 띄어야 한다.
+  */
+  const stageMismatch = everyone.filter((p) => {
+    const s = stageOfVersion(p.instrument_version);
+    return s !== null && s !== p.phase;
+  });
+
+  /*
+    지금 설정 자체가 어긋나 있는지 — 응답이 한 건도 없어도 잡아야 한다.
+
+    판번호를 올려 본실험으로 넘어갔는데 SURVEY_PHASE 를 그대로 두면, 위 stageMismatch 는
+    v3 응답이 **들어온 뒤에야** 잡는다. 그런데 문제가 터지는 시점은 첫 v3 참여자가
+    배정받는 순간이다 — assign_next_cell(phase) 이 파일럿 누적치를 세어 그 위에서
+    가장 적은 칸을 고르므로, 본실험 첫 사람부터 카운터밸런싱이 어긋난 채 시작한다.
+    그래서 데이터가 아니라 설정을 보고 미리 경고한다.
+  */
+  const currentStage = stageOfVersion(INSTRUMENT_VERSION);
+  const configMismatch = currentStage !== null && currentStage !== SURVEY_PHASE;
+  /** 지금 phase 로 이미 배정된 인원 — 본실험이 그 위에서 시작하면 얼마나 어긋나는지 */
+  const assignedInCurrentPhase = everyone.filter(
+    (p) => p.phase === SURVEY_PHASE && p.usage_condition,
+  ).length;
 
   /*
     판번호(instrument_version)별로 갈라 본다.
@@ -85,12 +151,19 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
     판은 그렇게 두면 새 판을 올린 직후 화면이 통째로 0 이 되어 자료가 사라진 것처럼
     보인다. 대신 토글 버튼마다 참여자 수를 적고, 섞어 보는 중이면 경고를 띄운다.
   */
+  /*
+    지금 보이는 단계에 속한 판 목록. 아직 응답이 없어도 수집 중인 판은 넣어 둔다 —
+    다만 그 판이 이 단계의 것일 때만이다 (판 3 을 수집 중인데 파일럿을 보고 있으면
+    v3 버튼을 띄우면 안 된다).
+  */
   const versions = [
     ...new Set([
       ...allParticipants
         .map((p) => p.instrument_version)
         .filter((v): v is string => Boolean(v)),
-      INSTRUMENT_VERSION,
+      ...(viewing === "all" || stageOfVersion(INSTRUMENT_VERSION) === viewing
+        ? [INSTRUMENT_VERSION]
+        : []),
     ]),
   ].sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
   const unversioned = allParticipants.filter((p) => !p.instrument_version).length;
@@ -123,7 +196,11 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   ];
 
   const versionLabel = (key: string) =>
-    key === "all" ? "전체" : key === "none" ? "미기록" : "v" + key;
+    key === "all"
+      ? "판 전체"
+      : key === "none"
+        ? "판 미기록"
+        : "v" + key + (viewing === "all" ? " · " + stageShort(key) : "");
   const countOfVersion = (key: string) =>
     key === "all"
       ? allParticipants.length
@@ -214,11 +291,16 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           >
             /dev 미리보기
           </Link>
+          {/* 화면에 보이는 범위를 그대로 내려받는다 — 링크가 화면과 다르면 어느 쪽이 맞는지 알 수 없다 */}
           <a
-            href={"/api/admin/export?phase=" + viewing}
+            href={"/api/admin/export?phase=" + viewing + "&v=" + version}
             className="rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white"
           >
             CSV 내려받기
+            <span className="ml-1.5 text-[11px] font-medium opacity-80">
+              {viewing === "all" ? "전체" : PHASE_LABELS[viewing]}
+              {version !== "all" && " · v" + version}
+            </span>
           </a>
           <form action="/api/admin/logout" method="post">
             <button type="submit" className="px-2 py-2.5 text-sm text-muted underline">
@@ -229,12 +311,17 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 text-xs">
+        {/*
+          지금 수집 중인 것 — 단계는 판번호에서 끌어낸다 (판 1·2 파일럿 / 판 3+ 본실험).
+          phase 컬럼이 어긋나 있으면 아래 경고가 따로 뜬다.
+        */}
         <span className="text-muted">
           수집 중:{" "}
-          <strong className="text-fg">{PHASE_LABELS[SURVEY_PHASE]}</strong>
-          <span className="ml-1 font-mono text-[11px]">
-            ({SURVEY_PHASE} · v{INSTRUMENT_VERSION})
-          </span>
+          <strong className="text-fg">
+            {PHASE_LABELS[stageOfVersion(INSTRUMENT_VERSION) ?? SURVEY_PHASE]} · v
+            {INSTRUMENT_VERSION}
+          </strong>
+          <span className="ml-1 font-mono text-[11px]">(phase={SURVEY_PHASE})</span>
         </span>
         <span className="text-line">|</span>
         <span className="text-muted">
@@ -243,44 +330,113 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
             {dbDriver === "supabase" ? "Supabase" : "로컬 .data (개발용)"}
           </strong>
         </span>
-        <span className="ml-auto flex items-center gap-1">
-          <span className="text-muted">단계</span>
-          {([...PHASES, "all"] as const).map((v) => (
-            <a
-              key={v}
-              href={adminHref({ phase: v })}
-              className={
-                "rounded-md px-2 py-1 font-medium transition " +
-                (viewing === v ? "bg-accent text-white" : "text-muted hover:bg-line/50")
-              }
-            >
-              {v === "all" ? "전체" : PHASE_LABELS[v]}
-            </a>
-          ))}
-        </span>
-        {/*
-          판번호 토글 — 버튼마다 참여자 수를 함께 적는다. 어느 판을 보고 있는데
-          0 명인지가 바로 보여야, 필터가 걸린 것을 자료가 없는 것으로 오해하지 않는다.
-        */}
-        <span className="flex items-center gap-1">
-          <span className="text-muted">판</span>
-          {versionKeys.map((key) => (
-            <a
-              key={key}
-              href={adminHref({ v: key })}
-              className={
-                "rounded-md px-2 py-1 font-medium transition " +
-                (version === key ? "bg-accent text-white" : "text-muted hover:bg-line/50")
-              }
-            >
-              {versionLabel(key)}
-              <span className="ml-1 text-[10px] tabular-nums opacity-70">
-                {countOfVersion(key)}
-              </span>
-            </a>
-          ))}
-        </span>
       </div>
+
+      {/*
+        보는 범위 — 위 줄에서 단계를 고르면 아래 줄에 그 단계의 판만 나온다.
+        단계와 판이 같은 것을 가리키므로(판 1·2 파일럿 / 판 3+ 본실험) 두 줄을 계층으로
+        두어 있을 수 없는 조합이 아예 생기지 않게 했다. 버튼마다 참여자 수를 적어,
+        0 명인 것이 '필터가 걸려서' 인지 '자료가 없어서' 인지 바로 보이게 한다.
+      */}
+      <section className="mt-3 rounded-xl border border-line bg-card px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span className="text-xs font-bold text-muted">보는 범위</span>
+          <span className="flex items-center gap-1">
+            {(["all", ...PHASES] as const).map((key) => (
+              <a
+                key={key}
+                href={adminHref({ phase: key, v: "all" })}
+                className={
+                  "rounded-lg px-3 py-1.5 text-[13px] font-bold transition " +
+                  (viewing === key ? "bg-accent text-white" : "text-muted hover:bg-line/50")
+                }
+              >
+                {key === "all" ? "전체" : PHASE_LABELS[key]}
+                {key !== "all" && (
+                  <span className="ml-1 text-[10px] font-medium opacity-70">
+                    {key === "pilot" ? "v1·v2" : "v" + MAIN_FROM_VERSION + "+"}
+                  </span>
+                )}
+                <span className="ml-1.5 tabular-nums">{countOfStage(key)}</span>
+              </a>
+            ))}
+          </span>
+        </div>
+
+        {/* 고른 단계 안에서 판별로 한 번 더 — 판이 하나뿐이면 나눌 것이 없으므로 숨긴다 */}
+        {versionKeys.length > 2 && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-2">
+            <span className="text-xs text-muted">판 나눠 보기</span>
+            <span className="flex items-center gap-1">
+              {versionKeys.map((key) => (
+                <a
+                  key={key}
+                  href={adminHref({ v: key })}
+                  className={
+                    "rounded-md px-2 py-1 text-xs font-medium transition " +
+                    (version === key ? "bg-accent text-white" : "text-muted hover:bg-line/50")
+                  }
+                >
+                  {versionLabel(key)}
+                  <span className="ml-1 text-[10px] tabular-nums opacity-70">
+                    {countOfVersion(key)}
+                  </span>
+                </a>
+              ))}
+            </span>
+          </div>
+        )}
+      </section>
+
+      {/*
+        phase 컬럼과 판번호가 어긋난 응답 — 판을 올리고 SURVEY_PHASE 를 안 바꿨을 때 생긴다.
+        화면 숫자로는 드러나지 않는데 조건 배정 카운터가 phase 로 세므로 반드시 알려야 한다.
+      */}
+      {/* 설정이 어긋난 경우 — 응답이 없어도 뜬다. 첫 본실험 참여자가 배정받기 전에 고쳐야 한다 */}
+      {configMismatch && (
+        <div className="mt-3 rounded-xl border-2 border-required/50 bg-required/5 px-4 py-3.5 text-[13px] leading-relaxed break-keep">
+          <p className="font-bold text-required">
+            지금 설정으로는 조건 배정이 어긋납니다 — 참여자를 더 받기 전에 고쳐 주세요
+          </p>
+          <p className="mt-1.5">
+            수집 중인 판이 <strong className="font-bold">v{INSTRUMENT_VERSION}</strong> 이라
+            단계는 <strong className="font-bold">{PHASE_LABELS[currentStage!]}</strong> 인데,
+            응답에 찍히는 <code className="font-mono">phase</code> 는{" "}
+            <code className="font-mono">{SURVEY_PHASE}</code> 입니다.
+          </p>
+          <p className="mt-1.5">
+            조건 배정 카운터는 <code className="font-mono">phase</code> 값으로 세는 범위를
+            정합니다. 이대로 두면 {PHASE_LABELS[currentStage!]} 첫 참여자가{" "}
+            <strong className="font-bold">
+              이미 배정된 {assignedInCurrentPhase}명의 누적치 위에서
+            </strong>{" "}
+            가장 적게 쓰인 칸을 받게 되어, 카운터밸런싱이 처음부터 어긋난 채 시작합니다.
+          </p>
+          <p className="mt-1.5 text-muted">
+            고치는 방법: <code className="font-mono">SURVEY_PHASE</code> 를{" "}
+            <code className="font-mono">{currentStage}</code> 로 바꾸고 서버를 다시 시작합니다
+            (<code className="font-mono">.env.local</code> 은 로컬용이고, 배포에는 Vercel 의
+            환경변수를 함께 바꿔야 합니다). 파일럿 응답은 지우지 않아도 됩니다 — 카운터는
+            같은 단계 안에서만 셉니다.
+          </p>
+        </div>
+      )}
+
+      {/* 이미 들어온 응답 중에 어긋난 것 — 위 설정 문제를 늦게 발견했을 때 잡힌다 */}
+      {stageMismatch.length > 0 && (
+        <p className="mt-3 rounded-xl border border-required/40 bg-required/5 px-4 py-3 text-[13px] leading-relaxed break-keep">
+          <strong className="font-bold text-required">
+            판번호와 phase 컬럼이 어긋난 응답이 {stageMismatch.length}건 있습니다
+          </strong>{" "}
+          (
+          {[...new Set(stageMismatch.map((p) => "v" + p.instrument_version + " → " + p.phase))]
+            .sort()
+            .join(" · ")}
+          ). 판 {MAIN_FROM_VERSION} 부터는 본실험인데 phase 가 다르게 찍힌 응답입니다. 이
+          응답들은 배정 카운터를 다른 단계에서 세었으므로, 분석에서 균형을 볼 때 따로
+          떼어 보셔야 합니다.
+        </p>
+      )}
 
       {/*
         판을 섞어 보고 있을 때의 경고 — 판마다 자극이 다르므로 아래 평균을 합치면
@@ -289,10 +445,21 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       {version === "all" && versions.filter((v) => countOfVersion(v) > 0).length > 1 && (
         <p className="mt-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-[13px] leading-relaxed break-keep">
           <strong className="font-bold text-accent">여러 판의 응답을 함께 보고 있습니다</strong>{" "}
-          ({versions.map((v) => versionLabel(v) + " " + countOfVersion(v) + "명").join(" · ")}).
-          판마다 이용조건 조작(개별 대여 금액·기간)과 추천 근거 문구가 다르므로, 아래 평균을
-          합쳐서 해석하면 안 됩니다 — 위 <strong className="font-bold">판</strong> 토글로 갈라
-          보세요.
+          (
+          {versions
+            .filter((v) => countOfVersion(v) > 0)
+            .map((v) => "v" + v + " " + countOfVersion(v) + "명")
+            .join(" · ")}
+          ). 판마다 자극물과 이용조건 조작(금액·기간)·추천 근거 문구가 다르므로, 아래 평균을
+          합쳐서 해석하면 안 됩니다 —{" "}
+          <strong className="font-bold">판 나눠 보기</strong>로 갈라 보세요.
+          {viewing === "all" && (
+            <>
+              {" "}
+              지금은 <strong className="font-bold">파일럿과 본실험을 함께</strong> 보고 있어
+              더욱 그렇습니다.
+            </>
+          )}
         </p>
       )}
 

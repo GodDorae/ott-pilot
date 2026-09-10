@@ -1,6 +1,12 @@
 import { listAll } from "@/lib/db";
 import { GENRE_LABELS, type Genre } from "@/lib/experiment";
-import { PHASES, SURVEY_PHASE, type Phase } from "@/lib/phase";
+import {
+  INSTRUMENT_VERSION,
+  PHASES,
+  SURVEY_PHASE,
+  stageOfVersion,
+  type Phase,
+} from "@/lib/phase";
 import { isAdminRequest } from "@/lib/adminauth";
 import type { FamiliarityLevel } from "@/lib/stimuli";
 import { buildCodebook } from "@/lib/codebook";
@@ -147,12 +153,34 @@ export async function GET(req: Request) {
     });
   }
 
-  // ?phase=pilot|main|all — 기본은 지금 수집 중인 단계
-  const raw = new URL(req.url).searchParams.get("phase");
-  const phase: Phase | "all" =
-    raw === "all" ? "all" : PHASES.includes(raw as Phase) ? (raw as Phase) : SURVEY_PHASE;
+  /*
+    ?phase=pilot|main|all · ?v=<판번호>|none|all — 관리자 화면의 '보는 범위'와 같은 값이다.
+    화면에서 고른 범위가 그대로 내려와야 한다 — 링크와 화면이 다르면 어느 쪽이
+    맞는지 알 수 없다.
 
-  const { participants, responses } = await listAll(phase);
+    단계는 판번호에서 끌어낸다 (판 1·2 파일럿 / 판 3+ 본실험, phase.ts 의 stageOfVersion).
+    phase 컬럼으로 거르지 않는 이유: 판을 올리고 SURVEY_PHASE 를 안 바꾼 행이
+    조용히 빠져 버린다.
+  */
+  const q = new URL(req.url).searchParams;
+  const raw = q.get("phase");
+  const phase: Phase | "all" =
+    raw === "all"
+      ? "all"
+      : PHASES.includes(raw as Phase)
+        ? (raw as Phase)
+        : (stageOfVersion(INSTRUMENT_VERSION) ?? SURVEY_PHASE);
+  const vParam = q.get("v");
+
+  const all = await listAll("all");
+  const participants = all.participants.filter((p) => {
+    if (phase !== "all" && stageOfVersion(p.instrument_version) !== phase) return false;
+    if (!vParam || vParam === "all") return true;
+    if (vParam === "none") return !p.instrument_version;
+    return p.instrument_version === vParam;
+  });
+  const keep = new Set(participants.map((p) => p.id));
+  const responses = all.responses.filter((r) => keep.has(r.participant_id));
   const byId = new Map(participants.map((p) => [p.id, p]));
 
   // 뷰가 계산해 주던 참여자 단위 값 — CSV 도 같은 열을 내야 나중에 이어 붙일 수 있다
@@ -255,7 +283,10 @@ export async function GET(req: Request) {
 
   const csv = [HEADERS.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
   const stamp = new Date().toISOString().slice(0, 10);
-  const suffix = phase === "all" ? "" : "-" + phase;
+  /* 내려받은 파일 이름만 봐도 어느 범위인지 알 수 있게 — 여러 번 받아 두면 섞인다 */
+  const suffix =
+    (phase === "all" ? "" : "-" + phase) +
+    (!vParam || vParam === "all" ? "" : "-v" + vParam);
 
   // Excel 에서 한글이 깨지지 않도록 UTF-8 BOM 을 붙인다
   return new Response("﻿" + csv, {

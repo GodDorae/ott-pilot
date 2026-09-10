@@ -31,6 +31,27 @@ function readPhase(): Phase {
 export const SURVEY_PHASE: Phase = readPhase();
 
 /**
+ * 판번호가 어느 단계의 것인지 — **판 1·2 는 파일럿, 판 3 부터 본실험.**
+ *
+ * 단계를 나타내는 값이 두 개 있다: participants.phase(환경변수 SURVEY_PHASE 로 찍힌다)와
+ * instrument_version. 둘이 겹쳐서 관리자 화면에 필터가 두 줄로 서 있었고, "단계=본실험 +
+ * 판=v1" 처럼 있을 수 없는 조합을 고를 수 있었다. 판번호가 곧 단계를 가리키므로
+ * 그 경계를 여기 한 곳에만 적고 화면은 이 함수만 쓴다.
+ *
+ * phase 컬럼을 지우지는 않는다 — 조건 배정 카운터(assign_next_cell)가 그 값으로
+ * 세는 범위를 정하기 때문이다. 대신 관리자 화면에서 둘이 어긋나면 경고를 띄운다
+ * (판을 올렸는데 SURVEY_PHASE 를 그대로 두면 본실험이 파일럿 누적치 위에서 배정된다).
+ */
+export const MAIN_FROM_VERSION = 3;
+
+/** 판번호 → 단계. 판번호가 없거나 숫자가 아니면 null (옛 응답) */
+export function stageOfVersion(version: string | null | undefined): Phase | null {
+  const n = Number(version);
+  if (!version || !Number.isFinite(n)) return null;
+  return n >= MAIN_FROM_VERSION ? "main" : "pilot";
+}
+
+/**
  * 측정 도구 판번호 — 이 응답이 어떤 구성·순서로 수집됐는지 데이터에 남기는 표시.
  *
  * 본실험은 구성과 순서가 달라질 수 있다. 그런데 단계 순서나 문항 구성은 스키마가 아니라
