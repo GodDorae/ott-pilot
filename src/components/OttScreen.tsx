@@ -86,36 +86,77 @@ const M = {
   */
   title1Y: 776,
   titleSize: 65,
-  /** 스파클은 세로로 긴 별 — 목업 잉크 44×52, 왼쪽 여백 56에서 시작 */
+  /*
+    레일 제목 줄 — [AI 스파클] [제목] [ⓘ]. 세 요소 모두 세로 중앙 정렬(items-center).
+    화면 크기는 목업값 / 4 다 (Figma 프레임 375px 기준 축척 1/4).
+
+    아이콘이 제목 글자(65목업 = 16.25px)에 비해 작아 보이던 것을 글자 높이에 맞춰 키웠다.
+    위계는 AI 스파클 ≈ 제목 > ⓘ 를 지킨다.
+
+      sparkleBox 88 → 화면 22px. 연구자 자료의 잉크가 viewBox 14 중 11.2 만 채우므로
+                      상자를 글자보다 크게 잡아야 글자와 비슷해 보인다
+                      (실제 잉크 ≈ 88 × 11.2/14 = 70목업 = 17.6px).
+                      Figma 원본 실측 잉크는 44×52(11×13px)로 이보다 작았다 —
+                      원본을 그대로 따르지 않고 "글자만큼" 이라는 요청을 따랐다.
+      infoBox    56 → 화면 14px (원래 44 = 11px). 보조 요소라 스파클보다 작게 둔다.
+  */
   sparkleX: 53,
-  sparkleW: 48,
-  sparkleH: 58,
+  sparkleBox: 88,
   sparkleGap: 30,
-  infoBox: 44,
+  infoBox: 56,
 
   bannerY: 915,
-  bannerH: 120,
+  /*
+    Figma 원본 실측값 — 원본 PNG(1500×3248)에서 배너 상자가 y 1022~1165, 즉 144목업
+    (화면 36px)인데 코드는 120(30px)이라 17% 낮았다. 룰러로 짚으신 "추천 문구 컨테이너가
+    원본보다 작다" 가 이 차이다. 상자가 24 커진 만큼 아래(rail1Y·title2Y·rail2Y)를 함께
+    내려, 배너와 포스터 줄 사이 여백 52 는 그대로 지킨다.
+  */
+  bannerH: 144,
   /* 4px — 목업 1500px 이 375px 로 그려지므로(축척 1/4) 목업 단위로는 16 이다 */
   bannerRadius: 16,
-  bannerIcon: 58,
   /*
-    화면에서 12.25px (목업 1500px 이 375px 로 그려지므로 축척 1/4).
-
-    글자 자리는 1278px 다 (배너 폭 1404 - paddingInline 24×2 - 아이콘 58 - gap 20).
-    한 줄로 잘리므로(truncate) 가장 긴 조건이 상한을 정한다 — 오후의
-    "분주한 평일 오후에 맞춰 …님이 기분 전환하며 볼 만한 작품" 이다.
-    Noto Sans KR 실측(한글 자폭 920/1000em, 공백 224, letterSpacing -0.01em)으로
-    호칭 3자(DISPLAY_NAME_MAX) 기준 그 조건의 상한은 49.93px = 화면 12.48px 다.
-
-    49 로 둔 것은 상한에 딱 붙이지 않으려는 것이다. 화면 12.5px(목업 50)은 그 조건에서
-    1.7px 넘쳐 끝이 "…" 로 잘리고, 49.9 는 여유가 0 이라 반올림 차이만으로도 잘린다.
-    49 는 약 2% 여유가 남는다. 문구를 고칠 때는 이 상한을 다시 재야 한다.
-
-    확정 목업의 배너는 51.3px 인데, 거기 실린 아침 조건은 짧아서 그 크기가 들어간다.
+    배너 왼쪽 아이콘 — 화면 18px (원래 58 = 14.5px, Figma 원본 실측 56 = 14px).
+    글자에 비해 작아 보이던 것을 키웠다. 다만 이 아이콘과 아래 gap 이 커지는 만큼
+    글자가 들어갈 가로 자리가 줄어든다 (bannerTextSize 주석 참고).
   */
-  bannerTextSize: 49,
+  bannerIcon: 72,
+  /** 아이콘과 글자 사이 — 화면 6px (원래 JSX 에 20 으로 박혀 있었다) */
+  bannerIconGap: 24,
+  /*
+    화면에서 12px (축척 1/4).
 
-  rail1Y: 1087,
+    ── 왜 Figma 원본보다 작은가 ─────────────────────────────────
+    원본 PNG 실측: 배너 글자 잉크 높이 48목업 → 한글 잉크가 약 0.92em 이므로
+    원본 글자 크기는 약 52목업(화면 13px)이다. 여기는 48 이라 8% 작다.
+
+    올리지 못하는 이유는 **문구가 자리보다 길기** 때문이다. 배너는 한 줄로
+    잘리고(truncate), 글자 자리는
+        1404(배너 폭) - 24×2(paddingInline) - 72(아이콘) - 24(gap) = 1260목업
+    인데, 가장 긴 조건인 오후
+        "분주한 평일 오후에 맞춰 ○○○님이 기분 전환하며 볼 만한 작품"
+    는 글자 크기 1목업당 25.6목업 을 쓴다 (Noto Sans KR 실측: 한글 자폭 920/1000em,
+    공백 224, letterSpacing -0.01em, 호칭 3자 = DISPLAY_NAME_MAX).
+    → 여덟 갈래가 모두 한 줄에 들어가는 상한은 49.2목업 뿐이다.
+
+    원본 크기 52목업 을 넣으려면 1331목업 이 필요한데, paddingInline 을 0 으로 줘도
+    배너 안쪽은 1404 - 72 - 24 = 1308 이다. **여백을 다 없애도 안 들어간다** —
+    원본 Figma 에 실린 것은 짧은 아침 조건("여유로운 주말 아침 / 가볍게")이라
+    그 크기로 들어갔던 것이고, 오후 조건은 그려 본 적이 없다.
+
+    그래서 48 로 둔다. 49 는 오후에서 여유가 5.8목업(0.46%)뿐이라 글꼴이 대체 글꼴로
+    떨어지기만 해도 끝이 "…" 로 잘린다. 48 은 31.4목업(2.5%) 남는다.
+
+    ── 원본 크기(13px)를 쓰고 싶으면 ────────────────────────────
+    무드 문구를 줄이면 상한이 올라간다 (오후 기준, 실측):
+        "기분 전환하며" → 49.2목업 (12.31px)   ← 지금
+        "기분 전환"     → 53.0목업 (13.25px)   ← 원본 크기 가능
+        "기분전환"      → 53.5목업 (13.37px)
+    문구는 연구자가 정하는 것이라 여기서 바꾸지 않았다.
+  */
+  bannerTextSize: 48,
+
+  rail1Y: 1111,
   posterRadius: 10,
 
   badgeInset: 18,
@@ -125,8 +166,8 @@ const M = {
   badgeRadius: 8,
 
   /* D — 위 title1Y 주석의 32px 규칙 참고 */
-  title2Y: 1823,
-  rail2Y: 1964,
+  title2Y: 1847,
+  rail2Y: 1988,
   rail2W: 612,
   rail2H: 1194,
   rail2PeekW: 164,
@@ -153,6 +194,64 @@ const M = {
  */
 const ICON_STROKE_MOCK = 4;
 const iconStroke = (viewBox: number) => (ICON_STROKE_MOCK * viewBox) / M.bannerIcon;
+
+/**
+ * AI 추천 표식 — 레일 제목 왼쪽의 반짝임.
+ *
+ * 연구자 자료(artificial-intelligence-08.svg)를 그대로 옮겼다. 좌표·그라디언트 정지점을
+ * 손대지 않았고, Figma 가 붙인 id 만 이 파일 안에서 부딪히지 않게 바꿨다.
+ * 채움(fill)에 그라디언트를 직접 걸어야 원본 색이 난다 — 예전에는 직접 그린 별 두 개에
+ * 분홍 두 정지점만 준 것이라 원본의 붉은색→마젠타→보라 흐름이 나오지 않았다.
+ *
+ * 크기는 M.sparkleBox (정사각). 잉크가 viewBox 를 꽉 채우지 않아(14 중 약 11.2)
+ * 상자를 제목 글자 높이보다 조금 크게 잡아야 글자와 비슷한 높이로 보인다.
+ */
+function SparkleIcon() {
+  return (
+    <svg
+      viewBox="0 0 14 14"
+      fill="none"
+      className="shrink-0"
+      style={{ width: u(M.sparkleBox), height: u(M.sparkleBox) }}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient
+          id="ott-ai-1"
+          x1="3.49185"
+          y1="5.23875"
+          x2="10.4749"
+          y2="11.8726"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#CB2026" />
+          <stop offset="0.639046" stopColor="#D4048F" />
+          <stop offset="1" stopColor="#C400FF" />
+        </linearGradient>
+        <linearGradient
+          id="ott-ai-2"
+          x1="9.7843"
+          y1="2.2188"
+          x2="12.4029"
+          y2="4.70651"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#CB2026" />
+          <stop offset="0.52779" stopColor="#D4048F" />
+          <stop offset="1" stopColor="#C400FF" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M5.58704 3.55835C5.77435 3.08342 6.44648 3.08342 6.6338 3.55835L7.16387 4.90228C7.50697 5.77228 8.19561 6.46095 9.06564 6.80405L10.4096 7.33412C10.8845 7.52144 10.8845 8.19355 10.4096 8.38087L9.06564 8.91094C8.19561 9.25404 7.50697 9.94268 7.16387 10.8127L6.6338 12.1566C6.44648 12.6315 5.77435 12.6315 5.58704 12.1566L5.057 10.8127C4.71388 9.94268 4.02521 9.25404 3.15521 8.91094L1.81128 8.38087C1.33635 8.19355 1.33635 7.52144 1.81128 7.33412L3.15521 6.80405C4.02521 6.46095 4.71388 5.77228 5.057 4.90228L5.58704 3.55835Z"
+        fill="url(#ott-ai-1)"
+      />
+      <path
+        d="M10.57 1.58865C10.6402 1.41055 10.8923 1.41055 10.9625 1.58865L11.1613 2.09263C11.29 2.41887 11.5482 2.67713 11.8745 2.8058L12.3785 3.00456C12.5565 3.0748 12.5565 3.32686 12.3785 3.3971L11.8745 3.59587C11.5482 3.72453 11.29 3.98279 11.1613 4.30904L10.9625 4.81301C10.8923 4.99111 10.6402 4.99111 10.57 4.81301L10.3713 4.30904C10.2425 3.98279 9.98428 3.72453 9.65806 3.59587L9.15406 3.3971C8.97599 3.32686 8.97599 3.0748 9.15406 3.00456L9.65806 2.8058C9.98428 2.67713 10.2425 2.41887 10.3713 2.09263L10.57 1.58865Z"
+        fill="url(#ott-ai-2)"
+      />
+    </svg>
+  );
+}
 
 /** 조건 무관 장식용 포스터 — 상단 줄과 "오직 이곳에서만" 줄 */
 const HERO_IMAGES = ["hero-1", "hero-2", "hero-3"];
@@ -566,30 +665,7 @@ export default function OttScreen({
           gap: u(M.sparkleGap),
         }}
       >
-        {/* 스파클 — 개인화 추천 표식 */}
-        <svg
-          viewBox="0 0 44 52"
-          className="shrink-0"
-          style={{ width: u(M.sparkleW), height: u(M.sparkleH) }}
-          aria-hidden
-        >
-          <defs>
-            <linearGradient id="ott-sparkle" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0%" stopColor="#ee1f6e" />
-              <stop offset="100%" stopColor="#e01ab4" />
-            </linearGradient>
-          </defs>
-          {/* 큰 별 (왼쪽 아래) — 세로로 긴 4각 별 */}
-          <path
-            d="M15 10C15 20.5 22.5 31 30 31C22.5 31 15 41.5 15 52C15 41.5 7.5 31 0 31C7.5 31 15 20.5 15 10Z"
-            fill="url(#ott-sparkle)"
-          />
-          {/* 작은 별 (오른쪽 위) */}
-          <path
-            d="M34 0C34 5.5 39 11 44 11C39 11 34 16.5 34 22C34 16.5 29 11 24 11C29 11 34 5.5 34 0Z"
-            fill="url(#ott-sparkle)"
-          />
-        </svg>
+        <SparkleIcon />
         <h2 className="truncate font-bold" style={{ fontSize: u(M.titleSize) }}>
           {headline}
         </h2>
@@ -597,7 +673,8 @@ export default function OttScreen({
           viewBox="0 0 24 24"
           fill="none"
           stroke="#9b9ba1"
-          strokeWidth={1.8}
+          /* 화면 1px 고정 — 상자(infoBox)가 커져도 선이 굵어지지 않게 환산한다 */
+          strokeWidth={(ICON_STROKE_MOCK * 24) / M.infoBox}
           className="shrink-0"
           style={{ width: u(M.infoBox), height: u(M.infoBox) }}
           aria-hidden
@@ -617,7 +694,7 @@ export default function OttScreen({
           top: u(M.bannerY),
           height: u(M.bannerH),
           borderRadius: u(M.bannerRadius),
-          gap: u(20),
+          gap: u(M.bannerIconGap),
           /*
             연구자 지정 그라디언트 (확정 목업). 붉은색 → 짙은 남색.
 
