@@ -214,10 +214,21 @@ function contextSegments(ctx: ContextSnapshot, displayName: string | null): Bann
  * 배너 — 근거유형 조작의 핵심 문구.
  *
  * 굵게 처리하는 구간은 조작의 근거를 직접 말하는 부분이다(무엇을 근거로 골랐는가).
- * 세 조건 모두 굵은 구간이 두 군데씩이라 시각적 강조량이 같다.
+ * 기본은 Regular 이고 지정한 구간만 Bold 다 — 조사("이"), 부사("평소"·"많이"),
+ * 결과 표현("작품")은 근거가 아니므로 Regular 로 남긴다. 호칭도 Bold 하지 않는다.
+ *
+ * 굵은 구간 수는 조건마다 다르다 (연구자 지정):
+ *   콘텐츠  1군데 — "자주 보시는 {장르} 장르와 유사한"
+ *   협업    2군데 — "시청 취향이 비슷한 이용자들" · "본"
+ *   맥락    2군데 — "{상황}" · "{무드}"
+ * 예전에는 세 조건을 두 군데씩으로 맞춰 강조량을 같게 두었는데, 무엇을 굵게 할지는
+ * 연구자가 문구별로 정하는 것이라 그 규칙을 버렸다.
+ *
+ * 조각을 따로 넘기는 이유: OttScreen 이 조각마다 <span> 을 만들고 strong 인 것에만
+ * font-bold 를 준다. 한 문자열에 일괄로 걸면 구간을 나눌 수 없다.
  *
  * 배너는 한 줄로 잘린다(OttScreen 의 truncate). 문구를 고칠 때는 호칭이
- * DISPLAY_NAME_MAX(3자)인 참여자를 기준으로 목업의 글자 자리(1278/1500px,
+ * DISPLAY_NAME_MAX(3자)인 참여자를 기준으로 목업의 글자 자리(1280/1500px,
  * 글자 크기 49px)를 넘지 않는지 본다 — 가장 긴 조건은 오후("기분 전환하며")다.
  */
 export function rationaleBanner(
@@ -228,18 +239,25 @@ export function rationaleBanner(
 ): BannerSegment[] {
   const who = honorific(displayName);
   switch (rationale) {
+    /*
+      굵은 구간은 **한 덩어리**다 — "자주 보시는 {장르} 장르와 유사한".
+      {장르} 값이 바뀌어도 구간이 그대로 유지되도록 굵은 조각 안에서 끼워 넣는다.
+      "평소" 와 마지막 "작품" 은 Regular 다.
+    */
     case "content":
       return [
-        { text: `${who}이 평소 자주 보시는 ` },
-        { text: `${GENRE_LABELS[genre]} 장르`, strong: true },
-        { text: "와 " },
-        { text: "유사한", strong: true },
+        { text: `${who}이 평소 ` },
+        { text: `자주 보시는 ${GENRE_LABELS[genre]} 장르와 유사한`, strong: true },
         { text: " 작품" },
       ];
+    /*
+      굵은 구간이 두 군데다 — "시청 취향이 비슷한 이용자들" 과 "본".
+      "이용자들" 뒤의 조사 "이", "많이", 마지막 "작품" 은 Regular 로 남긴다.
+    */
     case "collab":
       return [
-        { text: `${who}과 시청 취향이 ` },
-        { text: "비슷한 이용자들", strong: true },
+        { text: `${who}과 ` },
+        { text: "시청 취향이 비슷한 이용자들", strong: true },
         { text: "이 많이 " },
         { text: "본", strong: true },
         { text: " 작품" },
